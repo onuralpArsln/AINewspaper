@@ -44,6 +44,9 @@ def newsSelector():
 @app.on_event("startup")
 def startup_event():
     print("bu startup kodu")
+    fetch_incoming()
+    newsSelector()
+    print(f"Fetched {len(apiMemory)} news items on startup")
 
 
 
