@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 import feedparser
 
-# uvicorn main:app --reload
+# uvicorn backendServer:app --reload
 
 app = FastAPI()
 

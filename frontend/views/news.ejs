@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>
+        <%= title %>
+    </title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+
+<body>
+    <header>
+        <div class="container">
+            <h1><a href="/" style="color: inherit; text-decoration: none;">AI Newspaper</a></h1>
+            <p class="tagline">Your Daily Source for News</p>
+        </div>
+    </header>
+
+    <main class="container">
+        <article class="news-detail">
+            <div class="breadcrumb">
+                <a href="/">← Back to Home</a>
+            </div>
+
+            <h1 class="article-title">
+                <%= news.title %>
+            </h1>
+
+            <div class="article-meta">
+                <span class="article-date">
+                    <%= news.published %>
+                </span>
+                <% if (news.link && news.link !=='endofline' ) { %>
+                    <a href="<%= news.link %>" target="_blank" class="source-link">View Original Source →</a>
+                    <% } %>
+            </div>
+
+            <% if (news.image) { %>
+                <div class="article-image">
+                    <img src="<%= news.image %>" alt="<%= news.title %>" onerror="this.src='/images/placeholder.jpg'">
+                </div>
+                <% } %>
+
+                    <% if (news.summary) { %>
+                        <div class="article-summary">
+                            <strong>Summary:</strong>
+                            <p>
+                                <%= news.summary %>
+                            </p>
+                        </div>
+                        <% } %>
+
+                            <% if (news.content && news.content !=='endofline' ) { %>
+                                <div class="article-content">
+                                    <%- news.content %>
+                                </div>
+                                <% } %>
+
+                                    <div class="article-footer">
+                                        <a href="/" class="btn-back">← Back to All News</a>
+                                    </div>
+        </article>
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>&copy; 2025 AI Newspaper. All rights reserved.</p>
+        </div>
+    </footer>
+</body>
+
+</html>

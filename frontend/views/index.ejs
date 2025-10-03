@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>
+        <%= title %>
+    </title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+
+<body>
+    <header>
+        <div class="container">
+            <h1>AI Newspaper</h1>
+            <p class="tagline">Your Daily Source for News</p>
+        </div>
+    </header>
+
+    <main class="container">
+        <% if (news.length===0) { %>
+            <div class="no-news">
+                <h2>No news available</h2>
+                <p>Please check back later or ensure the backend is running.</p>
+            </div>
+            <% } else { %>
+                <div class="news-grid">
+                    <% news.forEach((item, index)=> { %>
+                        <article class="news-card">
+                            <% if (item.image || item.thumbnail) { %>
+                                <div class="news-image">
+                                    <img src="<%= item.image || item.thumbnail %>" alt="<%= item.title %>"
+                                        onerror="this.src='/images/placeholder.jpg'">
+                                </div>
+                                <% } %>
+                                    <div class="news-content">
+                                        <h2 class="news-title">
+                                            <a href="/news/<%= index %>">
+                                                <%= item.title %>
+                                            </a>
+                                        </h2>
+                                        <p class="news-date">
+                                            <%= item.published %>
+                                        </p>
+                                        <% if (item.summary) { %>
+                                            <p class="news-summary">
+                                                <%= item.summary %>
+                                            </p>
+                                            <% } %>
+                                                <a href="/news/<%= index %>" class="read-more">Read More →</a>
+                                    </div>
+                        </article>
+                        <% }); %>
+                </div>
+                <% } %>
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>&copy; 2025 AI Newspaper. All rights reserved.</p>
+        </div>
+    </footer>
+</body>
+
+</html>
