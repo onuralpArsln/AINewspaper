@@ -12,9 +12,36 @@
 
 <body>
     <header>
-        <div class="container">
-            <h1><a href="/" style="color: inherit; text-decoration: none;">AI Newspaper</a></h1>
-            <p class="tagline">Your Daily Source for News</p>
+        <div class="header-upper">
+            <div class="container">
+                <div class="header-content">
+                    <div class="header-logo">
+                        <a href="/">
+                            <img src="/images/logo.png" alt="AI Newspaper Logo" onerror="this.style.display='none'">
+                        </a>
+                    </div>
+                    <div class="header-branding">
+                        <h1><a href="/">AI Newspaper</a></h1>
+                        <p class="tagline">Your Daily Source for News</p>
+                    </div>
+                    <div class="header-widgets">
+                        <!-- Future widgets will be added here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="header-lower">
+            <div class="container">
+                <nav class="nav-container">
+                    <ul class="nav-tabs">
+                        <% navigation.tabs.forEach(tab=> { %>
+                            <li><a href="<%= tab.url %>" class="<%= tab.active ? 'active' : '' %>">
+                                    <%= tab.name %>
+                                </a></li>
+                            <% }); %>
+                    </ul>
+                </nav>
+            </div>
         </div>
     </header>
 

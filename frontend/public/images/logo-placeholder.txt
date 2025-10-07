@@ -1,0 +1,19 @@
+# Logo Placeholder
+
+This directory is ready for your logo.png file.
+
+## Instructions:
+1. Upload your logo.png file to this directory
+2. The logo should be:
+   - PNG format (recommended for transparency)
+   - Height: around 60px (will auto-scale)
+   - Width: up to 200px max
+   - Transparent background (optional)
+
+## Current Setup:
+- Logo appears on the left side of the header upper section
+- Clickable logo that links to home page
+- Responsive design - stacks vertically on mobile
+- Graceful fallback if logo file is missing
+
+The system will automatically hide the logo if the file is not found.

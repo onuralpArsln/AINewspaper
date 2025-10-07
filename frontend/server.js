@@ -17,6 +17,31 @@ app.use(express.static(path.join(__dirname, 'public')));
 // In-memory storage for fetched news
 let newsCache = [];
 
+// Navigation configuration - Tabs Names
+// To modify navigation tabs, simply update this configuration:
+const navigationConfig = {
+    tabs: [
+        { name: 'Home', url: '/', active: false },
+        { name: 'Spor', url: '/#spor', active: false },
+        { name: 'Canlı Yayın', url: '/#live', active: false },
+        { name: 'Yeni Haber', url: '/#latest', active: false },
+        { name: 'Servis Haber', url: '/#categories', active: false },
+        { name: 'About', url: '/#about', active: false }
+        // Add more tabs by adding objects with name, url, and active properties
+        // Example: { name: 'Contact', url: '/contact', active: false }
+    ]
+};
+
+// Helper function to get navigation with active tab set
+function getNavigation(activeUrl = '/') {
+    return {
+        tabs: navigationConfig.tabs.map(tab => ({
+            ...tab,
+            active: tab.url === activeUrl
+        }))
+    };
+}
+
 // Fetch news from backend
 async function fetchNewsFromBackend() {
     try {
@@ -55,7 +80,8 @@ async function initializeNewsCache() {
 app.get('/', (req, res) => {
     res.render('index', {
         news: newsCache,
-        title: 'AI Newspaper - Latest News'
+        title: 'AI Newspaper - Latest News',
+        navigation: getNavigation('/')
     });
 });
 
@@ -68,12 +94,14 @@ app.get('/news/:id', (req, res) => {
         res.render('news', {
             news: newsItem,
             newsId: newsId,
-            title: newsItem.title
+            title: newsItem.title,
+            navigation: getNavigation('/')
         });
     } else {
         res.status(404).render('error', {
             message: 'News not found',
-            title: 'Error 404'
+            title: 'Error 404',
+            navigation: getNavigation('/')
         });
     }
 });
@@ -98,7 +126,8 @@ app.get('/api/fetch-more', async (req, res) => {
 app.use((req, res) => {
     res.status(404).render('error', {
         message: 'Page not found',
-        title: 'Error 404'
+        title: 'Error 404',
+        navigation: getNavigation('/')
     });
 });
 
