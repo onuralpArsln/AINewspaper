@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Color System Demo - AI Newspaper</title>
+    <link rel="stylesheet" href="./public/css/style.css">
+    <style>
+        .color-demo {
+            padding: 2rem;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .color-controls {
+            background: var(--background-secondary);
+            padding: 2rem;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px var(--shadow-color);
+            margin-bottom: 2rem;
+        }
+
+        .color-controls h2 {
+            color: var(--primary-color);
+            margin-bottom: 1rem;
+        }
+
+        .color-inputs {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .color-input {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .color-input label {
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .color-input input {
+            padding: 0.5rem;
+            border: 2px solid var(--border-color);
+            border-radius: 6px;
+            font-size: 1rem;
+        }
+
+        .color-input input[type="range"] {
+            padding: 0;
+        }
+
+        .color-palette {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 1rem;
+            margin-top: 2rem;
+        }
+
+        .color-swatch {
+            text-align: center;
+            padding: 1rem;
+            border-radius: 8px;
+            color: white;
+            font-weight: 600;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+        }
+
+        .primary {
+            background: var(--primary-color);
+        }
+
+        .primary-light {
+            background: var(--primary-light);
+        }
+
+        .primary-dark {
+            background: var(--primary-dark);
+        }
+
+        .complementary {
+            background: var(--complementary-color);
+        }
+
+        .analogous-1 {
+            background: var(--analogous-1);
+        }
+
+        .analogous-2 {
+            background: var(--analogous-2);
+        }
+
+        .triadic-1 {
+            background: var(--triadic-1);
+        }
+
+        .triadic-2 {
+            background: var(--triadic-2);
+        }
+
+        .preset-buttons {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+            margin-top: 1rem;
+        }
+
+        .preset-btn {
+            padding: 0.5rem 1rem;
+            border: 2px solid var(--primary-color);
+            background: transparent;
+            color: var(--primary-color);
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .preset-btn:hover {
+            background: var(--primary-color);
+            color: white;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="color-demo">
+        <div class="color-controls">
+            <h2>🎨 Dynamic Color System Demo</h2>
+            <p>Change the base color below and watch how all complementary colors, gradients, and derived colors
+                automatically adjust!</p>
+
+            <div class="color-inputs">
+                <div class="color-input">
+                    <label for="hue">Base Hue (0-360)</label>
+                    <input type="range" id="hue" min="0" max="360" value="210">
+                    <input type="number" id="hueValue" min="0" max="360" value="210">
+                </div>
+                <div class="color-input">
+                    <label for="saturation">Saturation (0-100%)</label>
+                    <input type="range" id="saturation" min="0" max="100" value="70">
+                    <input type="number" id="saturationValue" min="0" max="100" value="70">
+                </div>
+                <div class="color-input">
+                    <label for="lightness">Lightness (0-100%)</label>
+                    <input type="range" id="lightness" min="0" max="100" value="35">
+                    <input type="number" id="lightnessValue" min="0" max="100" value="35">
+                </div>
+            </div>
+
+            <div class="preset-buttons">
+                <button class="preset-btn" onclick="setPreset(210, 70, 35)">Blue</button>
+                <button class="preset-btn" onclick="setPreset(0, 70, 35)">Red</button>
+                <button class="preset-btn" onclick="setPreset(120, 70, 35)">Green</button>
+                <button class="preset-btn" onclick="setPreset(270, 70, 35)">Purple</button>
+                <button class="preset-btn" onclick="setPreset(30, 70, 35)">Orange</button>
+                <button class="preset-btn" onclick="setPreset(180, 70, 35)">Teal</button>
+                <button class="preset-btn" onclick="setPreset(330, 70, 35)">Pink</button>
+            </div>
+        </div>
+
+        <div class="color-palette">
+            <div class="color-swatch primary">Primary</div>
+            <div class="color-swatch primary-light">Primary Light</div>
+            <div class="color-swatch primary-dark">Primary Dark</div>
+            <div class="color-swatch complementary">Complementary</div>
+            <div class="color-swatch analogous-1">Analogous 1</div>
+            <div class="color-swatch analogous-2">Analogous 2</div>
+            <div class="color-swatch triadic-1">Triadic 1</div>
+            <div class="color-swatch triadic-2">Triadic 2</div>
+        </div>
+
+        <div
+            style="margin-top: 2rem; padding: 2rem; background: var(--gradient-header); border-radius: 12px; color: white; text-align: center;">
+            <h3>Header Gradient Preview</h3>
+            <p>This shows how the header gradient automatically adjusts with your color changes!</p>
+        </div>
+    </div>
+
+    <script>
+        const hueSlider = document.getElementById('hue');
+        const hueValue = document.getElementById('hueValue');
+        const saturationSlider = document.getElementById('saturation');
+        const saturationValue = document.getElementById('saturationValue');
+        const lightnessSlider = document.getElementById('lightness');
+        const lightnessValue = document.getElementById('lightnessValue');
+
+        function updateColor() {
+            const hue = hueSlider.value;
+            const saturation = saturationSlider.value;
+            const lightness = lightnessSlider.value;
+
+            hueValue.value = hue;
+            saturationValue.value = saturation;
+            lightnessValue.value = lightness;
+
+            document.documentElement.style.setProperty('--base-hue', hue);
+            document.documentElement.style.setProperty('--base-saturation', saturation + '%');
+            document.documentElement.style.setProperty('--base-lightness', lightness + '%');
+        }
+
+        function setPreset(hue, saturation, lightness) {
+            hueSlider.value = hue;
+            saturationSlider.value = saturation;
+            lightnessSlider.value = lightness;
+            updateColor();
+        }
+
+        // Event listeners
+        hueSlider.addEventListener('input', updateColor);
+        saturationSlider.addEventListener('input', updateColor);
+        lightnessSlider.addEventListener('input', updateColor);
+
+        hueValue.addEventListener('input', function () {
+            hueSlider.value = this.value;
+            updateColor();
+        });
+
+        saturationValue.addEventListener('input', function () {
+            saturationSlider.value = this.value;
+            updateColor();
+        });
+
+        lightnessValue.addEventListener('input', function () {
+            lightnessSlider.value = this.value;
+            updateColor();
+        });
+    </script>
+</body>
+
+</html>

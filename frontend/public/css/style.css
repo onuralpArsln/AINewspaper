@@ -1,3 +1,157 @@
+/* 
+ * CSS Custom Properties - Dynamic Color System
+ * 
+ * To change the entire theme color:
+ * 1. Change the --base-hue value (0-360) to any color you want
+ * 2. All complementary colors, gradients, and derived colors will automatically adjust
+ * 
+ * Color Examples:
+ * - Blue: 210 (current)
+ * - Red: 0
+ * - Green: 120
+ * - Purple: 270
+ * - Orange: 30
+ * - Teal: 180
+ * - Pink: 330
+ * 
+ * You can also adjust --base-saturation and --base-lightness for fine-tuning
+ */
+:root {
+  /* Base Color - Change this to change the entire theme */
+  --base-hue: 190; /* Blue hue - change this value (0-360) to change base color */
+  --base-saturation: 60%;
+  --base-lightness: 45%;
+
+  /* Primary Colors */
+  --primary-color: hsl(
+    var(--base-hue),
+    var(--base-saturation),
+    var(--base-lightness)
+  );
+  --primary-light: hsl(
+    var(--base-hue),
+    var(--base-saturation),
+    calc(var(--base-lightness) + 15%)
+  );
+  --primary-dark: hsl(
+    var(--base-hue),
+    var(--base-saturation),
+    calc(var(--base-lightness) - 15%)
+  );
+  --primary-lighter: hsl(
+    var(--base-hue),
+    var(--base-saturation),
+    calc(var(--base-lightness) + 25%)
+  );
+  --primary-darker: hsl(
+    var(--base-hue),
+    var(--base-saturation),
+    calc(var(--base-lightness) - 25%)
+  );
+
+  /* Complementary Colors */
+  --complementary-hue: calc(var(--base-hue) + 180);
+  --complementary-color: hsl(
+    var(--complementary-hue),
+    var(--base-saturation),
+    var(--base-lightness)
+  );
+  --complementary-light: hsl(
+    var(--complementary-hue),
+    var(--base-saturation),
+    calc(var(--base-lightness) + 15%)
+  );
+  --complementary-dark: hsl(
+    var(--complementary-hue),
+    var(--base-saturation),
+    calc(var(--base-lightness) - 15%)
+  );
+
+  /* Analogous Colors (adjacent on color wheel) */
+  --analogous-1-hue: calc(var(--base-hue) + 30);
+  --analogous-2-hue: calc(var(--base-hue) - 30);
+  --analogous-1: hsl(
+    var(--analogous-1-hue),
+    var(--base-saturation),
+    var(--base-lightness)
+  );
+  --analogous-2: hsl(
+    var(--analogous-2-hue),
+    var(--base-saturation),
+    var(--base-lightness)
+  );
+
+  /* Triadic Colors */
+  --triadic-1-hue: calc(var(--base-hue) + 120);
+  --triadic-2-hue: calc(var(--base-hue) + 240);
+  --triadic-1: hsl(
+    var(--triadic-1-hue),
+    var(--base-saturation),
+    var(--base-lightness)
+  );
+  --triadic-2: hsl(
+    var(--triadic-2-hue),
+    var(--base-saturation),
+    var(--base-lightness)
+  );
+
+  /* Neutral Colors */
+  --text-primary: #333;
+  --text-secondary: #666;
+  --text-muted: #555;
+  --background-primary: #f5f5f5;
+  --background-secondary: white;
+  --background-muted: #f8f9fa;
+  --border-color: #e0e0e0;
+  --shadow-color: rgba(0, 0, 0, 0.1);
+  --shadow-color-dark: rgba(0, 0, 0, 0.2);
+
+  /* Transparent Colors */
+  --primary-alpha-10: hsl(
+    var(--base-hue),
+    var(--base-saturation),
+    var(--base-lightness),
+    0.1
+  );
+  --primary-alpha-20: hsl(
+    var(--base-hue),
+    var(--base-saturation),
+    var(--base-lightness),
+    0.2
+  );
+  --primary-alpha-30: hsl(
+    var(--base-hue),
+    var(--base-saturation),
+    var(--base-lightness),
+    0.3
+  );
+  --primary-alpha-50: hsl(
+    var(--base-hue),
+    var(--base-saturation),
+    var(--base-lightness),
+    0.5
+  );
+
+  /* Gradients */
+  --gradient-primary: linear-gradient(
+    135deg,
+    var(--primary-darker) 0%,
+    var(--primary-color) 50%,
+    var(--primary-light) 100%
+  );
+  --gradient-header: linear-gradient(
+    135deg,
+    var(--primary-darker) 0%,
+    var(--primary-color) 50%,
+    var(--primary-light) 100%
+  );
+  --gradient-nav: linear-gradient(
+    135deg,
+    var(--primary-alpha-20) 0%,
+    var(--primary-alpha-10) 100%
+  );
+}
+
 /* Reset and Base Styles */
 * {
   margin: 0;
@@ -9,8 +163,8 @@ body {
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen,
     Ubuntu, Cantarell, sans-serif;
   line-height: 1.6;
-  color: #333;
-  background-color: #f5f5f5;
+  color: var(--text-primary);
+  background-color: var(--background-primary);
 }
 
 .container {
@@ -21,9 +175,9 @@ body {
 
 /* Header Structure */
 header {
-  background: linear-gradient(135deg, #122d4a 0%, #1e4a6b 50%, #2a5f8a 100%);
+  background: var(--gradient-header);
   color: white;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 2px 10px var(--shadow-color-dark);
   position: relative;
   z-index: 1000;
 }
@@ -106,7 +260,7 @@ header {
 
 /* Lower Section - Navigation */
 .header-lower {
-  background: rgba(18, 45, 74, 0.2);
+  background: var(--primary-alpha-20);
   -webkit-backdrop-filter: blur(10px);
   backdrop-filter: blur(10px);
   border-top: 1px solid rgba(255, 255, 255, 0.15);
@@ -149,9 +303,9 @@ header {
 
 .nav-tabs a:hover,
 .nav-tabs a.active {
-  background: rgba(42, 95, 138, 0.3);
+  background: var(--primary-alpha-30);
   transform: translateY(-2px);
-  box-shadow: 0 4px 8px rgba(18, 45, 74, 0.2);
+  box-shadow: 0 4px 8px var(--primary-alpha-20);
 }
 
 .nav-tabs a.active::after {
@@ -182,23 +336,23 @@ main {
 
 /* News Card */
 .news-card {
-  background: white;
+  background: var(--background-secondary);
   border-radius: 12px;
   overflow: hidden;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 4px 6px var(--shadow-color);
   transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
 
 .news-card:hover {
   transform: translateY(-5px);
-  box-shadow: 0 8px 15px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 8px 15px var(--shadow-color-dark);
 }
 
 .news-image {
   width: 100%;
   height: 220px;
   overflow: hidden;
-  background-color: #e0e0e0;
+  background-color: var(--border-color);
 }
 
 .news-image img {
@@ -223,24 +377,24 @@ main {
 }
 
 .news-title a {
-  color: #333;
+  color: var(--text-primary);
   text-decoration: none;
   transition: color 0.3s ease;
 }
 
 .news-title a:hover {
-  color: #2a5f8a;
+  color: var(--primary-color);
 }
 
 .news-date {
-  color: #666;
+  color: var(--text-secondary);
   font-size: 0.85rem;
   margin-bottom: 0.75rem;
   display: block;
 }
 
 .news-summary {
-  color: #555;
+  color: var(--text-muted);
   font-size: 0.95rem;
   line-height: 1.5;
   margin-bottom: 1rem;
@@ -252,7 +406,7 @@ main {
 }
 
 .read-more {
-  color: #2a5f8a;
+  color: var(--primary-color);
   text-decoration: none;
   font-weight: 600;
   font-size: 0.95rem;
@@ -260,15 +414,15 @@ main {
 }
 
 .read-more:hover {
-  color: #1e4a6b;
+  color: var(--primary-dark);
 }
 
 /* News Detail Page */
 .news-detail {
-  background: white;
+  background: var(--background-secondary);
   padding: 3rem;
   border-radius: 12px;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 4px 6px var(--shadow-color);
   max-width: 900px;
   margin: 0 auto;
 }
@@ -278,21 +432,21 @@ main {
 }
 
 .breadcrumb a {
-  color: #2a5f8a;
+  color: var(--primary-color);
   text-decoration: none;
   font-weight: 500;
   transition: color 0.3s ease;
 }
 
 .breadcrumb a:hover {
-  color: #1e4a6b;
+  color: var(--primary-dark);
 }
 
 .article-title {
   font-size: 2.5rem;
   line-height: 1.3;
   margin-bottom: 1rem;
-  color: #222;
+  color: var(--text-primary);
 }
 
 .article-meta {
@@ -303,23 +457,23 @@ main {
   gap: 1rem;
   padding-bottom: 1.5rem;
   margin-bottom: 2rem;
-  border-bottom: 2px solid #e0e0e0;
+  border-bottom: 2px solid var(--border-color);
 }
 
 .article-date {
-  color: #666;
+  color: var(--text-secondary);
   font-size: 0.95rem;
 }
 
 .source-link {
-  color: #2a5f8a;
+  color: var(--primary-color);
   text-decoration: none;
   font-weight: 500;
   transition: color 0.3s ease;
 }
 
 .source-link:hover {
-  color: #1e4a6b;
+  color: var(--primary-dark);
 }
 
 .article-image {
@@ -335,9 +489,9 @@ main {
 }
 
 .article-summary {
-  background: #f8f9fa;
+  background: var(--background-muted);
   padding: 1.5rem;
-  border-left: 4px solid #2a5f8a;
+  border-left: 4px solid var(--primary-color);
   margin: 2rem 0;
   border-radius: 4px;
 }
@@ -345,13 +499,13 @@ main {
 .article-summary strong {
   display: block;
   margin-bottom: 0.5rem;
-  color: #2a5f8a;
+  color: var(--primary-color);
 }
 
 .article-content {
   font-size: 1.1rem;
   line-height: 1.8;
-  color: #444;
+  color: var(--text-muted);
   margin: 2rem 0;
 }
 
@@ -369,13 +523,13 @@ main {
 .article-footer {
   margin-top: 3rem;
   padding-top: 2rem;
-  border-top: 2px solid #e0e0e0;
+  border-top: 2px solid var(--border-color);
 }
 
 .btn-back {
   display: inline-block;
   padding: 0.75rem 1.5rem;
-  background: #2a5f8a;
+  background: var(--primary-color);
   color: white;
   text-decoration: none;
   border-radius: 6px;
@@ -384,7 +538,7 @@ main {
 }
 
 .btn-back:hover {
-  background: #1e4a6b;
+  background: var(--primary-dark);
 }
 
 /* Error Page */
@@ -395,20 +549,20 @@ main {
 
 .error-page h1 {
   font-size: 4rem;
-  color: #2a5f8a;
+  color: var(--primary-color);
   margin-bottom: 1rem;
 }
 
 .error-message {
   font-size: 1.3rem;
-  color: #666;
+  color: var(--text-secondary);
   margin-bottom: 2rem;
 }
 
 .btn-home {
   display: inline-block;
   padding: 0.75rem 2rem;
-  background: #2a5f8a;
+  background: var(--primary-color);
   color: white;
   text-decoration: none;
   border-radius: 6px;
@@ -417,20 +571,20 @@ main {
 }
 
 .btn-home:hover {
-  background: #1e4a6b;
+  background: var(--primary-dark);
 }
 
 /* No News Message */
 .no-news {
   text-align: center;
   padding: 4rem 2rem;
-  background: white;
+  background: var(--background-secondary);
   border-radius: 12px;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 4px 6px var(--shadow-color);
 }
 
 .no-news h2 {
-  color: #2a5f8a;
+  color: var(--primary-color);
   margin-bottom: 1rem;
 }
 
