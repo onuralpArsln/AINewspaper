@@ -1,36 +1,45 @@
 # AI Newspaper
 
-A modern news aggregation platform that fetches RSS feeds and displays them in a beautiful, responsive web interface. Built with FastAPI backend and Express.js + EJS frontend.
+An intelligent news aggregation platform that collects RSS feeds from 30+ Turkish news sources, groups similar articles, and uses AI to rewrite them into professional unified news pieces. Built with FastAPI backend and Express.js + EJS frontend.
 
 ## 🏗️ Project Structure
 
 ```
 AINewspaper/
-├── backend/                    # FastAPI backend server
-│   ├── aiConnection.py        # AI integration (Google Gemini)
-│   ├── backendServer.py       # FastAPI server with RSS feed parser
-│   └── testGrounds.ipynb      # Testing notebook
+├── backend/                    # Python backend processing pipeline
+│   ├── rss2db.py              # RSS feed collector → rss_articles.db
+│   ├── article_similarity.py  # Article grouping engine
+│   ├── group_articles.py      # CLI for article grouping
+│   ├── ai_writer.py           # AI article rewriter → our_articles.db
+│   ├── backendServer.py       # FastAPI API server
+│   ├── db_query.py            # Database query utilities
+│   ├── writer_prompt.txt      # AI writing instructions
+│   └── rsslist.txt            # 30+ Turkish RSS feed URLs
 │
 └── frontend/                  # Express.js frontend
     ├── server.js              # Express server
-    ├── package.json           # Node.js dependencies
     ├── views/                 # EJS templates
-    │   ├── index.ejs         # Main news page
+    │   ├── index.ejs         # Main news grid page
     │   ├── news.ejs          # Individual article page
     │   └── error.ejs         # Error page
-    └── public/               # Static assets
-        ├── css/
-        │   └── style.css     # Styles
-        └── images/
+    └── public/               # Static assets (CSS, images)
 ```
 
 ## 📋 Features
 
-- 📡 **RSS Feed Integration** - Fetches news from RSS feeds
+### Backend Processing Pipeline
+- 📡 **Multi-Source RSS Collection** - Fetches from 30+ Turkish news sources
+- 🔄 **Duplicate Prevention** - Content hashing to avoid duplicate articles
+- 🤝 **Smart Article Grouping** - Uses Jaccard & Cosine similarity to group articles about the same event
+- 🧠 **AI-Powered Rewriting** - Google Gemini AI rewrites and unifies articles
+- 🏷️ **Automatic Tagging** - Generates categories (sports, politics, etc.) and locations
+- 🖼️ **Image Collection** - Extracts images from multiple sources (image_url, image_urls, media_content)
+- 📊 **Source Tracking** - Maintains references to original articles
+
+### Frontend Display
 - 🎨 **Modern UI** - Beautiful, responsive design with gradient themes
 - 📰 **News Grid Layout** - Card-based news display
 - 📖 **Full Article View** - Detailed news pages with images
-- 🔄 **Real-time Updates** - Automatic news synchronization
 - 🖼️ **Image Support** - Displays thumbnails and full images
 - 🔗 **Source Links** - Links to original articles
 
@@ -40,76 +49,55 @@ AINewspaper/
 
 - Python 3.8+
 - Node.js 16+
-- npm or yarn
+- Google Gemini API key ([Get one here](https://ai.google.dev/))
 
-### Backend Setup (FastAPI)
+### Quick Setup
 
-1. **Navigate to backend directory:**
+1. **Install Backend Dependencies:**
 ```bash
 cd backend
-```
-
-2. **Install Python dependencies:**
-```bash
-pip install fastapi uvicorn feedparser python-dotenv google-genai
-```
-
-Or create a `requirements.txt`:
-```bash
 pip install -r requirements.txt
 ```
 
-3. **Create `.env` file** (if using AI features):
+2. **Configure Environment Variables:**
+
+Create `backend/.env`:
 ```env
-GEMINI_FREE_API=your_api_key_here
+GEMINI_FREE_API=your_gemini_api_key_here
 ```
 
-4. **Start the FastAPI server with uvicorn:**
-```bash
-uvicorn backendServer:app --reload
-```
-
-Or specify host and port:
-```bash
-uvicorn backendServer:app --host 0.0.0.0 --port 8000 --reload
-```
-
-The backend API will be available at `http://localhost:8000`
-
-**Backend API Endpoints:**
-- `GET /getOneNew` - Returns one unserved news item and marks it as served
-
-### Frontend Setup (Express.js)
-
-1. **Navigate to frontend directory:**
-```bash
-cd frontend
-```
-
-2. **Install Node.js dependencies:**
-```bash
-npm install
-```
-
-3. **Create `.env` file:**
+Create `frontend/.env`:
 ```env
 PORT=3000
 BACKEND_URL=http://localhost:8000
 ```
 
-4. **Start the frontend server:**
-
-**Development mode** (with auto-reload):
+3. **Install Frontend Dependencies:**
 ```bash
-npm run dev
+cd frontend
+npm install
 ```
 
-**Production mode:**
-```bash
-npm start
-```
+### Complete News Processing Pipeline
 
-The frontend will be available at `http://localhost:3000`
+```bash
+# Step 1: Collect RSS articles (30+ Turkish news sources)
+cd backend
+python rss2db.py
+
+# Step 2: Group similar articles using similarity detection
+python group_articles.py --threshold 0.3 --max-time-diff 2
+
+# Step 3: AI rewrite articles (configure in ai_writer.py)
+# Edit ai_writer.py: Set ONLY_IMAGES = True/False, ARTICLE_COUNT = 10
+python ai_writer.py
+
+# Step 4: Start web servers
+cd ..
+powershell -ExecutionPolicy Bypass -File start.ps1
+# Backend: http://localhost:8000
+# Frontend: http://localhost:3000
+```
 
 ## 🔧 Running the Full Application
 
@@ -155,229 +143,277 @@ npm run dev
 
 ## 📊 How It Works
 
-### Backend Flow
+### Processing Pipeline
 
-1. **RSS Feed Parsing**: 
-   - `fetch_incoming()` - Fetches news from RSS URL
-   - Parses: title, link, published date, summary, content, images
+```
+RSS Feeds → Collection → Grouping → AI Rewriting → Display
+    ↓          ↓           ↓            ↓            ↓
+rsslist.txt  rss2db.py  group_     ai_writer.py  Frontend
+                        articles                  (Express)
+                          .py
+    ↓                      ↓            ↓
+rss_articles.db ←─── Similarity ──→ our_articles.db
+```
 
-2. **News Management**:
-   - `newsSelector()` - Compares incoming news with stored news
-   - Only adds new articles to prevent duplicates
-   - Maintains newest-first order
+### 1. RSS Collection (`rss2db.py`)
+- Reads 30+ RSS feed URLs from `rsslist.txt`
+- Fetches articles using `feedparser`
+- Extracts: title, content, images, author, date, etc.
+- **Duplicate prevention** using content hashing
+- Stores in `rss_articles.db` with `is_read = 0`
 
-3. **API Service**:
-   - `/getOneNew` endpoint serves oldest unserved news
-   - Marks news as "served" to avoid repetition
-   - Returns "endofline" when no unserved news available
+### 2. Article Grouping (`group_articles.py`)
+- Finds articles about the **same event** from different sources
+- Uses **Jaccard & Cosine similarity** (title + content)
+- Groups articles with `event_group_id`
+- Only groups different sources within 2 days
+- Example: 7 articles about "Türk Devletleri Zirvesi" → Group 18
 
-### Frontend Flow
+### 3. AI Rewriting (`ai_writer.py`)
 
-1. **Initialization**:
-   - On startup, fetches 20 news articles from backend
-   - Caches news in memory for fast access
+**Configuration** (edit in file):
+```python
+ONLY_IMAGES = False  # True = only process articles with images
+ARTICLE_COUNT = 10   # Number of articles per run
+```
 
-2. **Main Page** (`/`):
-   - Displays all cached news in responsive grid
-   - Shows thumbnails, titles, summaries, dates
-   - Click any card to view full article
+**Process:**
+1. Iterates unread articles (newest first)
+2. If article has `event_group_id` → reads ALL group articles
+3. Sends to **Google Gemini AI** with `writer_prompt.txt` rules
+4. AI generates: Title, Description, Body, Tags (categories + locations)
+5. Collects ALL images from 3 columns: `image_url`, `image_urls`, `media_content`
+6. Saves to `our_articles.db` with source IDs
+7. Marks source articles `is_read = 1`
 
-3. **News Page** (`/news/:id`):
-   - Displays full article with images
-   - Shows complete content and source link
-   - Easy navigation back to main page
+**Usage:**
+```bash
+python ai_writer.py                    # Process ARTICLE_COUNT articles
+python ai_writer.py --max-articles 20  # Process 20 articles
+python ai_writer.py --stats            # Show statistics only
+```
 
-4. **API Endpoints**:
-   - `GET /api/news` - Returns all cached news as JSON
-   - `GET /api/fetch-more` - Fetches additional news from backend
+### 4. Frontend Display
+- Express.js serves news from backend API
+- Responsive grid layout with cards
+- Individual article pages with full content
+- Images and source links
 
-## 📝 Data Structure
+## 📝 Database Schemas
 
-Each news item has the following structure:
+### `rss_articles.db` (Source Articles)
+```sql
+articles:
+  - id, title, description, content, summary
+  - link, published, author, source_name
+  - image_url, image_urls, media_content  (3 image columns)
+  - event_group_id  (NULL or group number)
+  - is_read  (0 = unread, 1 = processed)
+```
 
-```javascript
-{
-  "title": "News Title",
-  "link": "https://original-source.com/article",
-  "published": "Thu, 02 Oct 2025 17:42:47 +0300",
-  "summary": "Brief summary of the article",
-  "content": "<p>Full HTML content...</p>",
-  "image": "https://example.com/image.jpg",
-  "thumbnail": "https://example.com/thumb.jpg",
-  "served": 0  // 0 = unserved, 1 = served
-}
+### `our_articles.db` (AI-Generated Articles)
+```sql
+our_articles:
+  - id, title, description, body
+  - tags  (e.g., "sports, Istanbul, football")
+  - images  (JSON array of all image URLs)
+  - date  (publication date from source)
+  - source_group_id  (reference to event group)
+  - source_article_ids  (e.g., "567,568,569")
 ```
 
 ## 🎨 Customization
 
-### Change RSS Feed Source
+### AI Writer Configuration
 
-Edit `backend/backendServer.py`:
+Edit `backend/ai_writer.py`:
 ```python
-RSS_URL = "https://your-rss-feed-url.com/rss.xml"
+ONLY_IMAGES = False  # True to only process articles with images
+ARTICLE_COUNT = 10   # Number of articles to process per run
 ```
 
-### Customize Frontend Styling
+### RSS Feed Sources
 
-Edit `frontend/public/css/style.css` to change:
-- Color scheme (currently purple gradient)
-- Layout dimensions
-- Fonts and typography
-- Responsive breakpoints
-
-### Modify News Fetch Count
-
-Edit `frontend/server.js`:
-```javascript
-// Change the number from 20 to your desired amount
-for (let i = 0; i < 20; i++) {
-    const newsItem = await fetchNewsFromBackend();
-    // ...
-}
+Add/remove feeds in `backend/rsslist.txt`:
 ```
+https://www.ntv.com.tr/gundem.rss
+https://www.aa.com.tr/tr/rss/default?cat=guncel
+# Add your feeds here (one per line)
+```
+
+### Article Grouping Parameters
+
+```bash
+python group_articles.py \
+  --threshold 0.3 \      # Similarity threshold (0.0-1.0)
+  --days 7 \             # Days back to process
+  --max-time-diff 2      # Max days between articles in same group
+```
+
+### AI Writing Prompt
+
+Customize `backend/writer_prompt.txt` to change:
+- Writing tone and style
+- Article structure requirements
+- Language and terminology
+- Tag generation rules
 
 ## 🐛 Troubleshooting
 
-### Backend Issues
-
-**Port already in use:**
+### No Articles Processed
 ```bash
-# Use a different port
-uvicorn backendServer:app --port 8001 --reload
+# Check statistics
+python ai_writer.py --stats
+
+# If ONLY_IMAGES = True, ensure articles have images
+# Check database: SELECT COUNT(*) FROM articles WHERE is_read = 0 AND image_url IS NOT NULL;
 ```
 
-**ModuleNotFoundError:**
+### AI Generation Fails
+- Verify Gemini API key in `.env`
+- Check `writer_prompt.txt` exists
+- Review logs for API errors
+- Try with fewer articles: `python ai_writer.py --max-articles 5`
+
+### No Groups Created
 ```bash
-# Install missing dependencies
-pip install fastapi uvicorn feedparser
+# Lower similarity threshold
+python group_articles.py --threshold 0.2
+
+# Check grouping status
+python group_articles.py --status
 ```
 
-### Frontend Issues
+### Database Issues
+```bash
+# View recent articles
+python db_query.py
 
-**Cannot connect to backend:**
-- Ensure backend is running on port 8000
-- Check `BACKEND_URL` in `.env` file
-- Verify no firewall blocking the connection
+# Check unread count
+sqlite3 backend/rss_articles.db "SELECT COUNT(*) FROM articles WHERE is_read = 0"
 
-**No news displayed:**
-- Check backend console for errors
-- Verify RSS feed URL is accessible
-- Check browser console for API errors
+# View generated articles
+sqlite3 backend/our_articles.db "SELECT id, title FROM our_articles LIMIT 10"
+```
 
-**Port 3000 already in use:**
-- Change `PORT` in `.env` file
-- Or stop other applications using port 3000
-
-## 📦 Dependencies
+## 📦 Key Technologies
 
 ### Backend (Python)
-- `fastapi` - Modern web framework
-- `uvicorn` - ASGI server
-- `feedparser` - RSS feed parsing
-- `python-dotenv` - Environment variables
-- `google-genai` - AI integration (optional)
+- **RSS Processing**: `feedparser`, `requests`
+- **Similarity Detection**: Jaccard & Cosine algorithms with Turkish stop words
+- **AI Integration**: Google Gemini (`google-genai`)
+- **Database**: SQLite3 with content hashing
+- **API Server**: FastAPI + Uvicorn
 
 ### Frontend (Node.js)
-- `express` - Web server framework
-- `ejs` - Template engine
-- `axios` - HTTP client
-- `dotenv` - Environment variables
-- `nodemon` - Development auto-reload (dev dependency)
+- **Server**: Express.js
+- **Templates**: EJS
+- **HTTP Client**: Axios
+- **Auto-reload**: Nodemon (dev)
 
-## 🔐 Environment Variables
+## 🔧 Command Reference
 
-### Backend `.env`
-```env
-GEMINI_FREE_API=your_gemini_api_key_here
+### RSS Collection
+```bash
+python rss2db.py                    # Collect from all feeds in rsslist.txt
 ```
 
-### Frontend `.env`
-```env
-PORT=3000
-BACKEND_URL=http://localhost:8000
+### Article Grouping
+```bash
+python group_articles.py            # Group with default settings
+python group_articles.py --status   # Show grouping statistics
+python group_articles.py --show-groups 10  # View top 10 groups
+python group_articles.py --search "ekonomi"  # Search groups
+python group_articles.py --reset    # Reset all grouping
 ```
 
-## 🚦 API Documentation
-
-### Backend API
-
-**GET /getOneNew**
-- Returns: Single news object
-- Response when news available:
-```json
-{
-  "news": {
-    "title": "...",
-    "link": "...",
-    ...
-  }
-}
-```
-- Response when no news available:
-```json
-{
-  "news": {
-    "title": "endofline",
-    ...
-  }
-}
+### AI Writing
+```bash
+python ai_writer.py                 # Use ARTICLE_COUNT from config
+python ai_writer.py --max-articles 20  # Process 20 articles
+python ai_writer.py --stats         # Show statistics only
 ```
 
-### Frontend API
+### Database Queries
+```bash
+python db_query.py                  # Interactive database query
+```
 
-**GET /**
-- Returns: HTML page with news grid
+### Start Servers
+```bash
+# Windows PowerShell (recommended)
+powershell -ExecutionPolicy Bypass -File start.ps1
 
-**GET /news/:id**
-- Params: `id` (integer) - Index of news article
-- Returns: HTML page with full article
+# Windows Batch
+start.bat
 
-**GET /api/news**
-- Returns: JSON array of all cached news
+# Linux/Mac
+./start.sh
+```
 
-**GET /api/fetch-more**
-- Returns: Newly fetched news item
+## 📚 Additional Documentation
+
+- **`backend/AI_WRITER_GUIDE.md`** - Comprehensive AI writer usage guide
+- **`backend/AI_WRITER_CHANGES.md`** - Detailed changelog for AI writer
+- **`backend/README.md`** - Backend system architecture and pipeline details
+
+## 🎯 Example Workflow
+
+```bash
+# 1. Collect news (run daily)
+cd backend
+python rss2db.py
+# Result: ~100 new articles in rss_articles.db
+
+# 2. Group similar articles (run after collection)
+python group_articles.py --threshold 0.3 --max-time-diff 2
+# Result: Similar articles grouped by event_group_id
+
+# 3. Configure AI writer (edit once)
+# Set ONLY_IMAGES = True, ARTICLE_COUNT = 20
+
+# 4. Generate AI articles (run as needed)
+python ai_writer.py
+# Result: Professional articles in our_articles.db with:
+#   - Categories & location tags
+#   - All images from sources
+#   - Source article references
+
+# 5. Start web interface
+cd ..
+powershell -ExecutionPolicy Bypass -File start.ps1
+# Visit: http://localhost:3000
+```
+
+## 🔑 Key Features Explained
+
+### Smart Grouping
+- Groups articles from **different sources** about the same event
+- Example: 7 articles from NTV, TRT, Cumhuriyet about "Summit" → 1 group
+- Uses temporal proximity (max 2 days apart)
+- AI combines all perspectives into one comprehensive article
+
+### Image Collection
+Collects from **3 database columns**:
+1. `image_url` - Primary image
+2. `image_urls` - JSON array of images
+3. `media_content` - Media metadata with URLs
+
+All unique images transferred to AI-generated article.
+
+### Category & Location Tags
+AI automatically generates:
+- **Categories**: sports, politics, economy, science, technology, health, etc.
+- **Locations**: Istanbul, Turkey, Ankara, etc.
+- **Keywords**: Relevant terms from article
+
+Example: `"sports, Istanbul, football, Galatasaray, championship"`
 
 ## 📄 License
 
 This project is open source and available under the MIT License.
 
-## 👨‍💻 Development
-
-### Adding New Features
-
-1. **Backend**: Edit `backend/backendServer.py`
-2. **Frontend**: Edit `frontend/server.js` and templates in `views/`
-3. **Styling**: Edit `frontend/public/css/style.css`
-
-### Testing Backend Separately
-
-```bash
-cd backend
-python -c "from backendServer import fetch_incoming; fetch_incoming(); print('Success!')"
-```
-
-Or use the Jupyter notebook:
-```bash
-jupyter notebook testGrounds.ipynb
-```
-
-## 🤝 Contributing
-
-Contributions are welcome! Feel free to:
-- Report bugs
-- Suggest new features
-- Submit pull requests
-
-## 📞 Support
-
-For issues or questions:
-1. Check the troubleshooting section
-2. Review backend/frontend console logs
-3. Verify all dependencies are installed
-4. Ensure both servers are running
-
 ---
 
-**Happy News Reading! 📰**
+**Built with ❤️ for intelligent news aggregation 📰**
 

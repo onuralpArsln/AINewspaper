@@ -13,6 +13,10 @@ This backend system automatically collects news from multiple RSS feeds, stores 
 - **`article_similarity.py`** - Advanced similarity detection engine that uses Jaccard and Cosine similarity algorithms to identify articles about the same events from different sources, with Turkish language support and configurable similarity thresholds.
 - **`group_articles.py`** - Command-line interface for article grouping that orchestrates the similarity detection process, provides flexible parameters (similarity threshold, time range, minimum group size), and offers search and statistics capabilities.
 
+### AI Content Generation
+- **`ai_writer.py`** - AI-powered article writer using Gemini to rewrite and unify RSS articles into professional news content with configurable prompts and automatic read status tracking.
+- **`writer_prompt.txt`** - Customizable prompt template for AI article generation with specific tone, structure, and language requirements.
+
 ## Database Structure
 
 ### Articles Table
@@ -62,34 +66,112 @@ CREATE TABLE feed_stats (
 );
 ```
 
-## Current Pipeline
+## News Processing Pipeline
+
+### Complete News Flow Diagram
+```
+RSS Feeds → Collection → Storage → Grouping → AI Writing → Final Articles
+    ↓         ↓          ↓         ↓           ↓            ↓
+rsslist.txt  rsstester  rss2db    group_    ai_writer   our_articles
+             .py        .py       articles  .py         .db
+                         ↓         .py        ↓
+                    rss_articles.db ←─────────┘
+                                              ↓
+                                         Query & Analysis
+                                              ↓
+                                         db_query.py
+```
 
 ### 1. RSS Collection Pipeline
 ```
 rsslist.txt → rsstester.py → rss2db.py → rss_articles.db
 ```
-- **Input**: RSS feed URLs stored in `rsslist.txt` (one URL per line)
-- **Processing**: `rsstester.py` fetches and parses RSS feeds, `rss2db.py` processes all feeds and stores articles
-- **Output**: Articles stored in `rss_articles.db` with duplicate prevention
-- **Usage**: `python rss2db.py`
+**Step-by-step process:**
+1. **Input**: RSS feed URLs stored in `rsslist.txt` (one URL per line)
+2. **Fetch**: `rsstester.py` connects to each RSS feed and downloads articles
+3. **Parse**: Extract article data (title, content, author, published date, etc.)
+4. **Store**: `rss2db.py` processes all feeds and stores articles in database
+5. **Output**: New articles added to `rss_articles.db` with `event_group_id = NULL`
+
+**Command**: `python rss2db.py`
 
 ### 2. Article Grouping Pipeline
 ```
 rss_articles.db → article_similarity.py → group_articles.py → Updated DB with event_group_id
 ```
-- **Input**: Articles from database (recent articles without group assignments)
-- **Processing**: `article_similarity.py` detects similar articles, `group_articles.py` creates event groups
-- **Output**: Articles updated with `event_group_id` for grouping similar articles
-- **Usage**: `python group_articles.py --threshold 0.3 --days 7`
+**Step-by-step process:**
+1. **Input**: Recent articles with `event_group_id = NULL` from database
+2. **Similarity Check**: `article_similarity.py` compares articles using text similarity algorithms
+3. **Temporal Check**: Only groups articles published within specified time period (default: 2 days)
+4. **Group Creation**: `group_articles.py` creates event groups for similar articles
+5. **Output**: Articles updated with unique `event_group_id` numbers
+
+**Command**: `python group_articles.py --threshold 0.3 --days 7 --max-time-diff 2`
 
 ### 3. Query & Analysis Pipeline
 ```
 rss_articles.db → db_query.py → Statistics, Search Results, Grouped Articles
 ```
-- **Input**: Database queries for articles, groups, or statistics
-- **Processing**: `db_query.py` provides various query functions
-- **Output**: Search results, statistics, grouped articles, or raw data
-- **Usage**: `python db_query.py` or import functions in other scripts
+**Step-by-step process:**
+1. **Input**: Database queries for articles, groups, or statistics
+2. **Processing**: `db_query.py` provides various query functions
+3. **Output**: Search results, statistics, grouped articles, or raw data
+
+**Command**: `python db_query.py` or import functions in other scripts
+
+### 4. AI Writing Pipeline
+```
+rss_articles.db → ai_writer.py → our_articles.db
+```
+**Step-by-step process:**
+1. **Input**: Unread articles from `rss_articles.db` (prioritizes grouped articles)
+2. **AI Processing**: `ai_writer.py` uses Gemini AI with `writer_prompt.txt` to rewrite articles
+3. **Content Unification**: Groups multiple articles about the same event into one comprehensive article
+4. **Structure Standardization**: Creates unified format (title, description, body, tags, images, date)
+5. **Output**: Professional articles saved to `our_articles.db`
+6. **Status Update**: Source articles marked as read in `rss_articles.db`
+
+**Command**: `python ai_writer.py --max-articles 10`
+
+### Complete Workflow Example
+```bash
+# Step 1: Collect news from RSS feeds
+python rss2db.py
+# Result: New articles added to database with event_group_id = NULL
+
+# Step 2: Group similar articles
+python group_articles.py --threshold 0.3 --max-time-diff 2
+# Result: Similar articles grouped together with same event_group_id
+
+# Step 3: AI writing - rewrite articles into professional content
+python ai_writer.py --max-articles 10
+# Result: Professional articles saved to our_articles.db, source articles marked as read
+
+# Step 4: Query and analyze results
+python db_query.py
+# Result: View grouped articles, statistics, and search results
+```
+
+### Database State After Each Step
+```
+After RSS Collection:
+- RSS Articles: 1,345 total
+- Grouped: 0 articles (event_group_id = NULL)
+- Groups: 0
+- Our Articles: 0
+
+After Grouping:
+- RSS Articles: 1,345 total  
+- Grouped: 267 articles (event_group_id = 1, 2, 3, etc.)
+- Groups: 115 event groups
+- Ungrouped: 1,078 articles (event_group_id = NULL)
+- Our Articles: 0
+
+After AI Writing:
+- RSS Articles: 1,345 total (267 read, 1,078 unread)
+- Our Articles: ~50-100 professional articles
+- Processing: AI continues to process unread articles
+```
 
 ## Quick Start
 
@@ -118,6 +200,21 @@ python group_articles.py --search "ekonomi"
 
 # Reset all grouping (start over)
 python group_articles.py --reset
+```
+
+### AI Article Writing
+```bash
+# Basic AI writing (process 10 articles)
+python ai_writer.py
+
+# Process more articles
+python ai_writer.py --max-articles 20
+
+# Check writing statistics
+python ai_writer.py --stats
+
+# Use custom databases
+python ai_writer.py --rss-db custom_rss.db --our-db custom_our.db
 ```
 
 ### Query Database

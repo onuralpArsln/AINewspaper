@@ -43,7 +43,8 @@ class RSSArticle:
         # Media information
         self.enclosures: List[Dict[str, str]] = []
         self.media_content: List[Dict[str, str]] = []
-        self.image_url: str = ""
+        self.image_url: str = ""  # Primary image (backward compatibility)
+        self.image_urls: List[str] = []  # All images
         
         # Source information
         self.source_name: str = ""
@@ -73,6 +74,7 @@ class RSSArticle:
             'enclosures': self.enclosures,
             'media_content': self.media_content,
             'image_url': self.image_url,
+            'image_urls': self.image_urls,
             'source_name': self.source_name,
             'source_url': self.source_url,
             'feed_url': self.feed_url,
@@ -157,40 +159,115 @@ class RSSFeedReader:
         
         return text
 
-    def extract_image_url(self, entry: Dict[str, Any]) -> str:
-        """Extract image URL from various possible locations"""
+    def extract_all_image_urls(self, entry: Dict[str, Any]) -> List[str]:
+        """Extract all image URLs from various possible locations"""
+        image_urls = []
+        
         # Check for media:content
         if 'media_content' in entry:
             for media in entry['media_content']:
                 if media.get('type', '').startswith('image/'):
-                    return media.get('url', '')
+                    url = media.get('url', '')
+                    if url and url not in image_urls:
+                        image_urls.append(url)
         
         # Check for enclosures
         if 'enclosures' in entry:
             for enclosure in entry['enclosures']:
                 if enclosure.get('type', '').startswith('image/'):
-                    return enclosure.get('href', '')
+                    url = enclosure.get('href', '')
+                    if url and url not in image_urls:
+                        image_urls.append(url)
         
         # Check for media:thumbnail
         if 'media_thumbnail' in entry:
-            return entry['media_thumbnail'][0].get('url', '')
+            for thumbnail in entry['media_thumbnail']:
+                url = thumbnail.get('url', '')
+                if url and url not in image_urls:
+                    image_urls.append(url)
         
         # Check for content with images
         content = entry.get('content', [{}])
         if content and isinstance(content, list):
             content_text = content[0].get('value', '')
-            img_match = re.search(r'<img[^>]+src=["\']([^"\']+)["\']', content_text)
-            if img_match:
-                return img_match.group(1)
+            urls = self._extract_images_from_html(content_text)
+            for url in urls:
+                if url not in image_urls:
+                    image_urls.append(url)
         
         # Check summary for images
         summary = entry.get('summary', '')
         if summary:
-            img_match = re.search(r'<img[^>]+src=["\']([^"\']+)["\']', summary)
-            if img_match:
-                return img_match.group(1)
+            urls = self._extract_images_from_html(summary)
+            for url in urls:
+                if url not in image_urls:
+                    image_urls.append(url)
         
-        return ""
+        # Check description for images
+        description = entry.get('description', '')
+        if description:
+            urls = self._extract_images_from_html(description)
+            for url in urls:
+                if url not in image_urls:
+                    image_urls.append(url)
+        
+        return image_urls
+    
+    def _extract_images_from_html(self, html_content: str) -> List[str]:
+        """Extract all image URLs from HTML content using multiple patterns"""
+        if not html_content:
+            return []
+        
+        image_urls = []
+        
+        # Common image patterns in HTML
+        patterns = [
+            r'<img[^>]+src=["\']([^"\']+)["\']',  # Standard img tags
+            r'<figure[^>]*>.*?<img[^>]+src=["\']([^"\']+)["\']',  # Images in figure tags
+            r'background-image:\s*url\(["\']?([^"\']+)["\']?\)',  # CSS background images
+            r'data-src=["\']([^"\']+)["\']',  # Lazy loading images
+            r'data-lazy=["\']([^"\']+)["\']',  # Alternative lazy loading
+            r'data-original=["\']([^"\']+)["\']',  # Another lazy loading pattern
+            r'data-srcset=["\']([^"\']+)["\']',  # Responsive images
+        ]
+        
+        for pattern in patterns:
+            matches = re.findall(pattern, html_content, re.IGNORECASE | re.DOTALL)
+            for match in matches:
+                # Clean up the URL (remove HTML entities, etc.)
+                clean_url = self._clean_image_url(match)
+                if clean_url and clean_url not in image_urls:
+                    image_urls.append(clean_url)
+        
+        return image_urls
+    
+    def _clean_image_url(self, url: str) -> str:
+        """Clean and normalize image URL"""
+        if not url:
+            return ""
+        
+        # Decode HTML entities
+        import html
+        url = html.unescape(url)
+        
+        # Remove common URL parameters that might cause issues
+        # Keep essential ones like width, height for responsive images
+        url = re.sub(r'&amp;', '&', url)
+        
+        # Remove trailing parameters that are not essential
+        # Keep width, height, quality, format parameters
+        essential_params = ['width', 'height', 'w', 'h', 'quality', 'q', 'format', 'f']
+        
+        # Basic URL validation
+        if not (url.startswith('http://') or url.startswith('https://')):
+            return ""
+        
+        return url.strip()
+    
+    def extract_image_url(self, entry: Dict[str, Any]) -> str:
+        """Extract primary image URL (backward compatibility)"""
+        image_urls = self.extract_all_image_urls(entry)
+        return image_urls[0] if image_urls else ""
 
     def parse_entry(self, entry: Dict[str, Any], feed_info: Dict[str, Any]) -> RSSArticle:
         """Parse a single RSS entry into unified format"""
@@ -231,7 +308,8 @@ class RSSFeedReader:
             article.tags = [tag.get('term', str(tag)) for tag in tags]
         
         # Media information
-        article.image_url = self.extract_image_url(entry)
+        article.image_urls = self.extract_all_image_urls(entry)
+        article.image_url = article.image_urls[0] if article.image_urls else ""  # Primary image for backward compatibility
         
         # Enclosures
         if 'enclosures' in entry:

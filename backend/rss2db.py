@@ -50,7 +50,8 @@ class RSSDatabase:
                         tags TEXT,  -- JSON array
                         enclosures TEXT,  -- JSON array
                         media_content TEXT,  -- JSON array
-                        image_url TEXT,
+                        image_url TEXT,  -- Primary image (backward compatibility)
+                        image_urls TEXT,  -- JSON array of all image URLs
                         source_name TEXT,
                         source_url TEXT,
                         feed_url TEXT,
@@ -88,6 +89,13 @@ class RSSDatabase:
                 
                 cursor.execute('CREATE INDEX IF NOT EXISTS idx_feed_url ON feed_stats(feed_url)')
                 cursor.execute('CREATE INDEX IF NOT EXISTS idx_last_processed ON feed_stats(last_processed)')
+                
+                # Check if image_urls column exists, if not add it (migration)
+                cursor.execute("PRAGMA table_info(articles)")
+                columns = [column[1] for column in cursor.fetchall()]
+                if 'image_urls' not in columns:
+                    cursor.execute('ALTER TABLE articles ADD COLUMN image_urls TEXT')
+                    logger.info("Added image_urls column to articles table")
                 
                 conn.commit()
                 logger.info(f"Database initialized successfully: {self.db_path}")
@@ -148,9 +156,9 @@ class RSSDatabase:
                     INSERT INTO articles (
                         title, description, content, summary, link, guid, comments,
                         published, updated, author, category, tags, enclosures,
-                        media_content, image_url, source_name, source_url, feed_url,
+                        media_content, image_url, image_urls, source_name, source_url, feed_url,
                         language, rights, content_hash
-                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 ''', (
                     article.title,
                     article.description,
@@ -167,6 +175,7 @@ class RSSDatabase:
                     json.dumps(article.enclosures) if article.enclosures else None,
                     json.dumps(article.media_content) if article.media_content else None,
                     article.image_url,
+                    json.dumps(article.image_urls) if article.image_urls else None,
                     article.source_name,
                     article.source_url,
                     article.feed_url,
