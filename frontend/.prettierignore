@@ -1,0 +1,8 @@
+# Ignore EJS templates to prevent breaking template syntax
+*.ejs
+views/**/*.ejs
+
+# Other files to ignore
+node_modules
+package-lock.json
+

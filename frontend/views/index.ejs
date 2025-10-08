@@ -21,7 +21,7 @@
                         </a>
                     </div>
                     <div class="header-branding">
-                        <h1><a href="/">AI Newspaper</a></h1>
+                        <h1><a href="/" id="page-title">Uygur Haber Ajansı</a></h1>
                         <p class="tagline">AI Curated News Just For You</p>
                     </div>
                     <div class="header-widgets">
@@ -88,6 +88,72 @@
             <p>&copy; 2025 AI Newspaper. All rights reserved.</p>
         </div>
     </footer>
+
+    <script>
+        // Navigation configuration from server
+        // tab çalışmıyo hatası " <% -" bunda oluyor "<%-" olacak
+        // hata bura
+         const navigationTabs = <%- JSON.stringify(navigation.tabs) %>;
+
+        // Create hash to page title mapping
+        const pageTitleMap = {};
+        const browserTitleMap = {};
+
+        navigationTabs.forEach(tab => {
+            const hash = tab.url.includes('#') ? tab.url.split('#')[1] : '';
+            pageTitleMap[hash] = tab.pageTitle;
+            browserTitleMap[hash] = tab.pageTitle + ' - AI Newspaper';
+        });
+
+        // Special case for home
+        pageTitleMap[''] = 'Uygur Haber Ajansı';
+        browserTitleMap[''] = 'Uygur Haber Ajansı - Latest News';
+
+        // Update title, header branding, and active tab based on current hash
+        function updateTabState() {
+            const currentHash = window.location.hash; // e.g., '#spor' or ''
+            const hash = currentHash.replace('#', ''); // e.g., 'spor' or ''
+
+            console.log('Current hash:', currentHash, 'Cleaned:', hash);
+
+            // Update browser title
+            document.title = browserTitleMap[hash] || 'Uygur Haber Ajansı - Latest News';
+
+            // Update header branding text
+            const pageTitle = document.getElementById('page-title');
+            if (pageTitle) {
+                pageTitle.textContent = pageTitleMap[hash] || 'Uygur Haber Ajansı';
+            }
+
+            // Update active tab
+            const navLinks = document.querySelectorAll('.nav-tabs a');
+            navLinks.forEach(link => {
+                const href = link.getAttribute('href'); // e.g., '/' or '/#spor'
+                let linkHash = '';
+
+                if (href.includes('#')) {
+                    linkHash = href.split('#')[1]; // e.g., 'spor'
+                }
+
+                console.log('Link href:', href, 'Link hash:', linkHash, 'Matches:', linkHash === hash);
+
+                // Remove active class from all
+                link.classList.remove('active');
+
+                // Add active class if hashes match
+                if (linkHash === hash) {
+                    link.classList.add('active');
+                    console.log('Activated:', href);
+                }
+            });
+        }
+
+        // Listen for hash changes
+        window.addEventListener('hashchange', updateTabState);
+
+        // Update on page load
+        updateTabState();
+    </script>
 </body>
 
 </html>

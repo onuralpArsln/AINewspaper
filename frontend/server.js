@@ -21,14 +21,16 @@ let newsCache = [];
 // To modify navigation tabs, simply update this configuration:
 const navigationConfig = {
     tabs: [
-        { name: 'Home', url: '/', active: false },
-        { name: 'Spor', url: '/#spor', active: false },
-        { name: 'Canlı Yayın', url: '/#live', active: false },
-        { name: 'Yeni Haber', url: '/#latest', active: false },
-        { name: 'Servis Haber', url: '/#categories', active: false },
-        { name: 'About', url: '/#about', active: false }
-        // Add more tabs by adding objects with name, url, and active properties
-        // Example: { name: 'Contact', url: '/contact', active: false }
+        { name: 'Anasayfa', url: '/', pageTitle: 'Uygur Haber Ajansı', active: false },
+        { name: 'Son Dakika', url: '/#breaking', pageTitle: 'UHA Son Dakika', active: false },
+        { name: 'Spor', url: '/#spor', pageTitle: 'UHA Spor Haberleri', active: false },
+        { name: 'Canlı Yayın', url: '/#live', pageTitle: 'UHACanlı Yayın', active: false },
+        { name: 'Cumhurbaşkanı Erdoğan Konuşuyor', url: '/#erdogan', pageTitle: 'UHA Cumhurbaşkanı Erdoğan', active: false },
+        { name: 'Devlet Bahçeli Konuşuyor', url: '/#bahceli', pageTitle: 'UHA Devlet Bahçeli', active: false },
+        { name: 'Özgür Özel Konuşuyor', url: '/#ozel', pageTitle: 'UHA Özgür Özel', active: false },
+        { name: 'Deprem', url: '/#deprem', pageTitle: 'UHA Deprem Haberleri', active: false }
+        // Add more tabs by adding objects with name, url, pageTitle, and active properties
+        // Example: { name: 'Contact', url: '/contact', pageTitle: 'Contact Us', active: false }
     ]
 };
 

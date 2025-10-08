@@ -1,0 +1,3 @@
+# Prevent Cursor from formatting EJS files
+*.ejs
+
