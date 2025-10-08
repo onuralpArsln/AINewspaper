@@ -51,7 +51,7 @@ logger = logging.getLogger(__name__)
 # CONFIGURATION FLAGS - Modify these to control AI writer behavior
 # ============================================================================
 ONLY_IMAGES = True  # Set to True to only process articles with images
-ARTICLE_COUNT = 10   # Number of articles to produce per run
+ARTICLE_COUNT = 2   # Number of articles to produce per run
 # ============================================================================
 
 class AIWriter:
@@ -467,9 +467,10 @@ Please rewrite the following articles:
             # Collect all images from source articles (from all three image columns)
             all_images = self._collect_images_from_articles(source_articles)
             
-            # Sort images by resolution (highest first) and filter out small images
+            # Sort images by resolution (highest first) with lenient filtering
+            # min_resolution=0 keeps all images, just sorts them by quality
             if all_images:
-                all_images = self._sort_images_by_resolution(all_images)
+                all_images = self._sort_images_by_resolution(all_images, min_resolution=0)
             
             images_json = json.dumps(all_images) if all_images else None
             
