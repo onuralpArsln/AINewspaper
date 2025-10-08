@@ -13,7 +13,7 @@ WORKFLOW:
    - Generates: Title, Description, Body, Tags (categories + locations)
 3. Saves to our_articles.db with:
    - Title, Description, Body, Tags
-   - All image URLs from source articles (image_url, image_urls, media_content)
+   - All image URLs from source articles (unified image_urls column)
    - Source article IDs for reference
    - Publication date
 4. Marks source articles as read (is_read = 1)
@@ -141,13 +141,12 @@ class AIWriter:
             
             # Build query based on only_images flag
             if self.only_images:
-                # Only get articles with images (image_url, image_urls, or media_content)
+                # Only get articles with images (using unified image_urls column)
                 cursor.execute('''
                     SELECT * FROM articles 
                     WHERE is_read = 0 
                         AND (
-                            (image_url IS NOT NULL AND image_url != '') 
-                            OR (image_urls IS NOT NULL AND image_urls != '[]' AND image_urls != 'null')
+                            (image_urls IS NOT NULL AND image_urls != '[]' AND image_urls != 'null')
                             OR (media_content IS NOT NULL AND media_content != '[]' AND media_content != 'null')
                         )
                     ORDER BY created_at DESC
@@ -187,23 +186,17 @@ class AIWriter:
                 SELECT COUNT(*) FROM articles 
                 WHERE event_group_id = ? 
                     AND is_read = 0
-                    AND (image_url IS NOT NULL AND image_url != '' 
-                         OR image_urls IS NOT NULL AND image_urls != '[]')
+                    AND (image_urls IS NOT NULL AND image_urls != '[]' AND image_urls != 'null')
             ''', (group_id,))
             count = cursor.fetchone()[0]
             return count > 0
     
     def _collect_images_from_articles(self, articles: List[Dict[str, Any]]) -> List[str]:
-        """Collect all unique images from source articles (image_url, image_urls, media_content)"""
+        """Collect all unique images from source articles (using unified image_urls column)"""
         all_images = []
         
         for article in articles:
-            # 1. Check image_url (primary image)
-            if article.get('image_url') and article['image_url'].strip():
-                if article['image_url'] not in all_images:
-                    all_images.append(article['image_url'])
-            
-            # 2. Check image_urls (JSON array of all images)
+            # Get images from unified image_urls column (already contains all images from all sources)
             if article.get('image_urls'):
                 try:
                     image_urls = json.loads(article['image_urls'])

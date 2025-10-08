@@ -2,6 +2,19 @@
 
 This backend system automatically collects news from multiple RSS feeds, stores them in a SQLite database, and groups similar articles from different sources to provide intelligent news aggregation.
 
+## 🔥 Recent Updates
+
+### Image Handling Overhaul (Latest)
+The RSS2DB module has been completely overhauled with **unified image handling**! All image URLs are now consolidated into a single `image_urls` column with comprehensive extraction from all sources. See **[RSS2DB_IMAGE_OVERHAUL.md](RSS2DB_IMAGE_OVERHAUL.md)** for complete details.
+
+**Key improvements:**
+- ✅ Single `image_urls` column (JSON array) - no more scattered data
+- ✅ Comprehensive image extraction from HTML, RSS fields, and media
+- ✅ Advanced regex patterns for lazy-loaded and responsive images
+- ✅ Automatic validation and deduplication
+- ✅ Migration script for existing databases (`migrate_images.py`)
+- ✅ Detailed image statistics
+
 ## Scripts Overview
 
 ### Core RSS Processing
@@ -37,7 +50,7 @@ CREATE TABLE articles (
     tags TEXT,                              -- JSON array of tags
     enclosures TEXT,                        -- JSON array of enclosures
     media_content TEXT,                     -- JSON array of media
-    image_url TEXT,                         -- Featured image URL
+    image_urls TEXT,                        -- 🆕 JSON array of ALL image URLs (consolidated)
     source_name TEXT,                       -- News source name
     source_url TEXT,                        -- News source URL
     feed_url TEXT,                          -- RSS feed URL
@@ -49,6 +62,8 @@ CREATE TABLE articles (
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 ```
+
+**Note:** The `image_urls` column now contains ALL images extracted from multiple sources (RSS fields, HTML content, media attachments) as a JSON array. Old `image_url` column has been replaced with this unified approach.
 
 ### Feed Statistics Table
 ```sql
@@ -175,10 +190,18 @@ After AI Writing:
 
 ## Quick Start
 
-### Collect News Articles
+### Collect News Articles (with Enhanced Image Extraction)
 ```bash
-# Process all RSS feeds and store in database
+# Process all RSS feeds and store in database with comprehensive image extraction
 python rss2db.py
+# Output includes image statistics showing how many images were found
+```
+
+### Migrate Existing Database (if upgrading)
+```bash
+# One-time migration to consolidate old image data
+python migrate_images.py
+# Consolidates all images from old schema into unified image_urls column
 ```
 
 ### Group Similar Articles
@@ -283,10 +306,13 @@ The system uses advanced text similarity algorithms to:
 ```python
 from article_similarity import ArticleSimilarityDetector
 from db_query import RSSDatabaseQuery
+from rss2db import RSSDatabase
+import json
 
 # Initialize components
 detector = ArticleSimilarityDetector('rss_articles.db')
 db_query = RSSDatabaseQuery('rss_articles.db')
+db = RSSDatabase('rss_articles.db')
 
 # Run grouping
 stats = detector.group_similar_articles(
@@ -305,6 +331,20 @@ print(f"Grouped articles: {grouping_stats['grouped_articles']}")
 groups = db_query.get_all_event_groups(10)
 for group in groups:
     print(f"Group {group['event_group_id']}: {group['article_count']} articles")
+
+# 🆕 Access consolidated image URLs
+recent_articles = db.get_recent_articles(5)
+for article in recent_articles:
+    image_urls = json.loads(article['image_urls']) if article.get('image_urls') else []
+    print(f"{article['title']}: {len(image_urls)} images")
+    for url in image_urls[:3]:  # Show first 3
+        print(f"  - {url}")
+
+# 🆕 Get image statistics
+image_stats = db.get_image_statistics()
+print(f"Articles with images: {image_stats['articles_with_images']}")
+print(f"Total images: {image_stats['total_images']}")
+print(f"Average per article: {image_stats['average_images_per_article']}")
 ```
 
 ### Database Queries for Grouped Articles
