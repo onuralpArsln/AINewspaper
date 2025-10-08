@@ -1,6 +1,6 @@
-fastapi==0.104.1
-uvicorn==0.24.0
-feedparser==6.0.10
-python-dotenv==1.0.0
-google-genai==0.2.1
+fastapi
+uvicorn
+feedparser
+python-dotenv
+google-genai
 

@@ -218,6 +218,70 @@ class RSSDatabaseQuery:
                 'average_group_size': round(avg_group_size, 2),
                 'grouping_percentage': round((grouped_articles / total_articles * 100), 2) if total_articles > 0 else 0
             }
+    
+    def get_unread_articles(self, limit: int = 10, offset: int = 0) -> List[Dict[str, Any]]:
+        """Get unread articles"""
+        with self.get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute('''
+                SELECT id, title, description, source_name, published, created_at, link, event_group_id
+                FROM articles 
+                WHERE is_read = 0 OR is_read IS NULL
+                ORDER BY created_at DESC 
+                LIMIT ? OFFSET ?
+            ''', (limit, offset))
+            return [dict(row) for row in cursor.fetchall()]
+    
+    def get_read_articles(self, limit: int = 10, offset: int = 0) -> List[Dict[str, Any]]:
+        """Get read articles"""
+        with self.get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute('''
+                SELECT id, title, description, source_name, published, created_at, link, event_group_id
+                FROM articles 
+                WHERE is_read = 1
+                ORDER BY updated_at DESC 
+                LIMIT ? OFFSET ?
+            ''', (limit, offset))
+            return [dict(row) for row in cursor.fetchall()]
+    
+    def get_unread_count(self) -> int:
+        """Get count of unread articles"""
+        with self.get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute('SELECT COUNT(*) FROM articles WHERE is_read = 0 OR is_read IS NULL')
+            return cursor.fetchone()[0]
+    
+    def get_read_count(self) -> int:
+        """Get count of read articles"""
+        with self.get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute('SELECT COUNT(*) FROM articles WHERE is_read = 1')
+            return cursor.fetchone()[0]
+    
+    def mark_article_as_read(self, article_id: int) -> bool:
+        """Mark an article as read"""
+        with self.get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute('''
+                UPDATE articles 
+                SET is_read = 1, updated_at = CURRENT_TIMESTAMP 
+                WHERE id = ?
+            ''', (article_id,))
+            conn.commit()
+            return cursor.rowcount > 0
+    
+    def mark_article_as_unread(self, article_id: int) -> bool:
+        """Mark an article as unread"""
+        with self.get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute('''
+                UPDATE articles 
+                SET is_read = 0, updated_at = CURRENT_TIMESTAMP 
+                WHERE id = ?
+            ''', (article_id,))
+            conn.commit()
+            return cursor.rowcount > 0
 
 def print_database_summary():
     """Print comprehensive database summary"""
@@ -230,6 +294,16 @@ def print_database_summary():
     # Total articles
     total = db.get_total_articles()
     print(f"Total articles in database: {total:,}")
+    
+    # Read/Unread statistics
+    unread_count = db.get_unread_count()
+    read_count = db.get_read_count()
+    print(f"\nRead Status Statistics:")
+    print("-" * 40)
+    print(f"Unread articles: {unread_count:,}")
+    print(f"Read articles: {read_count:,}")
+    if total > 0:
+        print(f"Unread percentage: {(unread_count / total * 100):.1f}%")
     
     # Articles by source
     print(f"\nArticles by source:")

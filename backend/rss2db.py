@@ -60,7 +60,8 @@ class RSSDatabase:
                         rights TEXT,
                         content_hash TEXT UNIQUE,  -- For duplicate detection
                         created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-                        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+                        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                        is_read BOOLEAN DEFAULT FALSE
                     )
                 ''')
                 
@@ -71,6 +72,7 @@ class RSSDatabase:
                 cursor.execute('CREATE INDEX IF NOT EXISTS idx_published ON articles(published)')
                 cursor.execute('CREATE INDEX IF NOT EXISTS idx_source_name ON articles(source_name)')
                 cursor.execute('CREATE INDEX IF NOT EXISTS idx_created_at ON articles(created_at)')
+                cursor.execute('CREATE INDEX IF NOT EXISTS idx_is_read ON articles(is_read)')
                 
                 # Create feed_stats table for tracking feed processing
                 cursor.execute('''
@@ -99,6 +101,11 @@ class RSSDatabase:
                 if 'image_urls' not in columns:
                     cursor.execute('ALTER TABLE articles ADD COLUMN image_urls TEXT')
                     logger.info("Added image_urls column to articles table")
+                
+                # Ensure is_read column exists (for backward compatibility)
+                if 'is_read' not in columns:
+                    cursor.execute('ALTER TABLE articles ADD COLUMN is_read BOOLEAN DEFAULT FALSE')
+                    logger.info("Added is_read column to articles table")
                 
                 # Migrate old image_url data to image_urls if needed
                 if 'image_url' in columns:
@@ -603,6 +610,132 @@ class RSSDatabase:
         except Exception as e:
             logger.error(f"Error cleaning up old articles: {e}")
             return 0
+    
+    def mark_article_as_read(self, article_id: int) -> bool:
+        """Mark a specific article as read"""
+        try:
+            with sqlite3.connect(self.db_path) as conn:
+                cursor = conn.cursor()
+                cursor.execute('''
+                    UPDATE articles 
+                    SET is_read = TRUE, updated_at = CURRENT_TIMESTAMP 
+                    WHERE id = ?
+                ''', (article_id,))
+                conn.commit()
+                logger.debug(f"Article {article_id} marked as read")
+                return True
+        except Exception as e:
+            logger.error(f"Error marking article {article_id} as read: {e}")
+            return False
+    
+    def mark_article_as_unread(self, article_id: int) -> bool:
+        """Mark a specific article as unread"""
+        try:
+            with sqlite3.connect(self.db_path) as conn:
+                cursor = conn.cursor()
+                cursor.execute('''
+                    UPDATE articles 
+                    SET is_read = FALSE, updated_at = CURRENT_TIMESTAMP 
+                    WHERE id = ?
+                ''', (article_id,))
+                conn.commit()
+                logger.debug(f"Article {article_id} marked as unread")
+                return True
+        except Exception as e:
+            logger.error(f"Error marking article {article_id} as unread: {e}")
+            return False
+    
+    def mark_articles_as_read(self, article_ids: List[int]) -> int:
+        """Mark multiple articles as read"""
+        try:
+            with sqlite3.connect(self.db_path) as conn:
+                cursor = conn.cursor()
+                placeholders = ','.join('?' * len(article_ids))
+                cursor.execute(f'''
+                    UPDATE articles 
+                    SET is_read = TRUE, updated_at = CURRENT_TIMESTAMP 
+                    WHERE id IN ({placeholders})
+                ''', article_ids)
+                conn.commit()
+                updated_count = cursor.rowcount
+                logger.info(f"Marked {updated_count} articles as read")
+                return updated_count
+        except Exception as e:
+            logger.error(f"Error marking articles as read: {e}")
+            return 0
+    
+    def get_unread_articles(self, limit: int = 10, offset: int = 0) -> List[Dict[str, Any]]:
+        """Get unread articles from database"""
+        try:
+            with sqlite3.connect(self.db_path) as conn:
+                conn.row_factory = sqlite3.Row
+                cursor = conn.cursor()
+                cursor.execute('''
+                    SELECT * FROM articles 
+                    WHERE is_read = FALSE 
+                    ORDER BY created_at DESC 
+                    LIMIT ? OFFSET ?
+                ''', (limit, offset))
+                return [dict(row) for row in cursor.fetchall()]
+        except Exception as e:
+            logger.error(f"Error getting unread articles: {e}")
+            return []
+    
+    def get_read_articles(self, limit: int = 10, offset: int = 0) -> List[Dict[str, Any]]:
+        """Get read articles from database"""
+        try:
+            with sqlite3.connect(self.db_path) as conn:
+                conn.row_factory = sqlite3.Row
+                cursor = conn.cursor()
+                cursor.execute('''
+                    SELECT * FROM articles 
+                    WHERE is_read = TRUE 
+                    ORDER BY updated_at DESC 
+                    LIMIT ? OFFSET ?
+                ''', (limit, offset))
+                return [dict(row) for row in cursor.fetchall()]
+        except Exception as e:
+            logger.error(f"Error getting read articles: {e}")
+            return []
+    
+    def get_unread_count(self) -> int:
+        """Get count of unread articles"""
+        try:
+            with sqlite3.connect(self.db_path) as conn:
+                cursor = conn.cursor()
+                cursor.execute('SELECT COUNT(*) FROM articles WHERE is_read = FALSE')
+                return cursor.fetchone()[0]
+        except Exception as e:
+            logger.error(f"Error getting unread count: {e}")
+            return 0
+    
+    def get_read_count(self) -> int:
+        """Get count of read articles"""
+        try:
+            with sqlite3.connect(self.db_path) as conn:
+                cursor = conn.cursor()
+                cursor.execute('SELECT COUNT(*) FROM articles WHERE is_read = TRUE')
+                return cursor.fetchone()[0]
+        except Exception as e:
+            logger.error(f"Error getting read count: {e}")
+            return 0
+    
+    def get_unread_articles_by_source(self, source_name: str, limit: int = 10) -> List[Dict[str, Any]]:
+        """Get unread articles from a specific source"""
+        try:
+            with sqlite3.connect(self.db_path) as conn:
+                conn.row_factory = sqlite3.Row
+                cursor = conn.cursor()
+                cursor.execute('''
+                    SELECT * FROM articles 
+                    WHERE is_read = FALSE AND source_name = ? 
+                    ORDER BY created_at DESC 
+                    LIMIT ?
+                ''', (source_name, limit))
+                return [dict(row) for row in cursor.fetchall()]
+        except Exception as e:
+            logger.error(f"Error getting unread articles by source: {e}")
+            return []
 
 class RSSToDatabase:
     """Main class for processing RSS feeds and storing in database"""
@@ -738,11 +871,22 @@ class RSSToDatabase:
             print(f"Total images extracted: {image_stats.get('total_images', 0)}")
             print(f"Average images per article: {image_stats.get('average_images_per_article', 0)}")
             print(f"Max images in a single article: {image_stats.get('max_images_in_article', 0)}")
+        
+        # Read/Unread statistics
+        unread_count = self.db.get_unread_count()
+        read_count = self.db.get_read_count()
+        print(f"\nREAD STATUS STATISTICS")
+        print(f"{'='*40}")
+        print(f"Unread articles: {unread_count}")
+        print(f"Read articles: {read_count}")
+        print(f"Total articles: {unread_count + read_count}")
     
     def get_database_summary(self) -> Dict[str, Any]:
         """Get comprehensive database summary"""
         return {
             'total_articles': self.db.get_article_count(),
+            'unread_articles': self.db.get_unread_count(),
+            'read_articles': self.db.get_read_count(),
             'articles_by_source': self.db.get_articles_by_source(),
             'recent_articles': self.db.get_recent_articles(5),
             'feed_stats': self.db.get_feed_stats()
