@@ -3,4 +3,6 @@ uvicorn
 feedparser
 python-dotenv
 google-genai
+requests
+Pillow
 

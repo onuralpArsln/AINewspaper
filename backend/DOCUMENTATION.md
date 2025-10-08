@@ -4,20 +4,22 @@
 
 ```bash
 # 1. Collect RSS articles
-python rss2db.py
+venv/bin/python rss2db.py
 
 # 2. Group similar articles (optional but recommended)
-python group_articles.py --threshold 0.3
+venv/bin/python group_articles.py --threshold 0.3
 
-# 3. Generate 10 output articles with AI
-python ai_writer.py --max-articles 10
+# 3. Generate 10 output articles with AI (images sorted by resolution)
+venv/bin/python ai_writer.py --max-articles 10
 
 # 4. Start backend server (serves our articles)
-python3 -m uvicorn backendServer:app --reload
+venv/bin/python -m uvicorn backendServer:app --reload
 
 # 5. Query database (optional)
-python db_query.py
+venv/bin/python db_query.py
 ```
+
+**Note:** Always use `venv/bin/python` (Python 3.11 virtual environment)
 
 ## 📋 Core Scripts
 
@@ -78,68 +80,96 @@ CREATE TABLE our_articles (
 );
 ```
 
-## 🔄 Complete Workflow to Generate Articles
+## 🔄 Complete Workflow
 
 ### Step 1: Collect RSS Articles
 ```bash
-python rss2db.py
+venv/bin/python rss2db.py
 ```
-- Fetches articles from feeds in `rsslist.txt`
-- Extracts images from: `image_urls`, `enclosures`, `media_content`, HTML content
-- Prevents duplicates using content hash
-- Marks all as `is_read = 0` (unread)
+**What happens:**
+- Fetches articles from `rsslist.txt`
+- Extracts images from 3 sources
+- Prevents duplicates (content hash)
+- Marks all as `is_read = 0`
 
 ### Step 2: Group Similar Articles (Optional)
 ```bash
-python group_articles.py --threshold 0.3 --days 7
+venv/bin/python group_articles.py --threshold 0.3
 ```
+**What happens:**
 - Finds similar articles from different sources
 - Assigns same `event_group_id` to related articles
-- Example: 12 articles about same event → group ID = 5
+- Example: 12 articles about same event → group #5
 
 ### Step 3: Generate OUTPUT Articles
 ```bash
-python ai_writer.py --max-articles 10
+venv/bin/python ai_writer.py --max-articles 10
 ```
+**What happens:**
+1. Gets unread articles (newest first, with images if `ONLY_IMAGES=True`)
+2. For each output article:
+   - If grouped (12 articles) → merges ALL → **1 output**
+   - If not grouped → **1 output**
+3. Collects images from all source articles
+4. **Sorts images by resolution** (highest first)
+5. **Filters out tiny images** (<200×200 pixels)
+6. Saves to `our_articles.db`
+7. Marks source articles as `is_read = 1`
+8. Continues until **10 output articles** generated
 
-**How it works:**
-1. Gets unread articles from `rss_articles.db` (newest first)
-2. For each article:
-   - **If in group** (e.g., 12 articles) → merges ALL → generates **1 OUTPUT article**
-   - **If not in group** → generates **1 OUTPUT article**
-3. Marks ALL source articles as `is_read = 1`
-4. Continues until **10 OUTPUT articles** generated in `our_articles.db`
+**Result:** 10 high-quality articles with sorted images in `our_articles.db`
 
-**Important:** `--max-articles 10` means **10 output articles**, not 10 input articles!
+**Note:** `--max-articles 10` = **10 output articles**, not input count!
 
 ### Step 4: Query Results
 ```bash
-python db_query.py          # View statistics
-python ai_writer.py --stats # AI writer statistics
+venv/bin/python db_query.py          # View statistics
+venv/bin/python ai_writer.py --stats # AI writer statistics
 ```
 
-## 🖼️ Image Handling
+## 🖼️ Image Handling & Sorting
 
-Images are extracted from **three sources** and consolidated:
+Images are extracted, sorted by resolution, and filtered:
 
-1. **`image_urls`** - Primary consolidated array (already contains all images)
-2. **`enclosures`** - Image attachments (type: `image/*`)
+### Collection (3 sources)
+1. **`image_urls`** - Primary consolidated array
+2. **`enclosures`** - Image attachments (`image/*`)
 3. **`media_content`** - RSS media tags
 
-**AI Writer** collects images from all sources and saves to `our_articles.db`.
+### Automatic Sorting (NEW!)
+When `ai_writer.py` saves articles:
+- ✅ Downloads each image to check resolution
+- ✅ Filters out tiny images (<200×200 pixels by default)
+- ✅ Sorts by quality (highest resolution first)
+- ✅ Saves sorted URLs to `our_articles.db`
+
+**Result:** `images[0]` is always the best quality image!
+
+### Configuration
+Edit `ai_writer.py` line ~472:
+```python
+# Default: 200×200 minimum (40,000 pixels)
+all_images = self._sort_images_by_resolution(all_images, min_resolution=40000)
+
+# Stricter: 500×500 minimum
+all_images = self._sort_images_by_resolution(all_images, min_resolution=250000)
+
+# Lenient: 100×100 minimum
+all_images = self._sort_images_by_resolution(all_images, min_resolution=10000)
+```
 
 ## 📊 Article Grouping
 
 ### Basic Usage
 ```bash
 # Group articles
-python group_articles.py
+venv/bin/python group_articles.py
 
 # View groups
-python group_articles.py --show-groups 10
+venv/bin/python group_articles.py --show-groups 10
 
 # Search groups
-python group_articles.py --search "ekonomi"
+venv/bin/python group_articles.py --search "ekonomi"
 ```
 
 ### Parameters
@@ -158,19 +188,21 @@ ARTICLE_COUNT = 10   # Number of OUTPUT articles to generate
 ### Usage Examples
 ```bash
 # Generate 10 output articles (uses config)
-python ai_writer.py
+venv/bin/python ai_writer.py
 
 # Generate 20 output articles (override)
-python ai_writer.py --max-articles 20
+venv/bin/python ai_writer.py --max-articles 20
 
 # Only show statistics
-python ai_writer.py --stats
+venv/bin/python ai_writer.py --stats
 ```
 
 ### Features
 - ✅ Processes unread articles (newest first)
 - ✅ Merges grouped articles into one output
 - ✅ Extracts images from all sources
+- ✅ **Sorts images by resolution** (highest first)
+- ✅ **Filters tiny images** (<200×200 pixels)
 - ✅ Generates: Title, Description, Body, Tags
 - ✅ Tags include: category + location + keywords
 - ✅ Marks source articles as read
@@ -215,13 +247,23 @@ GROUP BY event_group_id
 ORDER BY count DESC;
 ```
 
-## 🔧 Configuration Files
+## 🔧 Configuration & Setup
 
+### Environment Setup
+```bash
+# Python 3.11 virtual environment required
+cd /home/onuralp/project/AINewspaper/backend
+
+# Dependencies (already installed)
+venv/bin/pip install -r requirements.txt
+```
+
+### Configuration Files
 | File | Purpose |
 |------|---------|
 | `rsslist.txt` | RSS feed URLs (one per line) |
 | `writer_prompt.txt` | AI generation instructions |
-| `requirements.txt` | Python dependencies |
+| `requirements.txt` | Python dependencies (includes `requests`, `Pillow` for images) |
 | `.env` | API keys (`GEMINI_FREE_API`) |
 
 ## ⚙️ Key Features
@@ -229,6 +271,8 @@ ORDER BY count DESC;
 ✅ Multi-format RSS support (RSS, Atom, RDF)  
 ✅ Duplicate prevention (content hash)  
 ✅ Comprehensive image extraction (3 sources)  
+✅ **Image sorting by resolution** (highest first)  
+✅ **Smart image filtering** (removes tiny images)  
 ✅ Similarity detection (Jaccard + Cosine)  
 ✅ Event grouping across sources  
 ✅ Read status tracking  
@@ -244,16 +288,18 @@ ORDER BY count DESC;
 
 **AI writer generates fewer articles:**
 - Not enough unread articles with images (`ONLY_IMAGES=True`)
-- Check: `python ai_writer.py --stats`
+- Check: `venv/bin/python ai_writer.py --stats`
 
-**No images found:**
-- Verify feeds contain images
-- Check `image_urls` column: `SELECT image_urls FROM articles LIMIT 10;`
+**All images filtered out:**
+- Lower minimum resolution in `ai_writer.py` line ~472
+- Check source image quality: `SELECT image_urls FROM articles LIMIT 10;`
 
-**Performance issues:**
-- Reduce `--days` parameter
-- Process in smaller batches
-- Database has indexes automatically
+**Image sorting is slow:**
+- Normal! Downloads each image once to check resolution
+- Reduce timeout in `_get_image_resolution()` for faster processing
+
+**Import errors (PIL, requests):**
+- Reinstall dependencies: `venv/bin/pip install -r requirements.txt`
 
 ## 📊 Example Output Counts
 
@@ -270,41 +316,33 @@ ORDER BY count DESC;
 
 All 50 source articles marked as `is_read = 1` after processing.
 
-## 📝 Complete Pipeline Summary
+## 📝 Pipeline Summary
 
 ```
-┌─────────────┐
-│ rsslist.txt │
-└──────┬──────┘
-       ▼
-┌─────────────┐     ┌────────────────┐
-│  rss2db.py  │ --> │ rss_articles.db│ (is_read=0)
-└─────────────┘     └────────┬───────┘
-                             ▼
-                    ┌────────────────┐
-                    │group_articles  │ (assigns event_group_id)
-                    └────────┬───────┘
-                             ▼
-                    ┌────────────────┐
-                    │  ai_writer.py  │ (generates OUTPUT articles)
-                    └────────┬───────┘
-                             ▼
-                    ┌────────────────┐
-                    │our_articles.db │ (OUTPUT: 10 articles)
-                    └────────────────┘
+rsslist.txt
+    ↓
+rss2db.py → rss_articles.db (is_read=0, images collected)
+    ↓
+group_articles.py → assigns event_group_id (groups similar articles)
+    ↓
+ai_writer.py → collects images → sorts by resolution → filters small images
+    ↓
+our_articles.db (OUTPUT: 10 articles with sorted images)
+    ↓
+backendServer.py → serves articles to frontend
 ```
 
-**Result:** Professional articles ready for publication!
+**Result:** High-quality articles with best images first!
 
 ## 🌐 Backend Server (backendServer.py)
 
 ### Starting the Server
 ```bash
 # Start with auto-reload (development)
-python3 -m uvicorn backendServer:app --reload
+venv/bin/python -m uvicorn backendServer:app --reload
 
 # Start on specific port
-python3 -m uvicorn backendServer:app --port 8000
+venv/bin/python -m uvicorn backendServer:app --port 8000
 ```
 
 ### API Endpoints

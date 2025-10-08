@@ -35,10 +35,13 @@ import os
 import sqlite3
 import json
 from datetime import datetime
-from typing import List, Dict, Any, Optional
+from typing import List, Dict, Any, Optional, Tuple
 from dotenv import load_dotenv
 from google import genai
 import logging
+import requests
+from PIL import Image
+from io import BytesIO
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -262,6 +265,83 @@ class AIWriter:
         logger.info(f"Collected {len(all_images)} unique images from {len(articles)} articles")
         return all_images
     
+    def _get_image_resolution(self, image_url: str, timeout: int = 5) -> Tuple[Optional[int], Optional[int]]:
+        """
+        Get image resolution (width, height) from URL
+        Returns (width, height) or (None, None) if failed
+        """
+        try:
+            # Fetch image with timeout
+            response = requests.get(image_url, timeout=timeout, stream=True)
+            response.raise_for_status()
+            
+            # Open image and get dimensions
+            img = Image.open(BytesIO(response.content))
+            width, height = img.size
+            logger.debug(f"Image resolution: {width}x{height} - {image_url[:60]}...")
+            return width, height
+            
+        except requests.exceptions.Timeout:
+            logger.debug(f"Timeout fetching image: {image_url[:60]}...")
+            return None, None
+        except requests.exceptions.RequestException as e:
+            logger.debug(f"Error fetching image: {e} - {image_url[:60]}...")
+            return None, None
+        except Exception as e:
+            logger.debug(f"Error processing image: {e} - {image_url[:60]}...")
+            return None, None
+    
+    def _sort_images_by_resolution(self, image_urls: List[str], min_resolution: int = 40000) -> List[str]:
+        """
+        Sort images by resolution (highest first) and filter out small images
+        
+        Args:
+            image_urls: List of image URLs
+            min_resolution: Minimum resolution (width * height) to keep (default: 40000 = 200x200)
+        
+        Returns:
+            List of image URLs sorted by resolution (highest to lowest)
+        """
+        if not image_urls:
+            return []
+        
+        logger.info(f"Sorting {len(image_urls)} images by resolution...")
+        
+        # Get resolution for each image
+        image_data = []
+        for url in image_urls:
+            width, height = self._get_image_resolution(url)
+            if width and height:
+                resolution = width * height
+                # Only keep images that meet minimum resolution
+                if resolution >= min_resolution:
+                    image_data.append({
+                        'url': url,
+                        'width': width,
+                        'height': height,
+                        'resolution': resolution
+                    })
+                else:
+                    logger.debug(f"Filtered out low-res image ({width}x{height}): {url[:60]}...")
+            else:
+                logger.debug(f"Could not get resolution for: {url[:60]}...")
+        
+        # Sort by resolution (highest first)
+        image_data.sort(key=lambda x: x['resolution'], reverse=True)
+        
+        # Extract sorted URLs
+        sorted_urls = [img['url'] for img in image_data]
+        
+        if sorted_urls:
+            logger.info(f"Sorted images: kept {len(sorted_urls)}/{len(image_urls)} images")
+            logger.info(f"Best image: {image_data[0]['width']}x{image_data[0]['height']} ({image_data[0]['resolution']:,} pixels)")
+            if len(image_data) > 1:
+                logger.info(f"Worst image: {image_data[-1]['width']}x{image_data[-1]['height']} ({image_data[-1]['resolution']:,} pixels)")
+        else:
+            logger.warning(f"No valid images found after resolution sorting")
+        
+        return sorted_urls
+    
     def prepare_articles_for_ai(self, articles: List[Dict[str, Any]]) -> str:
         """Prepare articles text for AI processing"""
         if not articles:
@@ -386,6 +466,11 @@ Please rewrite the following articles:
             
             # Collect all images from source articles (from all three image columns)
             all_images = self._collect_images_from_articles(source_articles)
+            
+            # Sort images by resolution (highest first) and filter out small images
+            if all_images:
+                all_images = self._sort_images_by_resolution(all_images)
+            
             images_json = json.dumps(all_images) if all_images else None
             
             # Extract data from AI response
