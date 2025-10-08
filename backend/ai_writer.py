@@ -4,23 +4,30 @@ AI Writer for RSS Articles
 Uses Gemini AI to rewrite and unify articles from rss_articles.db
 
 WORKFLOW:
-1. Iterates through unread articles in rss_articles.db (newest first)
-2. For each article:
+1. Generates a target number of OUTPUT articles (set by ARTICLE_COUNT or --max-articles)
+2. For each OUTPUT article:
+   - Gets next unread article from rss_articles.db (newest first)
    - Checks if it has images (if ONLY_IMAGES flag is True)
-   - If article is in a group, reads ALL articles in that group
-   - Sends article(s) to Gemini AI for professional rewriting
+   - If article is in a group, reads ALL articles in that group (e.g., 12 articles)
+   - Merges all articles in the group and sends to Gemini AI
    - Follows rules from writer_prompt.txt
-   - Generates: Title, Description, Body, Tags (categories + locations)
-3. Saves to our_articles.db with:
-   - Title, Description, Body, Tags
-   - All image URLs from source articles (unified image_urls column)
-   - Source article IDs for reference
-   - Publication date
-4. Marks source articles as read (is_read = 1)
+   - Generates 1 OUTPUT article: Title, Description, Body, Tags (categories + locations)
+   - Marks ALL source articles as read (is_read = 1)
+3. Continues until target number of OUTPUT articles is generated
+4. Tracks processed groups to avoid duplicates
+
+IMPORTANT: ARTICLE_COUNT = number of OUTPUT articles to GENERATE, not input articles to process
+Example: If ARTICLE_COUNT=10, you get 10 articles in our_articles.db
+         Even if a group contains 12 source articles, it generates 1 output article
+
+IMAGE HANDLING:
+- Checks all image sources: image_urls (consolidated), enclosures, media_content
+- Collects unique images from all sources
+- Validates and filters image URLs
 
 USAGE:
-    python ai_writer.py                    # Process ARTICLE_COUNT articles
-    python ai_writer.py --max-articles 20  # Process 20 articles
+    python ai_writer.py                    # Generate ARTICLE_COUNT output articles
+    python ai_writer.py --max-articles 20  # Generate 20 output articles
     python ai_writer.py --stats            # Show statistics only
 """
 
@@ -40,8 +47,8 @@ logger = logging.getLogger(__name__)
 # ============================================================================
 # CONFIGURATION FLAGS - Modify these to control AI writer behavior
 # ============================================================================
-ONLY_IMAGES = False  # Set to True to only process articles with images
-ARTICLE_COUNT = 10   # Number of articles to process per run
+ONLY_IMAGES = True  # Set to True to only process articles with images
+ARTICLE_COUNT = 1   # Number of articles to produce per run
 # ============================================================================
 
 class AIWriter:
@@ -83,27 +90,37 @@ class AIWriter:
         # Initialize RSS database with read status and event grouping
         with sqlite3.connect(self.rss_db_path) as conn:
             cursor = conn.cursor()
+            
+            # Check existing columns
+            cursor.execute("PRAGMA table_info(articles)")
+            existing_columns = [column[1] for column in cursor.fetchall()]
+            
             # Add read status column if it doesn't exist
-            try:
-                cursor.execute('ALTER TABLE articles ADD COLUMN is_read BOOLEAN DEFAULT 0')
-                logger.info("Added is_read column to RSS articles table")
-            except sqlite3.OperationalError:
-                pass  # Column already exists
+            if 'is_read' not in existing_columns:
+                try:
+                    cursor.execute('ALTER TABLE articles ADD COLUMN is_read BOOLEAN DEFAULT 0')
+                    logger.info("Added is_read column to RSS articles table")
+                    conn.commit()
+                except sqlite3.OperationalError as e:
+                    logger.debug(f"is_read column might already exist: {e}")
             
             # Add event_group_id column if it doesn't exist
-            try:
-                cursor.execute('ALTER TABLE articles ADD COLUMN event_group_id INTEGER')
-                logger.info("Added event_group_id column to RSS articles table")
-            except sqlite3.OperationalError:
-                pass  # Column already exists
+            if 'event_group_id' not in existing_columns:
+                try:
+                    cursor.execute('ALTER TABLE articles ADD COLUMN event_group_id INTEGER')
+                    logger.info("Added event_group_id column to RSS articles table")
+                    conn.commit()
+                except sqlite3.OperationalError as e:
+                    logger.debug(f"event_group_id column might already exist: {e}")
             
             # Add indexes for performance
             try:
                 cursor.execute('CREATE INDEX IF NOT EXISTS idx_articles_read ON articles(is_read, created_at)')
                 cursor.execute('CREATE INDEX IF NOT EXISTS idx_articles_group_read ON articles(event_group_id, is_read)')
                 cursor.execute('CREATE INDEX IF NOT EXISTS idx_articles_group_id ON articles(event_group_id)')
-            except sqlite3.OperationalError:
-                pass
+                conn.commit()
+            except sqlite3.OperationalError as e:
+                logger.debug(f"Indexes might already exist: {e}")
         
         # Initialize our articles database
         with sqlite3.connect(self.our_articles_db_path) as conn:
@@ -141,13 +158,14 @@ class AIWriter:
             
             # Build query based on only_images flag
             if self.only_images:
-                # Only get articles with images (using unified image_urls column)
+                # Only get articles with images (check all possible image columns)
                 cursor.execute('''
                     SELECT * FROM articles 
                     WHERE is_read = 0 
                         AND (
-                            (image_urls IS NOT NULL AND image_urls != '[]' AND image_urls != 'null')
-                            OR (media_content IS NOT NULL AND media_content != '[]' AND media_content != 'null')
+                            (image_urls IS NOT NULL AND image_urls != '[]' AND image_urls != 'null' AND image_urls != '')
+                            OR (media_content IS NOT NULL AND media_content != '[]' AND media_content != 'null' AND media_content != '')
+                            OR (enclosures IS NOT NULL AND enclosures != '[]' AND enclosures != 'null' AND enclosures != '')
                         )
                     ORDER BY created_at DESC
                     LIMIT ?
@@ -179,24 +197,28 @@ class AIWriter:
             return group_articles
     
     def group_has_images(self, group_id: int) -> bool:
-        """Check if at least one article in the group has images"""
+        """Check if at least one article in the group has images (checks all image sources)"""
         with self.get_connection(self.rss_db_path) as conn:
             cursor = conn.cursor()
             cursor.execute('''
                 SELECT COUNT(*) FROM articles 
                 WHERE event_group_id = ? 
                     AND is_read = 0
-                    AND (image_urls IS NOT NULL AND image_urls != '[]' AND image_urls != 'null')
+                    AND (
+                        (image_urls IS NOT NULL AND image_urls != '[]' AND image_urls != 'null' AND image_urls != '')
+                        OR (media_content IS NOT NULL AND media_content != '[]' AND media_content != 'null' AND media_content != '')
+                        OR (enclosures IS NOT NULL AND enclosures != '[]' AND enclosures != 'null' AND enclosures != '')
+                    )
             ''', (group_id,))
             count = cursor.fetchone()[0]
             return count > 0
     
     def _collect_images_from_articles(self, articles: List[Dict[str, Any]]) -> List[str]:
-        """Collect all unique images from source articles (using unified image_urls column)"""
+        """Collect all unique images from source articles (from all image sources)"""
         all_images = []
         
         for article in articles:
-            # Get images from unified image_urls column (already contains all images from all sources)
+            # 1. Get images from unified image_urls column (primary source - already consolidated)
             if article.get('image_urls'):
                 try:
                     image_urls = json.loads(article['image_urls'])
@@ -207,16 +229,33 @@ class AIWriter:
                 except (json.JSONDecodeError, TypeError):
                     logger.debug(f"Could not parse image_urls for article {article.get('id', 'unknown')}")
             
+            # 2. Check enclosures (may contain image attachments)
+            if article.get('enclosures'):
+                try:
+                    enclosures = json.loads(article['enclosures'])
+                    if isinstance(enclosures, list):
+                        for enclosure in enclosures:
+                            if isinstance(enclosure, dict):
+                                enc_type = enclosure.get('type', '')
+                                if enc_type.startswith('image/'):
+                                    img_url = enclosure.get('url', enclosure.get('href', ''))
+                                    if img_url and img_url.strip() and img_url not in all_images:
+                                        all_images.append(img_url)
+                except (json.JSONDecodeError, TypeError):
+                    logger.debug(f"Could not parse enclosures for article {article.get('id', 'unknown')}")
+            
             # 3. Check media_content (JSON array with media information)
             if article.get('media_content'):
                 try:
                     media_content = json.loads(article['media_content'])
                     if isinstance(media_content, list):
                         for media in media_content:
-                            if isinstance(media, dict) and media.get('url'):
-                                img_url = media['url']
-                                if img_url and img_url.strip() and img_url not in all_images:
-                                    all_images.append(img_url)
+                            if isinstance(media, dict):
+                                media_type = media.get('type', '')
+                                if media_type.startswith('image/') or 'image' in media_type.lower():
+                                    img_url = media.get('url', '')
+                                    if img_url and img_url.strip() and img_url not in all_images:
+                                        all_images.append(img_url)
                 except (json.JSONDecodeError, TypeError):
                     logger.debug(f"Could not parse media_content for article {article.get('id', 'unknown')}")
         
@@ -400,13 +439,16 @@ Please rewrite the following articles:
     
     def process_articles(self, max_articles: int = None):
         """
-        Main processing function that iterates through unread articles starting from newest.
-        For each article:
-        1. Check if it has images (if only_images flag is True)
+        Main processing function that generates a target number of OUTPUT articles.
+        For each output article:
+        1. Get next unread article from RSS database
         2. Check if it's part of a group - if yes, read all articles in the group
         3. Send to Gemini AI for rewriting
-        4. Save to our_articles.db with title, description, body, tags, and images
-        5. Mark source articles as read
+        4. Save to our_articles.db (1 output article)
+        5. Mark all source articles as read
+        6. Continue until max_articles OUTPUT articles are generated
+        
+        Note: max_articles = number of OUTPUT articles to generate, not input articles to process
         """
         # Use class-level article_count if max_articles not provided
         if max_articles is None:
@@ -414,68 +456,97 @@ Please rewrite the following articles:
         
         mode_str = "ONLY IMAGES mode" if self.only_images else "ALL ARTICLES mode"
         logger.info(f"Starting AI article writing process ({mode_str})...")
-        logger.info(f"Processing up to {max_articles} articles")
+        logger.info(f"Target: Generate {max_articles} OUTPUT articles")
         
-        # Get unread articles starting from newest
-        articles_to_process = self.get_next_articles_to_process(max_articles)
-        
-        if not articles_to_process:
-            logger.info("✓ No unread articles found to process")
-            return
-        
-        processed_count = 0
+        generated_count = 0  # Number of output articles generated
         skipped_count = 0
+        processed_groups = set()  # Track processed groups to avoid duplicates
         
-        for article in articles_to_process:
-            try:
-                article_id = article['id']
-                article_title = article['title'][:60]
+        # Keep processing until we generate the target number of output articles
+        while generated_count < max_articles:
+            # Get next batch of unread articles (fetch more than needed to handle groups)
+            batch_size = max(10, (max_articles - generated_count) * 2)
+            articles_to_check = self.get_next_articles_to_process(batch_size)
+            
+            if not articles_to_check:
+                logger.info(f"✓ No more unread articles found (generated {generated_count} articles)")
+                break
+            
+            # Process articles until we reach our target
+            article_processed_in_batch = False
+            
+            for article in articles_to_check:
+                if generated_count >= max_articles:
+                    break
                 
-                logger.info(f"\n{'='*80}")
-                logger.info(f"Processing article {article_id}: {article_title}...")
-                
-                # Check if article is part of a group
-                group_id = article.get('event_group_id')
-                
-                if group_id and group_id > 0:
-                    # Article is part of a group - get ALL articles in the group
-                    logger.info(f"Article is part of group {group_id}")
-                    source_articles = self.get_group_articles(group_id)
-                    logger.info(f"Processing {len(source_articles)} articles from group {group_id}")
-                else:
-                    # Individual article (not in a group)
-                    logger.info("Processing individual article (not in a group)")
-                    source_articles = [article]
-                
-                # Prepare text for AI
-                articles_text = self.prepare_articles_for_ai(source_articles)
-                
-                # Generate article with AI
-                logger.info("Sending to Gemini AI for rewriting...")
-                ai_article = self.generate_article_with_ai(articles_text)
-                
-                if ai_article:
-                    # Save generated article with all images and metadata
-                    saved_id = self.save_article(ai_article, source_articles)
+                try:
+                    article_id = article['id']
+                    article_title = article['title'][:60]
+                    group_id = article.get('event_group_id')
                     
-                    # Mark source articles as read
-                    self.mark_articles_as_read(source_articles)
+                    # Skip if this group was already processed
+                    if group_id and group_id > 0 and group_id in processed_groups:
+                        logger.debug(f"Skipping article {article_id} - group {group_id} already processed")
+                        continue
                     
-                    processed_count += 1
-                    logger.info(f"✓ Successfully processed and saved article {saved_id}")
-                else:
-                    logger.error("✗ Failed to generate article with AI")
+                    # Skip if article is already read (might happen with groups)
+                    if article.get('is_read'):
+                        logger.debug(f"Skipping article {article_id} - already marked as read")
+                        continue
+                    
+                    logger.info(f"\n{'='*80}")
+                    logger.info(f"Processing article {article_id}: {article_title}...")
+                    logger.info(f"Output article {generated_count + 1}/{max_articles}")
+                    
+                    # Check if article is part of a group
+                    if group_id and group_id > 0:
+                        # Article is part of a group - get ALL articles in the group
+                        logger.info(f"Article is part of group {group_id}")
+                        source_articles = self.get_group_articles(group_id)
+                        logger.info(f"Merging {len(source_articles)} articles from group {group_id}")
+                        processed_groups.add(group_id)  # Mark group as processed
+                    else:
+                        # Individual article (not in a group)
+                        logger.info("Processing individual article (not in a group)")
+                        source_articles = [article]
+                    
+                    # Prepare text for AI
+                    articles_text = self.prepare_articles_for_ai(source_articles)
+                    
+                    # Generate article with AI
+                    logger.info("Sending to Gemini AI for rewriting...")
+                    ai_article = self.generate_article_with_ai(articles_text)
+                    
+                    if ai_article:
+                        # Save generated article with all images and metadata
+                        saved_id = self.save_article(ai_article, source_articles)
+                        
+                        # Mark source articles as read
+                        self.mark_articles_as_read(source_articles)
+                        
+                        generated_count += 1
+                        article_processed_in_batch = True
+                        logger.info(f"✓ Successfully generated output article {generated_count}/{max_articles} (ID: {saved_id})")
+                        logger.info(f"  - Used {len(source_articles)} source article(s)")
+                    else:
+                        logger.error("✗ Failed to generate article with AI")
+                        skipped_count += 1
+                        
+                except Exception as e:
+                    logger.error(f"✗ Error processing article {article.get('id', 'unknown')}: {e}")
                     skipped_count += 1
-                    
-            except Exception as e:
-                logger.error(f"✗ Error processing article {article.get('id', 'unknown')}: {e}")
-                skipped_count += 1
-                continue
+                    continue
+            
+            # If no articles were processed in this batch, we're done
+            if not article_processed_in_batch:
+                logger.info(f"No more processable articles found (generated {generated_count} articles)")
+                break
         
         logger.info(f"\n{'='*80}")
         logger.info(f"AI writing process completed!")
-        logger.info(f"  ✓ Successfully processed: {processed_count} articles")
-        logger.info(f"  ✗ Skipped/Failed: {skipped_count} articles")
+        logger.info(f"  ✓ OUTPUT articles generated: {generated_count}/{max_articles}")
+        logger.info(f"  ✗ Skipped/Failed: {skipped_count}")
+        logger.info(f"  📊 Processed groups: {len(processed_groups)}")
         logger.info(f"{'='*80}\n")
     
     def get_writing_statistics(self) -> Dict[str, Any]:
@@ -525,17 +596,21 @@ def main():
         epilog=f"""
 Configuration Settings (edit in ai_writer.py):
   ONLY_IMAGES   = {ONLY_IMAGES}   (Process only articles with images)
-  ARTICLE_COUNT = {ARTICLE_COUNT}   (Number of articles to process per run)
+  ARTICLE_COUNT = {ARTICLE_COUNT}   (Number of OUTPUT articles to GENERATE per run)
+
+IMPORTANT: ARTICLE_COUNT is the number of OUTPUT articles to generate.
+  - If a group has 12 source articles, it generates 1 OUTPUT article
+  - ARTICLE_COUNT=10 means you get 10 articles in our_articles.db
 
 Examples:
-  python ai_writer.py                    # Process {ARTICLE_COUNT} articles
-  python ai_writer.py --max-articles 20  # Process 20 articles
+  python ai_writer.py                    # Generate {ARTICLE_COUNT} output articles
+  python ai_writer.py --max-articles 20  # Generate 20 output articles
   python ai_writer.py --stats            # Show statistics only
         """
     )
     
     parser.add_argument('--max-articles', type=int, 
-                       help=f'Override ARTICLE_COUNT setting (default: {ARTICLE_COUNT})')
+                       help=f'Number of OUTPUT articles to generate (default: {ARTICLE_COUNT})')
     parser.add_argument('--stats', action='store_true',
                        help='Show statistics only without processing')
     parser.add_argument('--rss-db', default='rss_articles.db',
