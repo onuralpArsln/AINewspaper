@@ -221,7 +221,7 @@ header {
   left: 50%;
   transform: translateX(-50%);
   text-align: center;
-  min-width: 300px;
+  min-width: 650px;
   z-index: 1;
   pointer-events: none;
 }
