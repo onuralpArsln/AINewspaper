@@ -1,74 +1,257 @@
-from fastapi import FastAPI
-import feedparser
+from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
+from contextlib import asynccontextmanager
+import json
+import sqlite3
+from typing import Dict, Any, Optional
+from db_query import OurArticlesDatabaseQuery
 
 # uvicorn backendServer:app --reload
 
-app = FastAPI()
+# Database query interface
+db = OurArticlesDatabaseQuery('our_articles.db')
 
-RSS_URL = "https://www.gazeteabc.com/rss_arahaberi_178.xml"
+# Storage for articles and served tracking
+articles_cache = []
+served_indices = set()
+current_offset = 0
+BATCH_SIZE = 20  # Load articles in batches
 
-# storage arrays
-incoming = []
-apiMemory = []
+def load_articles_batch():
+    """Load a batch of articles from database"""
+    global articles_cache, current_offset
+    
+    new_articles = db.get_recent_articles(limit=BATCH_SIZE, offset=current_offset)
+    
+    if new_articles:
+        # Process articles - parse JSON images field
+        for article in new_articles:
+            parse_article_images(article)
+        
+        articles_cache.extend(new_articles)
+        current_offset += len(new_articles)
+        return len(new_articles)
+    
+    return 0
 
-def fetch_incoming():
-    """Fetch RSS and update the incoming list."""
-    global incoming
-    feed = feedparser.parse(RSS_URL)
-    temp = []
-    for entry in feed.entries:
-        temp.append({
-            "title": entry.get("title"),
-            "link": entry.get("link"),
-            "published": entry.get("published"),
-            "summary": entry.get("summary"),
-            "content": entry.get("content")[0]["value"] if "content" in entry else None,
-            "image": entry["media_content"][0]["url"] if "media_content" in entry else None,
-            "thumbnail": entry["media_thumbnail"][0]["url"] if "media_thumbnail" in entry else None,
-            "served": 0   # new field
-        })
-    incoming = temp
+def get_next_unserved_article() -> Optional[Dict[str, Any]]:
+    """Get the next unserved article from cache"""
+    global articles_cache, served_indices
+    
+    # Try to find an unserved article in current cache
+    for i, article in enumerate(articles_cache):
+        if i not in served_indices:
+            served_indices.add(i)
+            return article
+    
+    # If all cached articles are served, load more
+    loaded = load_articles_batch()
+    
+    if loaded > 0:
+        # Try again with newly loaded articles
+        for i, article in enumerate(articles_cache):
+            if i not in served_indices:
+                served_indices.add(i)
+                return article
+    
+    # No more articles available
+    return None
 
-def newsSelector():
-    """Compare incoming with apiMemory, add only new news (at the front)."""
-    global apiMemory, incoming
-    # Collect all links we already have
-    known_links = {n["link"] for n in apiMemory}
-    new_items = [item for item in incoming if item["link"] not in known_links]
+def parse_article_images(article: Dict[str, Any]) -> Dict[str, Any]:
+    """Parse JSON images field in article"""
+    if article.get('images'):
+        try:
+            article['images'] = json.loads(article['images'])
+        except (json.JSONDecodeError, TypeError):
+            article['images'] = []
+    else:
+        article['images'] = []
+    return article
 
-    # newest first
-    for item in reversed(new_items):  # reverse so that newest ends up at 0
-        apiMemory.insert(0, item)
+def get_source_article_link(source_article_ids: str) -> Optional[str]:
+    """
+    Retrieve the original article link from RSS database using source article IDs.
+    Returns the link from the first source article, or None if not available.
+    """
+    if not source_article_ids:
+        return None
+    
+    try:
+        # Get the first source article ID
+        first_id = source_article_ids.split(',')[0].strip()
+        
+        # Query RSS database for the original link
+        conn = sqlite3.connect('rss_articles.db')
+        cursor = conn.cursor()
+        cursor.execute('SELECT link FROM articles WHERE id = ?', (first_id,))
+        result = cursor.fetchone()
+        conn.close()
+        
+        return result[0] if result else None
+    except Exception as e:
+        print(f"Error retrieving source link: {e}")
+        return None
 
+def format_article_for_frontend(article: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Format article data for frontend consumption.
+    Maps database fields to frontend-expected field names:
+    - description → summary (for article cards and summary section)
+    - body → content (for full article content)
+    - Adds link field from source articles
+    """
+    # Get first image if available
+    images = article.get('images', [])
+    image = images[0] if images else None
+    thumbnail = images[0] if images else None  # Use same as image, or could use a smaller version
+    
+    # Get original source link from RSS database
+    link = get_source_article_link(article.get('source_article_ids'))
+    
+    return {
+        "id": article['id'],
+        "title": article['title'],
+        "summary": article.get('description', ''),      # Frontend expects 'summary'
+        "content": article['body'],                      # Frontend expects 'content'
+        "tags": article.get('tags', ''),
+        "published": article.get('date', ''),
+        "image": image,
+        "thumbnail": thumbnail,
+        "link": link if link else "#",                  # Original source link
+        "images": images,  # All images
+        "source_group_id": article.get('source_group_id'),
+        "created_at": article.get('created_at', '')
+    }
 
-@app.on_event("startup")
-def startup_event():
-    print("bu startup kodu")
-    fetch_incoming()
-    newsSelector()
-    print(f"Fetched {len(apiMemory)} news items on startup")
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """
+    Lifespan event handler for FastAPI application.
+    Handles startup and shutdown events using modern async context manager.
+    """
+    # Startup: Load initial batch of articles
+    print("Starting backend server...")
+    print("Loading articles from our_articles.db...")
+    
+    loaded = load_articles_batch()
+    print(f"Loaded {loaded} articles on startup")
+    
+    # Print statistics
+    stats = db.get_statistics()
+    print(f"Total articles in database: {stats['total_articles']}")
+    print(f"Articles with images: {stats['articles_with_images']}")
+    
+    yield  # Server is running
+    
+    # Shutdown: Cleanup code goes here (if needed)
+    print("Shutting down backend server...")
 
+# Initialize FastAPI app with lifespan handler
+app = FastAPI(lifespan=lifespan)
 
+# Add CORS middleware for frontend access
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # Configure appropriately for production
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+@app.get("/")
+def root():
+    """Root endpoint"""
+    stats = db.get_statistics()
+    return {
+        "message": "AI Newspaper Backend Server",
+        "status": "running",
+        "database": "our_articles.db",
+        "statistics": stats
+    }
 
 @app.get("/getOneNew")
 def get_one_new():
-    """Return the oldest unserved news, mark it as served."""
-    global apiMemory
-    for i in range(len(apiMemory) - 1, -1, -1):  # check from oldest to newest
-        if apiMemory[i]["served"] == 0:
-            apiMemory[i]["served"] = 1
-            return {"news": apiMemory[i]}
+    """Return the next unserved article, mark it as served"""
+    article = get_next_unserved_article()
     
-    # if no unserved left → return dummy "endofline"
+    if article:
+        formatted_article = format_article_for_frontend(article)
+        return {"news": formatted_article}
+    
+    # No more articles - return end of line marker
     return {
         "news": {
             "title": "endofline",
-            "link": "endofline",
-            "published": "endofline",
             "summary": "endofline",
             "content": "endofline",
+            "published": "endofline",
             "image": "endofline",
             "thumbnail": "endofline",
+            "link": "endofline",
             "served": 1
         }
     }
+
+@app.get("/articles")
+def get_articles(limit: int = 10, offset: int = 0):
+    """Get articles with pagination"""
+    articles = db.get_recent_articles(limit=limit, offset=offset)
+    
+    # Parse images for each article
+    for article in articles:
+        parse_article_images(article)
+    
+    return {"articles": articles, "count": len(articles)}
+
+@app.get("/articles/{article_id}")
+def get_article(article_id: int):
+    """Get a specific article by ID"""
+    article = db.get_article_by_id(article_id)
+    
+    if not article:
+        raise HTTPException(status_code=404, detail="Article not found")
+    
+    # Parse images
+    parse_article_images(article)
+    
+    return {"article": article}
+
+@app.get("/search")
+def search_articles(q: str, limit: int = 20):
+    """Search articles by keyword"""
+    if not q:
+        raise HTTPException(status_code=400, detail="Search query required")
+    
+    articles = db.search_articles(q, limit=limit)
+    
+    # Parse images for each article
+    for article in articles:
+        parse_article_images(article)
+    
+    return {"articles": articles, "count": len(articles), "query": q}
+
+@app.get("/tags/{tag}")
+def get_articles_by_tag(tag: str, limit: int = 20):
+    """Get articles by tag"""
+    articles = db.get_articles_by_tag(tag, limit=limit)
+    
+    # Parse images for each article
+    for article in articles:
+        parse_article_images(article)
+    
+    return {"articles": articles, "count": len(articles), "tag": tag}
+
+@app.get("/statistics")
+def get_statistics():
+    """Get database statistics"""
+    return db.get_statistics()
+
+@app.post("/reset")
+def reset_served():
+    """Reset served status - allows articles to be served again"""
+    global served_indices, current_offset, articles_cache
+    served_indices.clear()
+    current_offset = 0
+    articles_cache = []
+    load_articles_batch()
+    return {"message": "Served status reset", "articles_loaded": len(articles_cache)}

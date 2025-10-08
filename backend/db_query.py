@@ -392,6 +392,121 @@ def search_articles_interactive():
                 print(f"   Description: {article['description'][:100]}...")
             print()
 
+class OurArticlesDatabaseQuery:
+    """Database query interface for our generated articles"""
+    
+    def __init__(self, db_path: str = 'our_articles.db'):
+        self.db_path = db_path
+    
+    def get_connection(self):
+        """Get database connection with row factory"""
+        conn = sqlite3.connect(self.db_path)
+        conn.row_factory = sqlite3.Row
+        return conn
+    
+    def get_total_articles(self) -> int:
+        """Get total number of our articles"""
+        with self.get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute('SELECT COUNT(*) FROM our_articles')
+            return cursor.fetchone()[0]
+    
+    def get_recent_articles(self, limit: int = 10, offset: int = 0) -> List[Dict[str, Any]]:
+        """Get recent articles ordered by date"""
+        with self.get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute('''
+                SELECT id, title, description, body, tags, images, date, 
+                       source_group_id, source_article_ids, created_at
+                FROM our_articles 
+                ORDER BY date DESC, created_at DESC 
+                LIMIT ? OFFSET ?
+            ''', (limit, offset))
+            return [dict(row) for row in cursor.fetchall()]
+    
+    def get_article_by_id(self, article_id: int) -> Dict[str, Any]:
+        """Get a specific article by ID"""
+        with self.get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute('''
+                SELECT id, title, description, body, tags, images, date,
+                       source_group_id, source_article_ids, created_at
+                FROM our_articles 
+                WHERE id = ?
+            ''', (article_id,))
+            result = cursor.fetchone()
+            return dict(result) if result else None
+    
+    def get_articles_by_tag(self, tag: str, limit: int = 20) -> List[Dict[str, Any]]:
+        """Get articles by tag"""
+        with self.get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute('''
+                SELECT id, title, description, body, tags, images, date,
+                       source_group_id, source_article_ids, created_at
+                FROM our_articles 
+                WHERE tags LIKE ?
+                ORDER BY date DESC, created_at DESC 
+                LIMIT ?
+            ''', (f'%{tag}%', limit))
+            return [dict(row) for row in cursor.fetchall()]
+    
+    def search_articles(self, search_term: str, limit: int = 20) -> List[Dict[str, Any]]:
+        """Search articles by title, description, or body"""
+        with self.get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute('''
+                SELECT id, title, description, body, tags, images, date,
+                       source_group_id, source_article_ids, created_at
+                FROM our_articles 
+                WHERE title LIKE ? OR description LIKE ? OR body LIKE ?
+                ORDER BY date DESC, created_at DESC 
+                LIMIT ?
+            ''', (f'%{search_term}%', f'%{search_term}%', f'%{search_term}%', limit))
+            return [dict(row) for row in cursor.fetchall()]
+    
+    def get_articles_with_images(self, limit: int = 10, offset: int = 0) -> List[Dict[str, Any]]:
+        """Get articles that have images"""
+        with self.get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute('''
+                SELECT id, title, description, body, tags, images, date,
+                       source_group_id, source_article_ids, created_at
+                FROM our_articles 
+                WHERE images IS NOT NULL AND images != '[]' AND images != 'null'
+                ORDER BY date DESC, created_at DESC 
+                LIMIT ? OFFSET ?
+            ''', (limit, offset))
+            return [dict(row) for row in cursor.fetchall()]
+    
+    def get_statistics(self) -> Dict[str, Any]:
+        """Get statistics about our articles"""
+        with self.get_connection() as conn:
+            cursor = conn.cursor()
+            
+            # Total articles
+            cursor.execute('SELECT COUNT(*) FROM our_articles')
+            total_count = cursor.fetchone()[0]
+            
+            # Articles with images
+            cursor.execute('''
+                SELECT COUNT(*) FROM our_articles 
+                WHERE images IS NOT NULL AND images != '[]' AND images != 'null'
+            ''')
+            with_images = cursor.fetchone()[0]
+            
+            # Oldest and newest articles
+            cursor.execute('SELECT MIN(date), MAX(date) FROM our_articles')
+            oldest, newest = cursor.fetchone()
+            
+            return {
+                'total_articles': total_count,
+                'articles_with_images': with_images,
+                'articles_without_images': total_count - with_images,
+                'oldest_article': oldest,
+                'newest_article': newest
+            }
+
 def main():
     """Main function"""
     print_database_summary()
