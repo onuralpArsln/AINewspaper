@@ -282,7 +282,7 @@ header {
   list-style: none;
   margin: 0;
   padding: 0;
-  gap: 2rem;
+  gap: 1rem;
 }
 
 .nav-tabs li {
@@ -299,6 +299,9 @@ header {
   transition: all 0.3s ease;
   position: relative;
   display: block;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .nav-tabs a:hover,
