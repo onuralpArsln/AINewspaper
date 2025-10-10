@@ -109,28 +109,27 @@
   
   let _baseMarkup = ""; // DOM çoğaltmayı resetlemek için temel içerik
   
-  /* ---------------- RSS & HTML çekiciler ---------------- */
-  async function getLatest(){
-    const res  = await fetch(siteRoot + '/service/json/getlatest.json', { cache: 'no-store' });
-    const json = await res.json();
-    const doc  = new DOMParser().parseFromString(json.data, 'text/html');
-    const items= Array.from(doc.querySelectorAll('a.title-2-line')).slice(0,10);
-    return items.map(a=>{
-      const t=(a.querySelector('span.fw-bold')?.textContent||'').trim();
-      const title=a.textContent.replace(t,'').trim();
-      const href=a.getAttribute('href')||'#';
-      return {baslik:title,tarih:t,link:href.startsWith('http')?href:siteRoot+href};
-    });
-  }
+  /* ---------------- RSS çekici ---------------- */
   async function getRss(url){
-    const api = `https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(url)}`;
-    const res = await fetch(api, { cache: 'no-store' });
-    const data= await res.json();
-    return (data.items||[]).slice(0,10).map(i=>({
-      baslik:i.title,
-      tarih:new Date(i.pubDate).toLocaleTimeString('tr-TR',{hour:'2-digit',minute:'2-digit'}),
-      link:i.link
-    }));
+    const res = await fetch(url, { cache: 'no-store' });
+    const text = await res.text();
+    const parser = new DOMParser();
+    const xml = parser.parseFromString(text, 'text/xml');
+    const items = Array.from(xml.querySelectorAll('item'));
+    
+    // Parse and sort by date (newest first)
+    const parsed = items.map(item => {
+      const pubDate = new Date(item.querySelector('pubDate')?.textContent || 0);
+      return {
+        baslik: item.querySelector('title')?.textContent || '',
+        tarih: pubDate.toLocaleTimeString('tr-TR', {hour:'2-digit', minute:'2-digit'}),
+        link: item.querySelector('link')?.textContent || '#',
+        date: pubDate
+      };
+    });
+    
+    // Sort by date descending (newest first) and take top 10
+    return parsed.sort((a, b) => b.date - a.date).slice(0, 10);
   }
   
   /* ---------------- Akış doldurucu & hız ayarlayıcı ---------------- */
@@ -180,11 +179,11 @@
   async function load(url){
     try{
       fill([{baslik:'Yükleniyor…',tarih:'',link:'#'}]);
-      const data = url ? await getRss(url) : await getLatest();
+      const data = await getRss(url || 'https://www.uygurhaberajansi.com/rss');
       fill(data.length ? data : [{baslik:'Yeni Haber Yok',tarih:'',link:'#'}]);
     }catch(e){
-      console.error(e);
-      fill([{baslik:'Yeni Haber Yok',tarih:'',link:'#'}]);
+      console.error('RSS yükleme hatası:', e, 'URL:', url);
+      fill([{baslik:'Haber yüklenemedi. Lütfen daha sonra tekrar deneyin.',tarih:'',link:'#'}]);
     }
   }
   
