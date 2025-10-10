@@ -64,7 +64,7 @@
   <div class="sondakika-seridi">
     <div class="sondakika-title-inline">Son&nbsp;Dakika</div>
     <div class="sondakika-haberler">
-      <div class="sondakika-haberler-icerik" id="sondakikaHaberler"></div>
+      <div class="sondakika-haberler-icerik" id="uha-sondakikaHaberler-v2"></div>
     </div>
     <div class="sondakika-tum-haberler">
       <button class="sondakika-tum-haberler-btn" onclick="window.open('https://www.uygurhaberajansi.com/gundem','_blank','noopener,noreferrer')">
@@ -84,7 +84,15 @@
 </div>
 
 <script>
-const sondakikaHaberler = document.getElementById('sondakikaHaberler');
+(function() {
+  'use strict';
+  
+const sondakikaHaberler = document.getElementById('uha-sondakikaHaberler-v2');
+if(!sondakikaHaberler) {
+  console.error('Banner widget element not found');
+  return;
+}
+
 const categorieEls = document.querySelectorAll('.sondakika-kategori');
 
 const categoryCache = {};
@@ -211,4 +219,6 @@ document.addEventListener('DOMContentLoaded', () => {
   // 5 dakikada bir yenile
   setInterval(() => Object.keys(categoryURLs).forEach(url => load(url, true)), 300000);
 });
+
+})(); // End IIFE - isolates scope from CMS
 </script>
