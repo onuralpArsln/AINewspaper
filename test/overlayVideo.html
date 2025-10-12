@@ -1,9 +1,9 @@
 <style>
     #overlayVideoContainer {
       position: fixed;
-      top: 10px;
-      right: 10px;
-      width: 300px;
+      top: 100px;
+      left: 10px;
+      width: 350px;
       aspect-ratio: 16/9;
       z-index: 9999;
       border-radius: 8px;
@@ -11,6 +11,7 @@
       box-shadow: 0 0 10px rgba(0,0,0,0.5);
       background: #000;
       transition: all 0.3s ease;
+      cursor: move;
     }
   
     #overlayVideoContainer.overlayVideoFullscreen {
@@ -20,6 +21,7 @@
       width: 100vw;
       height: 100vh;
       border-radius: 0;
+      cursor: default;
     }
   
     #overlayVideoContainer video {
@@ -54,6 +56,7 @@
   
   <div id="overlayVideoContainer">
     <div class="overlayVideoControls">
+      <button class="overlayVideoBtn" id="overlayVideoSoundBtn">🔇</button>
       <button class="overlayVideoBtn" id="overlayVideoFullscreenBtn">⛶</button>
       <button class="overlayVideoBtn" id="overlayVideoCloseBtn">✖</button>
     </div>
@@ -65,9 +68,21 @@
   
   <script>
     const overlayVideoContainer = document.getElementById('overlayVideoContainer');
+    const overlayVideoPlayer = document.getElementById('overlayVideoPlayer');
+    const overlayVideoSoundBtn = document.getElementById('overlayVideoSoundBtn');
     const overlayVideoFullscreenBtn = document.getElementById('overlayVideoFullscreenBtn');
     const overlayVideoCloseBtn = document.getElementById('overlayVideoCloseBtn');
   
+    overlayVideoSoundBtn.onclick = () => {
+      if (overlayVideoPlayer.muted) {
+        overlayVideoPlayer.muted = false;
+        overlayVideoSoundBtn.textContent = '🔊';
+      } else {
+        overlayVideoPlayer.muted = true;
+        overlayVideoSoundBtn.textContent = '🔇';
+      }
+    };
+
     overlayVideoFullscreenBtn.onclick = () => {
       if (overlayVideoContainer.classList.contains('overlayVideoFullscreen')) {
         overlayVideoContainer.classList.remove('overlayVideoFullscreen');
@@ -77,5 +92,66 @@
     };
   
     overlayVideoCloseBtn.onclick = () => overlayVideoContainer.remove();
+
+    // Drag functionality
+    let overlayVideoIsDragging = false;
+    let overlayVideoOffsetX = 0;
+    let overlayVideoOffsetY = 0;
+    const overlayVideoSnapDistance = 80;
+
+    overlayVideoContainer.addEventListener('mousedown', (e) => {
+      if (overlayVideoContainer.classList.contains('overlayVideoFullscreen')) return;
+      if (e.target.closest('.overlayVideoBtn')) return;
+      
+      overlayVideoIsDragging = true;
+      overlayVideoContainer.style.transition = 'none';
+      overlayVideoOffsetX = e.clientX - overlayVideoContainer.getBoundingClientRect().left;
+      overlayVideoOffsetY = e.clientY - overlayVideoContainer.getBoundingClientRect().top;
+    });
+
+    document.addEventListener('mousemove', (e) => {
+      if (!overlayVideoIsDragging) return;
+      
+      const x = e.clientX - overlayVideoOffsetX;
+      const y = e.clientY - overlayVideoOffsetY;
+      
+      overlayVideoContainer.style.left = x + 'px';
+      overlayVideoContainer.style.top = y + 'px';
+      overlayVideoContainer.style.right = 'auto';
+    });
+
+    document.addEventListener('mouseup', () => {
+      if (overlayVideoIsDragging) {
+        overlayVideoContainer.style.transition = 'all 0.3s ease';
+        
+        const rect = overlayVideoContainer.getBoundingClientRect();
+        const windowWidth = window.innerWidth;
+        const windowHeight = window.innerHeight;
+        
+        let finalLeft = rect.left;
+        let finalTop = rect.top;
+        
+        // Snap to left edge
+        if (rect.left < overlayVideoSnapDistance) {
+          finalLeft = 10;
+        }
+        // Snap to right edge
+        if (windowWidth - rect.right < overlayVideoSnapDistance) {
+          finalLeft = windowWidth - rect.width - 10;
+        }
+        // Snap to top edge
+        if (rect.top < overlayVideoSnapDistance) {
+          finalTop = 10;
+        }
+        // Snap to bottom edge
+        if (windowHeight - rect.bottom < overlayVideoSnapDistance) {
+          finalTop = windowHeight - rect.height - 10;
+        }
+        
+        overlayVideoContainer.style.left = finalLeft + 'px';
+        overlayVideoContainer.style.top = finalTop + 'px';
+      }
+      overlayVideoIsDragging = false;
+    });
   </script>
   
