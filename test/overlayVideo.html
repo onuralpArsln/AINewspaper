@@ -16,10 +16,14 @@
   
     #overlayVideoContainer.overlayVideoFullscreen {
       position: fixed;
-      top: 0;
-      left: 0;
+      top: 0 !important;
+      left: 0 !important;
+      right: 0;
+      bottom: 0;
       width: 100vw;
       height: 100vh;
+      max-width: 100vw;
+      max-height: 100vh;
       border-radius: 0;
       cursor: default;
     }
@@ -28,6 +32,12 @@
       width: 100%;
       height: 100%;
       object-fit: cover;
+    }
+
+    #overlayVideoContainer.overlayVideoFullscreen video {
+      width: 100vw;
+      height: 100vh;
+      object-fit: contain;
     }
   
   .overlayVideoControls {
@@ -44,9 +54,11 @@
     color: white;
     border: none;
     cursor: pointer;
-    padding: 8px 12px;
-    border-radius: 4px;
-    font-size: 18px;
+    padding: 12px 16px;
+    border-radius: 6px;
+    font-size: 24px;
+    min-width: 44px;
+    min-height: 44px;
   }
   
     .overlayVideoBtn:hover {
@@ -88,6 +100,7 @@
         overlayVideoContainer.classList.remove('overlayVideoFullscreen');
       } else {
         overlayVideoContainer.classList.add('overlayVideoFullscreen');
+        overlayVideoContainer.style.transition = 'all 0.3s ease';
       }
     };
   
@@ -99,28 +112,29 @@
     let overlayVideoOffsetY = 0;
     const overlayVideoSnapDistance = 80;
 
-    overlayVideoContainer.addEventListener('mousedown', (e) => {
-      if (overlayVideoContainer.classList.contains('overlayVideoFullscreen')) return;
-      if (e.target.closest('.overlayVideoBtn')) return;
+    function overlayVideoStartDrag(clientX, clientY, target) {
+      if (overlayVideoContainer.classList.contains('overlayVideoFullscreen')) return false;
+      if (target.closest('.overlayVideoBtn')) return false;
       
       overlayVideoIsDragging = true;
       overlayVideoContainer.style.transition = 'none';
-      overlayVideoOffsetX = e.clientX - overlayVideoContainer.getBoundingClientRect().left;
-      overlayVideoOffsetY = e.clientY - overlayVideoContainer.getBoundingClientRect().top;
-    });
+      overlayVideoOffsetX = clientX - overlayVideoContainer.getBoundingClientRect().left;
+      overlayVideoOffsetY = clientY - overlayVideoContainer.getBoundingClientRect().top;
+      return true;
+    }
 
-    document.addEventListener('mousemove', (e) => {
+    function overlayVideoDrag(clientX, clientY) {
       if (!overlayVideoIsDragging) return;
       
-      const x = e.clientX - overlayVideoOffsetX;
-      const y = e.clientY - overlayVideoOffsetY;
+      const x = clientX - overlayVideoOffsetX;
+      const y = clientY - overlayVideoOffsetY;
       
       overlayVideoContainer.style.left = x + 'px';
       overlayVideoContainer.style.top = y + 'px';
       overlayVideoContainer.style.right = 'auto';
-    });
+    }
 
-    document.addEventListener('mouseup', () => {
+    function overlayVideoEndDrag() {
       if (overlayVideoIsDragging) {
         overlayVideoContainer.style.transition = 'all 0.3s ease';
         
@@ -152,6 +166,37 @@
         overlayVideoContainer.style.top = finalTop + 'px';
       }
       overlayVideoIsDragging = false;
+    }
+
+    // Mouse events
+    overlayVideoContainer.addEventListener('mousedown', (e) => {
+      overlayVideoStartDrag(e.clientX, e.clientY, e.target);
+    });
+
+    document.addEventListener('mousemove', (e) => {
+      overlayVideoDrag(e.clientX, e.clientY);
+    });
+
+    document.addEventListener('mouseup', () => {
+      overlayVideoEndDrag();
+    });
+
+    // Touch events
+    overlayVideoContainer.addEventListener('touchstart', (e) => {
+      if (overlayVideoStartDrag(e.touches[0].clientX, e.touches[0].clientY, e.target)) {
+        e.preventDefault();
+      }
+    });
+
+    document.addEventListener('touchmove', (e) => {
+      if (overlayVideoIsDragging) {
+        e.preventDefault();
+        overlayVideoDrag(e.touches[0].clientX, e.touches[0].clientY);
+      }
+    }, { passive: false });
+
+    document.addEventListener('touchend', () => {
+      overlayVideoEndDrag();
     });
   </script>
   
