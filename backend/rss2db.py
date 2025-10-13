@@ -8,16 +8,12 @@ import sqlite3
 import hashlib
 import json
 import re
+import time
 from datetime import datetime, timezone
 from typing import List, Dict, Optional, Any, Set, Tuple
 import logging
 from pathlib import Path
-from urllib.parse import urlparse, urljoin
-import time
-
-# Third-party imports
-import requests
-from bs4 import BeautifulSoup
+from urllib.parse import urlparse
 
 # Import our RSS classes
 from rsstester import RSSFeedReader, RSSArticle
@@ -27,411 +23,11 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 logger = logging.getLogger(__name__)
 
 
-class ImageEnhancer:
-    """
-    Advanced image enhancement module for RSS articles.
-    Fetches article pages to extract high-resolution images from meta tags and content.
-    Handles CDN patterns to find full-size versions.
-    """
-    
-    def __init__(self, timeout: int = 10, max_retries: int = 2):
-        self.timeout = timeout
-        self.max_retries = max_retries
-        self.session = requests.Session()
-        self.session.headers.update({
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
-        })
-        
-        # Simple in-memory cache: URL -> (timestamp, images)
-        self._page_cache: Dict[str, Tuple[float, List[str]]] = {}
-        self._cache_ttl = 3600  # 1 hour cache TTL
-        
-        # Statistics
-        self.stats = {
-            'pages_fetched': 0,
-            'cache_hits': 0,
-            'cache_misses': 0,
-            'fetch_errors': 0,
-            'images_enhanced': 0
-        }
-    
-    def _is_cache_valid(self, url: str) -> bool:
-        """Check if cached data for URL is still valid"""
-        if url not in self._page_cache:
-            return False
-        
-        timestamp, _ = self._page_cache[url]
-        return (time.time() - timestamp) < self._cache_ttl
-    
-    def _get_from_cache(self, url: str) -> Optional[List[str]]:
-        """Get cached images for URL"""
-        if self._is_cache_valid(url):
-            self.stats['cache_hits'] += 1
-            _, images = self._page_cache[url]
-            logger.debug(f"Cache hit for {url}: {len(images)} images")
-            return images
-        
-        self.stats['cache_misses'] += 1
-        return None
-    
-    def _add_to_cache(self, url: str, images: List[str]):
-        """Add images to cache"""
-        self._page_cache[url] = (time.time(), images)
-        
-        # Simple cache size management - keep only last 100 entries
-        if len(self._page_cache) > 100:
-            # Remove oldest entries
-            sorted_cache = sorted(self._page_cache.items(), key=lambda x: x[1][0])
-            for old_url, _ in sorted_cache[:20]:  # Remove 20 oldest
-                del self._page_cache[old_url]
-    
-    def enhance_image_url(self, url: str) -> str:
-        """
-        Attempt to convert thumbnail/resized URL to full-resolution version.
-        Handles common CDN patterns.
-        """
-        if not url:
-            return url
-        
-        original_url = url
-        
-        # Common CDN patterns for resized images
-        cdn_patterns = [
-            # WordPress/media patterns: image-300x200.jpg -> image.jpg
-            (r'-(\d+)x(\d+)(\.[a-z]+)$', r'\3'),
-            
-            # Thumbnail indicators: image_thumb.jpg -> image.jpg
-            (r'_thumb(\.[a-z]+)$', r'\1'),
-            (r'_thumbnail(\.[a-z]+)$', r'\1'),
-            (r'-thumb(\.[a-z]+)$', r'\1'),
-            (r'-thumbnail(\.[a-z]+)$', r'\1'),
-            
-            # Size indicators: image-small.jpg -> image.jpg
-            (r'-(small|medium|large|thumb)(\.[a-z]+)$', r'\2'),
-            (r'_(small|medium|large|thumb)(\.[a-z]+)$', r'\2'),
-            
-            # Dimension patterns in query strings: ?w=300&h=200 -> remove params
-            (r'\?w=\d+&h=\d+.*$', ''),
-            (r'\?width=\d+&height=\d+.*$', ''),
-            (r'\?resize=\d+,\d+.*$', ''),
-            (r'\?size=\d+.*$', ''),
-            
-            # CDN-specific patterns
-            # Example: https://cdn.example.com/image-300x200.jpg?quality=80
-            (r'/resize/\d+x\d+/', '/'),
-            (r'/thumb/', '/'),
-            (r'/thumbnails/', '/images/'),
-        ]
-        
-        # Try each pattern
-        for pattern, replacement in cdn_patterns:
-            enhanced = re.sub(pattern, replacement, url, flags=re.IGNORECASE)
-            if enhanced != url:
-                logger.debug(f"Enhanced URL: {url} -> {enhanced}")
-                url = enhanced
-        
-        # Clean up double slashes (except in protocol)
-        url = re.sub(r'([^:])//+', r'\1/', url)
-        
-        # If URL changed, mark it as enhanced
-        if url != original_url:
-            self.stats['images_enhanced'] += 1
-        
-        return url
-    
-    def fetch_article_page(self, url: str) -> Optional[BeautifulSoup]:
-        """
-        Fetch and parse an article page.
-        Returns BeautifulSoup object or None on error.
-        """
-        # Check cache first
-        if url in self._page_cache and self._is_cache_valid(url):
-            # For soup, we need to refetch as we can't cache BeautifulSoup objects efficiently
-            pass
-        
-        for attempt in range(self.max_retries):
-            try:
-                logger.debug(f"Fetching article page: {url} (attempt {attempt + 1})")
-                response = self.session.get(url, timeout=self.timeout, allow_redirects=True)
-                response.raise_for_status()
-                
-                # Parse HTML
-                soup = BeautifulSoup(response.content, 'lxml')
-                self.stats['pages_fetched'] += 1
-                
-                return soup
-                
-            except requests.exceptions.Timeout:
-                logger.warning(f"Timeout fetching {url} (attempt {attempt + 1}/{self.max_retries})")
-                if attempt < self.max_retries - 1:
-                    time.sleep(1)
-            except requests.exceptions.RequestException as e:
-                logger.warning(f"Error fetching {url}: {e}")
-                if attempt < self.max_retries - 1:
-                    time.sleep(1)
-            except Exception as e:
-                logger.error(f"Unexpected error fetching {url}: {e}")
-                break
-        
-        self.stats['fetch_errors'] += 1
-        return None
-    
-    def extract_images_from_meta_tags(self, soup: BeautifulSoup, base_url: str) -> List[str]:
-        """Extract high-res images from meta tags (og:image, twitter:image, etc.)"""
-        images = []
-        
-        # Meta tags that typically contain high-quality images
-        meta_properties = [
-            'og:image',
-            'og:image:url',
-            'og:image:secure_url',
-            'twitter:image',
-            'twitter:image:src',
-        ]
-        
-        for prop in meta_properties:
-            # Try property attribute
-            tags = soup.find_all('meta', property=prop)
-            for tag in tags:
-                content = tag.get('content', '')
-                if content:
-                    full_url = urljoin(base_url, content)
-                    if full_url not in images:
-                        images.append(full_url)
-            
-            # Try name attribute (some sites use name instead of property)
-            tags = soup.find_all('meta', attrs={'name': prop})
-            for tag in tags:
-                content = tag.get('content', '')
-                if content:
-                    full_url = urljoin(base_url, content)
-                    if full_url not in images:
-                        images.append(full_url)
-        
-        return images
-    
-    def extract_images_from_content(self, soup: BeautifulSoup, base_url: str) -> List[Dict[str, Any]]:
-        """
-        Extract images from page content with size information.
-        Returns list of dicts with 'url', 'width', 'height' keys.
-        """
-        image_data = []
-        
-        # Find all img tags in article content areas
-        # Priority areas: article, main, .content, .post, .entry-content
-        content_selectors = [
-            'article img',
-            'main img',
-            '.content img',
-            '.post img',
-            '.entry-content img',
-            '.article-content img',
-            '.post-content img',
-            '[role="main"] img',
-        ]
-        
-        found_imgs = set()
-        
-        # Try content-specific selectors first
-        for selector in content_selectors:
-            imgs = soup.select(selector)
-            for img in imgs:
-                src = img.get('src') or img.get('data-src') or img.get('data-lazy-src')
-                if src and src not in found_imgs:
-                    found_imgs.add(src)
-                    full_url = urljoin(base_url, src)
-                    
-                    # Get dimensions if available
-                    width = img.get('width', '')
-                    height = img.get('height', '')
-                    
-                    try:
-                        width = int(width) if width else 0
-                    except (ValueError, TypeError):
-                        width = 0
-                    
-                    try:
-                        height = int(height) if height else 0
-                    except (ValueError, TypeError):
-                        height = 0
-                    
-                    image_data.append({
-                        'url': full_url,
-                        'width': width,
-                        'height': height,
-                        'area': width * height if width and height else 0
-                    })
-        
-        # If no images found in content areas, search all img tags
-        if not image_data:
-            all_imgs = soup.find_all('img')
-            for img in all_imgs:
-                src = img.get('src') or img.get('data-src') or img.get('data-lazy-src')
-                if src and src not in found_imgs:
-                    found_imgs.add(src)
-                    full_url = urljoin(base_url, src)
-                    
-                    width = img.get('width', '')
-                    height = img.get('height', '')
-                    
-                    try:
-                        width = int(width) if width else 0
-                    except (ValueError, TypeError):
-                        width = 0
-                    
-                    try:
-                        height = int(height) if height else 0
-                    except (ValueError, TypeError):
-                        height = 0
-                    
-                    image_data.append({
-                        'url': full_url,
-                        'width': width,
-                        'height': height,
-                        'area': width * height if width and height else 0
-                    })
-        
-        # Sort by area (larger images first), but keep all images
-        image_data.sort(key=lambda x: x['area'], reverse=True)
-        
-        return image_data
-    
-    def filter_valid_images(self, image_urls: List[str]) -> List[str]:
-        """
-        Filter out invalid image URLs (tracking pixels, icons, etc.)
-        """
-        filtered = []
-        
-        for url in image_urls:
-            # Skip empty
-            if not url:
-                continue
-            
-            # Must be HTTP/HTTPS
-            if not (url.startswith('http://') or url.startswith('https://')):
-                continue
-            
-            # Filter out common non-article images
-            skip_patterns = [
-                r'/icon[s]?/',
-                r'/avatar[s]?/',
-                r'/logo[s]?/',
-                r'/button[s]?/',
-                r'/badge[s]?/',
-                r'/emoji/',
-                r'/smilies/',
-                r'\.svg$',  # SVG icons
-                r'1x1\.',  # Tracking pixels
-                r'pixel\.',
-                r'tracking\.',
-                r'beacon\.',
-                r'/ads/',
-                r'/ad/',
-                r'blank\.',
-                r'spacer\.',
-                r'transparent\.',
-            ]
-            
-            if any(re.search(pattern, url, re.IGNORECASE) for pattern in skip_patterns):
-                continue
-            
-            filtered.append(url)
-        
-        return filtered
-    
-    def enhance_images_from_article(self, article_url: str, existing_images: List[str]) -> List[str]:
-        """
-        Main enhancement function: fetch article page and extract all high-res images.
-        
-        Args:
-            article_url: URL of the article page
-            existing_images: Images already extracted from RSS feed
-            
-        Returns:
-            Combined list of all images (existing + enhanced), with highest resolution versions
-        """
-        if not article_url:
-            return existing_images
-        
-        # Check cache
-        cached_images = self._get_from_cache(article_url)
-        if cached_images is not None:
-            # Combine cached with existing
-            all_images = list(existing_images)
-            for img in cached_images:
-                if img not in all_images:
-                    all_images.append(img)
-            return all_images
-        
-        # Fetch the page
-        soup = self.fetch_article_page(article_url)
-        if not soup:
-            logger.debug(f"Could not fetch article page: {article_url}")
-            return existing_images
-        
-        # Extract images from meta tags (usually high quality)
-        meta_images = self.extract_images_from_meta_tags(soup, article_url)
-        logger.debug(f"Found {len(meta_images)} images from meta tags")
-        
-        # Extract images from content
-        content_image_data = self.extract_images_from_content(soup, article_url)
-        content_images = [img['url'] for img in content_image_data]
-        logger.debug(f"Found {len(content_images)} images from content")
-        
-        # Combine all sources
-        all_discovered_images = meta_images + content_images
-        
-        # Enhance URLs (convert thumbnails to full-size)
-        enhanced_images = [self.enhance_image_url(url) for url in all_discovered_images]
-        
-        # Filter invalid images
-        enhanced_images = self.filter_valid_images(enhanced_images)
-        
-        # Cache the discovered images
-        self._add_to_cache(article_url, enhanced_images)
-        
-        # Combine with existing images from RSS
-        final_images = []
-        seen = set()
-        
-        # First add existing images (already validated)
-        for img in existing_images:
-            enhanced = self.enhance_image_url(img)
-            if enhanced not in seen:
-                seen.add(enhanced)
-                final_images.append(enhanced)
-        
-        # Then add discovered images
-        for img in enhanced_images:
-            if img not in seen:
-                seen.add(img)
-                final_images.append(img)
-        
-        logger.debug(f"Article {article_url}: {len(existing_images)} RSS images + "
-                    f"{len(enhanced_images)} page images = {len(final_images)} total")
-        
-        return final_images
-    
-    def get_stats(self) -> Dict[str, int]:
-        """Get enhancement statistics"""
-        return self.stats.copy()
-
-
 class RSSDatabase:
     """Database handler for RSS articles with duplicate prevention"""
     
-    def __init__(self, db_path: str = 'rss_articles.db', enable_image_enhancement: bool = True):
+    def __init__(self, db_path: str = 'rss_articles.db'):
         self.db_path = db_path
-        self.enable_image_enhancement = enable_image_enhancement
-        
-        # Initialize image enhancer if enabled
-        if self.enable_image_enhancement:
-            self.image_enhancer = ImageEnhancer()
-            logger.info("Image enhancement enabled - will fetch article pages for high-res images")
-        else:
-            self.image_enhancer = None
-            logger.info("Image enhancement disabled - using RSS images only")
-        
         self.init_database()
     
     def init_database(self):
@@ -522,10 +118,6 @@ class RSSDatabase:
                 # Create index for event_group_id (after ensuring column exists)
                 cursor.execute('CREATE INDEX IF NOT EXISTS idx_event_group_id ON articles(event_group_id)')
                 
-                # Migrate old image_url data to image_urls if needed
-                if 'image_url' in columns:
-                    logger.info("Migrating old image_url data to consolidated image_urls column...")
-                    self._migrate_image_data(cursor)
                 
                 conn.commit()
                 logger.info(f"Database initialized successfully: {self.db_path}")
@@ -534,147 +126,7 @@ class RSSDatabase:
             logger.error(f"Error initializing database: {e}")
             raise
     
-    def _migrate_image_data(self, cursor):
-        """Migrate old image_url and scattered image data to consolidated image_urls column"""
-        try:
-            # Get all articles that need migration
-            cursor.execute('''
-                SELECT id, image_url, image_urls, content, description, 
-                       enclosures, media_content 
-                FROM articles
-            ''')
-            articles = cursor.fetchall()
-            
-            migrated_count = 0
-            for row in articles:
-                article_id, old_image_url, old_image_urls, content, description, enclosures, media_content = row
-                
-                # Collect all image URLs
-                all_images = set()
-                
-                # Add old image_url if exists
-                if old_image_url:
-                    all_images.add(old_image_url)
-                
-                # Add old image_urls if exists
-                if old_image_urls:
-                    try:
-                        urls = json.loads(old_image_urls)
-                        if isinstance(urls, list):
-                            all_images.update(urls)
-                    except:
-                        pass
-                
-                # Extract from content
-                if content:
-                    all_images.update(self._extract_images_from_html(content))
-                
-                # Extract from description
-                if description:
-                    all_images.update(self._extract_images_from_html(description))
-                
-                # Extract from enclosures
-                if enclosures:
-                    try:
-                        enc_list = json.loads(enclosures)
-                        for enc in enc_list:
-                            if isinstance(enc, dict) and enc.get('type', '').startswith('image/'):
-                                if enc.get('url'):
-                                    all_images.add(enc['url'])
-                    except:
-                        pass
-                
-                # Extract from media_content
-                if media_content:
-                    try:
-                        media_list = json.loads(media_content)
-                        for media in media_list:
-                            if isinstance(media, dict) and media.get('type', '').startswith('image/'):
-                                if media.get('url'):
-                                    all_images.add(media['url'])
-                    except:
-                        pass
-                
-                # Filter and validate URLs
-                validated_images = self._validate_and_filter_image_urls(list(all_images))
-                
-                # Update with consolidated image URLs
-                if validated_images:
-                    cursor.execute('''
-                        UPDATE articles 
-                        SET image_urls = ? 
-                        WHERE id = ?
-                    ''', (json.dumps(validated_images), article_id))
-                    migrated_count += 1
-            
-            logger.info(f"Migrated image data for {migrated_count} articles")
-            
-        except Exception as e:
-            logger.error(f"Error during image data migration: {e}")
     
-    def _extract_images_from_html(self, html_content: str) -> Set[str]:
-        """Extract all image URLs from HTML content"""
-        if not html_content:
-            return set()
-        
-        image_urls = set()
-        
-        # Comprehensive image patterns
-        patterns = [
-            r'<img[^>]+src=["\']([^"\']+)["\']',  # Standard img tags
-            r'<img[^>]+data-src=["\']([^"\']+)["\']',  # Lazy loading
-            r'<img[^>]+data-lazy=["\']([^"\']+)["\']',  # Alternative lazy
-            r'<img[^>]+data-original=["\']([^"\']+)["\']',  # Original image
-            r'background-image:\s*url\(["\']?([^"\'()]+)["\']?\)',  # CSS backgrounds
-            r'<figure[^>]*>.*?<img[^>]+src=["\']([^"\']+)["\']',  # Figure tags
-            r'srcset=["\']([^"\']+)["\']',  # Responsive images
-        ]
-        
-        for pattern in patterns:
-            matches = re.findall(pattern, html_content, re.IGNORECASE | re.DOTALL)
-            for match in matches:
-                # Handle srcset which can have multiple URLs
-                if 'srcset' in pattern:
-                    # srcset format: "url1 1x, url2 2x" or "url1 100w, url2 200w"
-                    urls = re.findall(r'(https?://[^\s,]+)', match)
-                    image_urls.update(urls)
-                else:
-                    cleaned_url = self._clean_image_url(match)
-                    if cleaned_url:
-                        image_urls.add(cleaned_url)
-        
-        return image_urls
-    
-    def _clean_image_url(self, url: str) -> str:
-        """Clean and normalize image URL"""
-        if not url:
-            return ""
-        
-        # Decode HTML entities
-        import html
-        url = html.unescape(url)
-        
-        # Remove common artifacts
-        url = re.sub(r'&amp;', '&', url)
-        url = url.strip()
-        
-        # Must be valid HTTP/HTTPS URL
-        if not (url.startswith('http://') or url.startswith('https://')):
-            return ""
-        
-        # Basic URL validation
-        try:
-            parsed = urlparse(url)
-            if not parsed.netloc:
-                return ""
-        except:
-            return ""
-        
-        # Filter out tracking pixels and tiny images
-        if any(x in url.lower() for x in ['1x1', 'pixel', 'tracking', 'beacon']):
-            return ""
-        
-        return url
     
     def _validate_and_filter_image_urls(self, urls: List[str]) -> List[str]:
         """Validate and filter image URLs, removing duplicates and invalid ones"""
@@ -685,38 +137,43 @@ class RSSDatabase:
             if not url:
                 continue
             
-            cleaned = self._clean_image_url(url)
-            if cleaned and cleaned not in seen:
-                seen.add(cleaned)
-                validated.append(cleaned)
+            # Basic URL validation
+            url = url.strip()
+            
+            # Must be valid HTTP/HTTPS URL
+            if not (url.startswith('http://') or url.startswith('https://')):
+                continue
+            
+            # Basic URL validation
+            try:
+                parsed = urlparse(url)
+                if not parsed.netloc:
+                    continue
+            except:
+                continue
+            
+            # Filter out tracking pixels and tiny images
+            if any(x in url.lower() for x in ['1x1', 'pixel', 'tracking', 'beacon']):
+                continue
+            
+            if url not in seen:
+                seen.add(url)
+                validated.append(url)
         
         return validated
     
     def extract_all_image_urls_from_article(self, article: RSSArticle) -> List[str]:
         """
-        Comprehensive image extraction from all possible sources in an RSS article.
-        This is the main method that consolidates all image finding logic.
-        Now includes enhancement from article page scraping.
+        Extract images only from explicit RSS feed fields.
+        Safe and reliable - no HTML parsing or external page fetching.
         """
-        all_images = set()
+        rss_images = set()
         
-        # 1. Get images already parsed by RSSFeedReader
+        # 1. RSS Feed Images (explicit image fields)
         if article.image_urls:
-            all_images.update(article.image_urls)
+            rss_images.update(article.image_urls)
         
-        # 2. Extract from content field
-        if article.content:
-            all_images.update(self._extract_images_from_html(article.content))
-        
-        # 3. Extract from description field
-        if article.description:
-            all_images.update(self._extract_images_from_html(article.description))
-        
-        # 4. Extract from summary field
-        if article.summary:
-            all_images.update(self._extract_images_from_html(article.summary))
-        
-        # 5. Extract from enclosures
+        # 2. Extract from enclosures (RSS explicit field)
         if article.enclosures:
             for enclosure in article.enclosures:
                 if isinstance(enclosure, dict):
@@ -724,9 +181,9 @@ class RSSDatabase:
                     if enc_type.startswith('image/'):
                         url = enclosure.get('url', enclosure.get('href', ''))
                         if url:
-                            all_images.add(url)
+                            rss_images.add(url)
         
-        # 6. Extract from media_content
+        # 3. Extract from media_content (RSS explicit field)
         if article.media_content:
             for media in article.media_content:
                 if isinstance(media, dict):
@@ -734,31 +191,18 @@ class RSSDatabase:
                     if media_type.startswith('image/') or 'image' in media_type.lower():
                         url = media.get('url', '')
                         if url:
-                            all_images.add(url)
+                            rss_images.add(url)
         
-        # 7. Add legacy image_url if it exists
+        # 4. Add legacy image_url if it exists (RSS explicit field)
         if article.image_url:
-            all_images.add(article.image_url)
+            rss_images.add(article.image_url)
         
-        # Validate and filter
-        validated_images = self._validate_and_filter_image_urls(list(all_images))
+        # Validate and return RSS images only
+        final_images = self._validate_and_filter_image_urls(list(rss_images))
         
-        # 8. ENHANCEMENT: Fetch article page for high-resolution images
-        if self.enable_image_enhancement and self.image_enhancer and article.link:
-            try:
-                enhanced_images = self.image_enhancer.enhance_images_from_article(
-                    article.link, 
-                    validated_images
-                )
-                validated_images = enhanced_images
-                logger.debug(f"Enhanced to {len(validated_images)} images for article: {article.title[:50]}")
-            except Exception as e:
-                logger.warning(f"Image enhancement failed for {article.link}: {e}")
-                # Fall back to original images on error
+        logger.debug(f"RSS images found: {len(final_images)} for article: {article.title[:50]}")
         
-        logger.debug(f"Final: {len(validated_images)} images for article: {article.title[:50]}")
-        
-        return validated_images
+        return final_images
     
     def generate_content_hash(self, article: RSSArticle) -> str:
         """Generate a unique hash for article content to detect duplicates"""
@@ -1301,16 +745,6 @@ class RSSToDatabase:
             print(f"Average images per article: {image_stats.get('average_images_per_article', 0)}")
             print(f"Max images in a single article: {image_stats.get('max_images_in_article', 0)}")
         
-        # Image enhancement statistics
-        if self.db.enable_image_enhancement and self.db.image_enhancer:
-            enhancement_stats = self.db.image_enhancer.get_stats()
-            print(f"\nIMAGE ENHANCEMENT STATISTICS")
-            print(f"{'='*40}")
-            print(f"Article pages fetched: {enhancement_stats.get('pages_fetched', 0)}")
-            print(f"Cache hits: {enhancement_stats.get('cache_hits', 0)}")
-            print(f"Cache misses: {enhancement_stats.get('cache_misses', 0)}")
-            print(f"Fetch errors: {enhancement_stats.get('fetch_errors', 0)}")
-            print(f"Images enhanced (thumbnails->full): {enhancement_stats.get('images_enhanced', 0)}")
         
         # Read/Unread statistics
         unread_count = self.db.get_unread_count()
