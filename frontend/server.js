@@ -82,7 +82,7 @@ async function initializeNewsCache() {
 app.get('/', (req, res) => {
     res.render('index', {
         news: newsCache,
-        title: 'AI Newspaper - Latest News',
+        title: 'AI Gazetesi - Son Haberler',
         navigation: getNavigation('/')
     });
 });
@@ -101,8 +101,8 @@ app.get('/news/:id', (req, res) => {
         });
     } else {
         res.status(404).render('error', {
-            message: 'News not found',
-            title: 'Error 404',
+            message: 'Haber bulunamadı',
+            title: 'Hata 404',
             navigation: getNavigation('/')
         });
     }
@@ -120,15 +120,15 @@ app.get('/api/fetch-more', async (req, res) => {
         newsCache.push(newsItem);
         res.json({ success: true, news: newsItem });
     } else {
-        res.json({ success: false, message: 'No more news available' });
+        res.json({ success: false, message: 'Daha fazla haber mevcut değil' });
     }
 });
 
 // 404 handler
 app.use((req, res) => {
     res.status(404).render('error', {
-        message: 'Page not found',
-        title: 'Error 404',
+        message: 'Sayfa bulunamadı',
+        title: 'Hata 404',
         navigation: getNavigation('/')
     });
 });

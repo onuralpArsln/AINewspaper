@@ -1,165 +1,108 @@
 <!DOCTYPE html>
-<html lang="en">
-
+<html lang="tr">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>
-        <%= title %>
-    </title>
+    <title><%= title %></title>
     <link rel="stylesheet" href="/css/style.css">
 </head>
-
 <body>
     <header>
         <div class="header-upper">
             <div class="container">
                 <div class="header-content">
                     <div class="header-logo">
-                        <a href="/">
-                            <img src="/images/logo.png" alt="AI Newspaper Logo" onerror="this.style.display='none'">
-                        </a>
+                        <img src="/images/logo.png" alt="Uygur Haber Ajansı">
                     </div>
                     <div class="header-branding">
-                        <h1><a href="/" id="page-title">Uygur Haber Ajansı</a></h1>
-                        <p class="tagline">Your Daily Source for News</p>
+                        <h1><a href="/">Uygur Haber Ajansı</a></h1>
+                        <p class="tagline">AI Destekli Haber Platformu</p>
                     </div>
                     <div class="header-widgets">
-                        <!-- Future widgets will be added here -->
+                        <!-- Widget area for future use -->
                     </div>
                 </div>
             </div>
         </div>
+        
         <div class="header-lower">
             <div class="container">
                 <nav class="nav-container">
                     <ul class="nav-tabs">
-                        <% navigation.tabs.forEach(tab=> { %>
-                            <li><a href="<%= tab.url %>" class="<%= tab.active ? 'active' : '' %>">
+                        <% navigation.tabs.forEach(tab => { %>
+                            <li>
+                                <a href="<%= tab.url %>" class="<%= tab.active ? 'active' : '' %>">
                                     <%= tab.name %>
-                                </a></li>
-                            <% }); %>
+                                </a>
+                            </li>
+                        <% }); %>
                     </ul>
                 </nav>
             </div>
         </div>
     </header>
 
-    <main class="container">
-        <article class="news-detail">
-            <div class="breadcrumb">
-                <a href="/">← Back to Home</a>
-            </div>
-
-            <h1 class="article-title">
-                <%= news.title %>
-            </h1>
-
-            <div class="article-meta">
-                <span class="article-date">
-                    <%= news.published %>
-                </span>
-                <% if (news.link && news.link !=='endofline' ) { %>
-                    <a href="<%= news.link %>" target="_blank" class="source-link">View Original Source →</a>
-                    <% } %>
-            </div>
-
-            <% if (news.image) { %>
-                <div class="article-image">
-                    <img src="<%= news.image %>" alt="<%= news.title %>" onerror="this.src='/images/placeholder.jpg'">
+    <main>
+        <div class="container">
+            <article class="news-detail">
+                <div class="breadcrumb">
+                    <a href="/">← Anasayfaya Dön</a>
                 </div>
+                
+                <h1 class="article-title"><%= news.title %></h1>
+                
+                <div class="article-meta">
+                    <span class="article-date">
+                        <%= new Date(news.published).toLocaleDateString('tr-TR', {
+                            year: 'numeric',
+                            month: 'long',
+                            day: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit'
+                        }) %>
+                    </span>
+                    <% if (news.link && news.link !== '#') { %>
+                        <a href="<%= news.link %>" class="source-link" target="_blank" rel="noopener">
+                            Kaynak Haberi Görüntüle
+                        </a>
+                    <% } %>
+                </div>
+
+                <% if (news.image) { %>
+                    <div class="article-image">
+                        <img src="<%= news.image %>" alt="<%= news.title %>">
+                    </div>
                 <% } %>
 
-                    <% if (news.summary) { %>
-                        <div class="article-summary">
-                            <strong>Summary:</strong>
-                            <p>
-                                <%= news.summary %>
-                            </p>
-                        </div>
-                        <% } %>
+                <% if (news.summary) { %>
+                    <div class="article-summary">
+                        <strong>Özet:</strong>
+                        <p><%= news.summary %></p>
+                    </div>
+                <% } %>
 
-                            <% if (news.content && news.content !=='endofline' ) { %>
-                                <div class="article-content">
-                                    <%- news.content %>
-                                </div>
-                                <% } %>
+                <div class="article-content">
+                    <%= news.content %>
+                </div>
 
-                                    <div class="article-footer">
-                                        <a href="/" class="btn-back">← Back to All News</a>
-                                    </div>
-        </article>
+                <% if (news.tags) { %>
+                    <div class="article-tags">
+                        <strong>Etiketler:</strong>
+                        <span><%= news.tags %></span>
+                    </div>
+                <% } %>
+
+                <div class="article-footer">
+                    <a href="/" class="btn-back">← Tüm Haberlere Dön</a>
+                </div>
+            </article>
+        </div>
     </main>
 
     <footer>
         <div class="container">
-            <p>&copy; 2025 AI Newspaper. All rights reserved.</p>
+            <p>&copy; 2024 Uygur Haber Ajansı. Tüm hakları saklıdır.</p>
         </div>
     </footer>
-
-    <script>
-        // Navigation configuration from server
-        const navigationTabs = <%- JSON.stringify(navigation.tabs) %>;
-
-        // Create hash to page title mapping
-        const pageTitleMap = {};
-        const browserTitleMap = {};
-
-        navigationTabs.forEach(tab => {
-            const hash = tab.url.includes('#') ? tab.url.split('#')[1] : '';
-            pageTitleMap[hash] = tab.pageTitle;
-            browserTitleMap[hash] = tab.pageTitle + ' - AI Newspaper';
-        });
-
-        // Special case for home
-        pageTitleMap[''] = 'Uygur Haber Ajansı';
-        browserTitleMap[''] = '<%= title %>';
-
-        // Update title, header branding, and active tab based on current hash
-        function updateTabState() {
-            const currentHash = window.location.hash; // e.g., '#spor' or ''
-            const hash = currentHash.replace('#', ''); // e.g., 'spor' or ''
-
-            console.log('Current hash:', currentHash, 'Cleaned:', hash);
-
-            // Update browser title
-            document.title = browserTitleMap[hash] || '<%= title %>';
-
-            // Update header branding text
-            const pageTitle = document.getElementById('page-title');
-            if (pageTitle) {
-                pageTitle.textContent = pageTitleMap[hash] || 'Uygur Haber Ajansı';
-            }
-
-            // Update active tab
-            const navLinks = document.querySelectorAll('.nav-tabs a');
-            navLinks.forEach(link => {
-                const href = link.getAttribute('href'); // e.g., '/' or '/#spor'
-                let linkHash = '';
-
-                if (href.includes('#')) {
-                    linkHash = href.split('#')[1]; // e.g., 'spor'
-                }
-
-                console.log('Link href:', href, 'Link hash:', linkHash, 'Matches:', linkHash === hash);
-
-                // Remove active class from all
-                link.classList.remove('active');
-
-                // Add active class if hashes match
-                if (linkHash === hash) {
-                    link.classList.add('active');
-                    console.log('Activated:', href);
-                }
-            });
-        }
-
-        // Listen for hash changes
-        window.addEventListener('hashchange', updateTabState);
-
-        // Update on page load
-        updateTabState();
-    </script>
 </body>
-
 </html>

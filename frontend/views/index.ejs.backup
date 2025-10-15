@@ -47,7 +47,7 @@
             <% if (news && news.length > 0) { %>
                 <div class="news-grid">
                     <% news.forEach((article, index) => { %>
-                        <article class="news-card" onclick="window.location.href='/news/<%= index %>'">
+                        <article class="news-card">
                             <% if (article.image) { %>
                                 <div class="news-image">
                                     <img src="<%= article.image %>" alt="<%= article.title %>" loading="lazy">
@@ -55,11 +55,11 @@
                             <% } %>
                             <div class="news-content">
                                 <h2 class="news-title">
-                                    <%= article.title %>
+                                    <a href="/news/<%= index %>"><%= article.title %></a>
                                 </h2>
                                 <span class="news-date"><%= new Date(article.published).toLocaleDateString('tr-TR') %></span>
                                 <p class="news-summary"><%= article.summary %></p>
-                                <span class="read-more">Devamını Oku</span>
+                                <a href="/news/<%= index %>" class="read-more">Devamını Oku</a>
                             </div>
                         </article>
                     <% }); %>

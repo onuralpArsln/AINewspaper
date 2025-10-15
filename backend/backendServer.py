@@ -163,8 +163,8 @@ def root():
     """Root endpoint"""
     stats = db.get_statistics()
     return {
-        "message": "AI Newspaper Backend Server",
-        "status": "running",
+        "message": "AI Gazetesi Backend Sunucusu",
+        "status": "çalışıyor",
         "database": "our_articles.db",
         "statistics": stats
     }
@@ -209,7 +209,7 @@ def get_article(article_id: int):
     article = db.get_article_by_id(article_id)
     
     if not article:
-        raise HTTPException(status_code=404, detail="Article not found")
+        raise HTTPException(status_code=404, detail="Makale bulunamadı")
     
     # Parse images
     parse_article_images(article)
@@ -220,7 +220,7 @@ def get_article(article_id: int):
 def search_articles(q: str, limit: int = 20):
     """Search articles by keyword"""
     if not q:
-        raise HTTPException(status_code=400, detail="Search query required")
+        raise HTTPException(status_code=400, detail="Arama sorgusu gerekli")
     
     articles = db.search_articles(q, limit=limit)
     
@@ -254,4 +254,4 @@ def reset_served():
     current_offset = 0
     articles_cache = []
     load_articles_batch()
-    return {"message": "Served status reset", "articles_loaded": len(articles_cache)}
+    return {"message": "Sunum durumu sıfırlandı", "articles_loaded": len(articles_cache)}

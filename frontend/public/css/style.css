@@ -343,6 +343,7 @@ main {
   overflow: hidden;
   box-shadow: 0 4px 6px var(--shadow-color);
   transition: transform 0.3s ease, box-shadow 0.3s ease;
+  cursor: pointer;
 }
 
 .news-card:hover {
@@ -378,13 +379,12 @@ main {
   line-height: 1.4;
 }
 
-.news-title a {
+.news-title {
   color: var(--text-primary);
-  text-decoration: none;
   transition: color 0.3s ease;
 }
 
-.news-title a:hover {
+.news-card:hover .news-title {
   color: var(--primary-color);
 }
 
@@ -409,13 +409,12 @@ main {
 
 .read-more {
   color: var(--primary-color);
-  text-decoration: none;
   font-weight: 600;
   font-size: 0.95rem;
   transition: color 0.3s ease;
 }
 
-.read-more:hover {
+.news-card:hover .read-more {
   color: var(--primary-dark);
 }
 
@@ -588,6 +587,28 @@ main {
 .no-news h2 {
   color: var(--primary-color);
   margin-bottom: 1rem;
+}
+
+/* Article Tags */
+.article-tags {
+  margin-top: 2rem;
+  padding-top: 2rem;
+  border-top: 1px solid var(--border-color);
+}
+
+.article-tags strong {
+  color: var(--primary-color);
+  margin-right: 0.5rem;
+}
+
+.article-tags span {
+  color: var(--text-secondary);
+  font-style: italic;
+}
+
+/* Fetch More Button */
+.btn-fetch-more:hover {
+  background: var(--primary-dark);
 }
 
 /* Footer */
