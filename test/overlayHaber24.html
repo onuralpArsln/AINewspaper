@@ -150,15 +150,34 @@
       }, 2000); // Wait 2 seconds before showing iframe
     });
   
+    let isVideoMuted = true; // Start muted for autoplay
+    
     overlayVideoSoundBtn.onclick = () => {
-      // Note: YouTube iframe controls are handled by YouTube's player
-      // This button is disabled for iframe content due to browser security restrictions
-      overlayVideoSoundBtn.textContent = '⚠️';
-      overlayVideoSoundBtn.title = 'Sound control not available for YouTube videos';
-      setTimeout(() => {
-        overlayVideoSoundBtn.textContent = '🔊';
-        overlayVideoSoundBtn.title = '';
-      }, 1000);
+      // Toggle mute state
+      isVideoMuted = !isVideoMuted;
+      
+      // Update button appearance
+      overlayVideoSoundBtn.textContent = isVideoMuted ? '🔇' : '🔊';
+      
+      // Build new URL with updated mute parameter
+      const baseUrl = 'https://www.youtube.com/embed/6B-nPOdP720';
+      const params = new URLSearchParams({
+        controls: '0',
+        showinfo: '0',
+        rel: '0',
+        modestbranding: '1',
+        disablekb: '1',
+        autoplay: '1',
+        mute: isVideoMuted ? '1' : '0',
+        iv_load_policy: '3',
+        cc_load_policy: '0',
+        fs: '0',
+        start: '0',
+        enablejsapi: '1'
+      });
+      
+      // Update iframe source
+      overlayVideoPlayer.src = `${baseUrl}?${params.toString()}`;
     };
 
     overlayVideoFullscreenBtn.onclick = () => {
