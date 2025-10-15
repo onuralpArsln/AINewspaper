@@ -13,6 +13,15 @@
       transition: all 0.3s ease;
       cursor: move;
     }
+
+    #overlayVideoContainer.loading iframe {
+      opacity: 0;
+      transition: opacity 0.5s ease;
+    }
+
+    #overlayVideoContainer.loaded iframe {
+      opacity: 1;
+    }
   
     #overlayVideoContainer.overlayVideoFullscreen {
       position: fixed;
@@ -28,16 +37,31 @@
       cursor: default;
     }
   
-    #overlayVideoContainer video {
+    #overlayVideoContainer iframe {
       width: 100%;
-      height: 100%;
-      object-fit: cover;
+      height: 133.33%; /* Increase height to allow for cropping top 25% */
+      border: none;
+      pointer-events: none;
+      position: absolute;
+      top: -33.33%; /* Move up to crop top 25% */
+      left: 0;
     }
 
-    #overlayVideoContainer.overlayVideoFullscreen video {
+    #overlayVideoContainer .youtube-overlay-blocker {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: transparent;
+      z-index: 1;
+      pointer-events: auto;
+    }
+
+    #overlayVideoContainer.overlayVideoFullscreen iframe {
       width: 100vw;
-      height: 100vh;
-      object-fit: contain;
+      height: 133.33vh; /* Increase height to allow for cropping top 25% */
+      top: -33.33vh; /* Move up to crop top 25% */
     }
 
     #overlayVideoContainer.overlayVideoMinimized {
@@ -50,10 +74,14 @@
       transition: all 0.3s ease;
     }
 
-    #overlayVideoContainer.overlayVideoMinimized video {
+    #overlayVideoContainer.overlayVideoMinimized iframe {
       width: 100%;
-      height: 100%;
-      object-fit: cover;
+      height: 133.33%; /* Increase height to allow for cropping top 25% */
+      border-radius: 50%;
+      top: -33.33%; /* Move up to crop top 25% */
+    }
+
+    #overlayVideoContainer.overlayVideoMinimized .youtube-overlay-blocker {
       border-radius: 50%;
     }
 
@@ -93,10 +121,15 @@
       <button class="overlayVideoBtn" id="overlayVideoFullscreenBtn">⛶</button>
       <button class="overlayVideoBtn" id="overlayVideoCloseBtn">✖</button>
     </div>
-    <video id="overlayVideoPlayer"
-      src="https://uygurhaberajansicom.tevideo.org/uygurhaberajansi-com/uploads/2025/08/u-h-a-jenerik-2.mp4"
-      playsinline muted autoplay loop>
-    </video>
+    <iframe id="overlayVideoPlayer"
+      src="https://www.youtube.com/embed/6B-nPOdP720?controls=0&showinfo=0&rel=0&modestbranding=1&disablekb=1&autoplay=1&mute=1&iv_load_policy=3&cc_load_policy=0&fs=0&start=0&enablejsapi=1"
+      title="24 TV Canlı İzle #Haber #SonDakika"
+      frameborder="0"
+      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+      referrerpolicy="strict-origin-when-cross-origin"
+      allowfullscreen>
+    </iframe>
+    <div class="youtube-overlay-blocker"></div>
   </div>
   
   <script>
@@ -105,15 +138,27 @@
     const overlayVideoSoundBtn = document.getElementById('overlayVideoSoundBtn');
     const overlayVideoFullscreenBtn = document.getElementById('overlayVideoFullscreenBtn');
     const overlayVideoCloseBtn = document.getElementById('overlayVideoCloseBtn');
+
+    // Hide iframe during initial load to prevent logo flash
+    overlayVideoContainer.classList.add('loading');
+    
+    // Show iframe after a delay to allow video to load
+    window.addEventListener('load', () => {
+      setTimeout(() => {
+        overlayVideoContainer.classList.remove('loading');
+        overlayVideoContainer.classList.add('loaded');
+      }, 2000); // Wait 2 seconds before showing iframe
+    });
   
     overlayVideoSoundBtn.onclick = () => {
-      if (overlayVideoPlayer.muted) {
-        overlayVideoPlayer.muted = false;
+      // Note: YouTube iframe controls are handled by YouTube's player
+      // This button is disabled for iframe content due to browser security restrictions
+      overlayVideoSoundBtn.textContent = '⚠️';
+      overlayVideoSoundBtn.title = 'Sound control not available for YouTube videos';
+      setTimeout(() => {
         overlayVideoSoundBtn.textContent = '🔊';
-      } else {
-        overlayVideoPlayer.muted = true;
-        overlayVideoSoundBtn.textContent = '🔇';
-      }
+        overlayVideoSoundBtn.title = '';
+      }, 1000);
     };
 
     overlayVideoFullscreenBtn.onclick = () => {
