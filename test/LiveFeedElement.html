@@ -3,6 +3,12 @@
 <style>
     .live-feed-container {
         --video-width: 720px;
+        --logo-width: 200px;
+        --logo-height: 60px;
+        --logo-top-crop: 0px;
+        --logo-bottom-crop: 0px;
+        --logo-position-x: 20px;
+        --logo-position-y: 20px;
         width: var(--video-width);
         aspect-ratio: 16/9;
         border-radius: 12px;
@@ -10,6 +16,7 @@
         box-shadow: 0 8px 32px rgba(0,0,0,0.3);
         background: #000;
         margin: 0 auto;
+        position: relative;
     }
 
     .live-feed-container iframe {
@@ -18,21 +25,40 @@
         border: none;
     }
 
+    .logo-overlay {
+        position: absolute;
+        top: var(--logo-position-y);
+        left: var(--logo-position-x);
+        width: var(--logo-width);
+        height: var(--logo-height);
+        background-image: url('https://uygurhaberajansicom.teimg.com/uygurhaberajansi-com/uploads/2025/03/adsiz-tasarim-4.png');
+        background-size: cover;
+        background-position: center;
+        background-repeat: no-repeat;
+        z-index: 10;
+        pointer-events: none;
+        /* Crop top and bottom */
+        clip-path: inset(var(--logo-top-crop) 0 var(--logo-bottom-crop) 0);
+    }
+
     @media (max-width: 768px) {
         .live-feed-container {
             --video-width: 90vw;
+            --logo-width: 150px;
+            --logo-height: 45px;
         }
     }
 </style>
 
 <div class="live-feed-container">
     <iframe class="live-feed-player"
-        src="https://www.youtube.com/embed/videoseries?list=PLtltY0dZ__aSNo70nmetBRkVVhK1v9tFL&autoplay=1&mute=1&loop=1&playlist=PLtltY0dZ__aSNo70nmetBRkVVhK1v9tFL&enablejsapi=1"
+        src="https://www.youtube.com/embed/videoseries?list=PLtltY0dZ__aSNo70nmetBRkVVhK1v9tFL&autoplay=1&mute=1&loop=1&playlist=PLtltY0dZ__aSNo70nmetBRkVVhK1v9tFL&enablejsapi=1&controls=0"
         title="YouTube playlist player"
         frameborder="0"
         allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
         allowfullscreen>
     </iframe>
+    <div class="logo-overlay"></div>
 </div>
 
 <script>
