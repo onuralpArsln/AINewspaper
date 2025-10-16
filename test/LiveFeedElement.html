@@ -12,10 +12,10 @@
         margin: 0 auto;
     }
 
-    .live-feed-container video {
+    .live-feed-container iframe {
         width: 100%;
         height: 100%;
-        object-fit: cover;
+        border: none;
     }
 
     @media (max-width: 768px) {
@@ -26,8 +26,26 @@
 </style>
 
 <div class="live-feed-container">
-    <video class="live-feed-player"
-        src="https://uygurhaberajansicom.tevideo.org/uygurhaberajansi-com/uploads/2025/08/u-h-a-jenerik-2.mp4"
-        controls playsinline autoplay loop>
-    </video>
+    <iframe class="live-feed-player"
+        src="https://www.youtube.com/embed/videoseries?list=PLtltY0dZ__aSNo70nmetBRkVVhK1v9tFL&autoplay=1&mute=1&loop=1&playlist=PLtltY0dZ__aSNo70nmetBRkVVhK1v9tFL&enablejsapi=1"
+        title="YouTube playlist player"
+        frameborder="0"
+        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+        allowfullscreen>
+    </iframe>
 </div>
+
+<script>
+    // Ensure autoplay on page load
+    document.addEventListener('DOMContentLoaded', function() {
+        const iframe = document.querySelector('.live-feed-player');
+        if (iframe) {
+            // Force reload the iframe to ensure autoplay works
+            const currentSrc = iframe.src;
+            iframe.src = '';
+            setTimeout(() => {
+                iframe.src = currentSrc;
+            }, 100);
+        }
+    });
+</script>
