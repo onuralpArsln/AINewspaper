@@ -1,0 +1,80 @@
+<style>
+/* Canlı yayın */
+.uhaCanliYayinButon {
+  color: black !important;
+  font-weight: bold;
+  font-size: 1rem;
+  position: relative;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  /* initial subtle glow */
+  text-shadow: 0 0 6px rgba(224, 195, 195, 0.6), 0 0 10px rgba(255, 0, 0, 0.25);
+  transition: transform .12s ease;
+  animation: uhaGlow 1.8s ease-in-out infinite;
+}
+
+/* little recording dot on the left */
+.uhaCanliYayinButon::before {
+  content: "";
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #ff2b2b; /* bright red */
+  display: inline-block;
+  flex: 0 0 auto;
+  transform-origin: center;
+  margin-right: 5px;
+  box-shadow: 0 0 6px rgba(255, 255, 255, 0.5);
+  animation: uhaBlink 2s infinite;
+}
+
+
+@keyframes uhaBlink {
+  0% {
+    transform: scale(1);
+    opacity: 0.6;
+    box-shadow: 0 0 6px rgba(255, 43, 43, 0.6);
+  }
+  50% {
+    transform: scale(1.5);
+    opacity: 1;
+    box-shadow: 0 0 14px rgba(255, 43, 43, 1);
+  }
+  100% {
+    transform: scale(1);
+    opacity: 0.6;
+    box-shadow: 0 0 6px rgba(255, 43, 43, 0.6);
+  }
+}
+
+.uhaCanliYayinButon::after {
+  content: "";
+  width: 10px;
+  height: 10px;
+  border-radius: 0 100%  0 0 ;
+  border-width:2px 2px 0 0 ;
+  border-color: #ff2b2b;
+  border-style: solid;
+  display: inline-block;
+  margin-left: 3px;
+  animation: uhaSignal 2s step-end infinite;
+  transition: transform 0s linear;
+}
+@keyframes uhaSignal {
+  0% {
+    transform: scale(1) translateX(0px) translateY(-1px);
+  }
+  33% {
+    transform: scale(1.5) translateX(2px) translateY(-1.5px);
+  }
+  66% {
+    transform: scale(2) translateX(4px) translateY(-2px);
+  }
+}
+
+
+
+
+</style>
+
+<div class="uhaCanliYayinButon">Canlı yayın</div>
