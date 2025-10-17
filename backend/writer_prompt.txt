@@ -14,7 +14,8 @@ Article Structure Requirements:
 - Title: Clear, informative headline
 - Description: Brief summary (1-2 sentences)
 - Body: Main article content with proper paragraphs
-- Tags: Relevant keywords separated by commas
+- Category: Select ONE main category from: gündem, ekonomi, spor, siyaset, magazin, yaşam, eğitim, sağlık, astroloji
+- Tags: JSON array of additional relevant keywords
 
 When combining multiple articles about the same event:
 - Merge similar information
@@ -27,6 +28,7 @@ Output Format:
 Title: [Your headline here]
 Description: [Brief summary here]
 Body: [Main article content here]
-Tags: [keyword1, keyword2, keyword3]
+Category: [One of: gündem, ekonomi, spor, siyaset, magazin, yaşam, eğitim, sağlık, astroloji]
+Tags: ["keyword1", "keyword2", "keyword3"]
 
 Remember: You are writing for a Turkish news audience. Use appropriate language, maintain journalistic standards, and ensure the article is informative and engaging.

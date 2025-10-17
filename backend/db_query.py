@@ -416,7 +416,7 @@ class OurArticlesDatabaseQuery:
         with self.get_connection() as conn:
             cursor = conn.cursor()
             cursor.execute('''
-                SELECT id, title, description, body, tags, images, date, 
+                SELECT id, title, description, body, category, tags, images, date, 
                        source_group_id, source_article_ids, created_at
                 FROM our_articles 
                 ORDER BY date DESC, created_at DESC 
@@ -429,7 +429,7 @@ class OurArticlesDatabaseQuery:
         with self.get_connection() as conn:
             cursor = conn.cursor()
             cursor.execute('''
-                SELECT id, title, description, body, tags, images, date,
+                SELECT id, title, description, body, category, tags, images, date,
                        source_group_id, source_article_ids, created_at
                 FROM our_articles 
                 WHERE id = ?
@@ -437,12 +437,26 @@ class OurArticlesDatabaseQuery:
             result = cursor.fetchone()
             return dict(result) if result else None
     
-    def get_articles_by_tag(self, tag: str, limit: int = 20) -> List[Dict[str, Any]]:
-        """Get articles by tag"""
+    def get_articles_by_category(self, category: str, limit: int = 20) -> List[Dict[str, Any]]:
+        """Get articles by category"""
         with self.get_connection() as conn:
             cursor = conn.cursor()
             cursor.execute('''
-                SELECT id, title, description, body, tags, images, date,
+                SELECT id, title, description, body, category, tags, images, date,
+                       source_group_id, source_article_ids, created_at
+                FROM our_articles 
+                WHERE category = ?
+                ORDER BY date DESC, created_at DESC 
+                LIMIT ?
+            ''', (category, limit))
+            return [dict(row) for row in cursor.fetchall()]
+    
+    def get_articles_by_tag(self, tag: str, limit: int = 20) -> List[Dict[str, Any]]:
+        """Get articles by tag (searches in JSON tags array)"""
+        with self.get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute('''
+                SELECT id, title, description, body, category, tags, images, date,
                        source_group_id, source_article_ids, created_at
                 FROM our_articles 
                 WHERE tags LIKE ?
@@ -456,7 +470,7 @@ class OurArticlesDatabaseQuery:
         with self.get_connection() as conn:
             cursor = conn.cursor()
             cursor.execute('''
-                SELECT id, title, description, body, tags, images, date,
+                SELECT id, title, description, body, category, tags, images, date,
                        source_group_id, source_article_ids, created_at
                 FROM our_articles 
                 WHERE title LIKE ? OR description LIKE ? OR body LIKE ?
@@ -470,7 +484,7 @@ class OurArticlesDatabaseQuery:
         with self.get_connection() as conn:
             cursor = conn.cursor()
             cursor.execute('''
-                SELECT id, title, description, body, tags, images, date,
+                SELECT id, title, description, body, category, tags, images, date,
                        source_group_id, source_article_ids, created_at
                 FROM our_articles 
                 WHERE images IS NOT NULL AND images != '[]' AND images != 'null'

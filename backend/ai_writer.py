@@ -134,7 +134,8 @@ class AIWriter:
                     title TEXT NOT NULL,
                     description TEXT,
                     body TEXT NOT NULL,
-                    tags TEXT,
+                    category TEXT,  -- Main category (one of: gündem,ekonomi,spor,siyaset,magazin,yaşam,eğitim,sağlık,astroloji)
+                    tags TEXT,  -- JSON array of additional tags
                     images TEXT,  -- JSON array of image URLs
                     date DATETIME DEFAULT CURRENT_TIMESTAMP,
                     source_group_id INTEGER,  -- Reference to event group
@@ -143,6 +144,14 @@ class AIWriter:
                     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
                 )
             ''')
+            
+            # Add category column if it doesn't exist (for existing databases)
+            try:
+                cursor.execute('ALTER TABLE our_articles ADD COLUMN category TEXT')
+                logger.info("Added category column to our_articles table")
+                conn.commit()
+            except sqlite3.OperationalError as e:
+                logger.debug(f"category column might already exist: {e}")
             
             # Add indexes
             cursor.execute('CREATE INDEX IF NOT EXISTS idx_our_articles_date ON our_articles(date)')
@@ -370,17 +379,19 @@ Link: {article.get('link', 'N/A')}
             return text
     
     def generate_article_with_ai(self, articles_text: str) -> Optional[Dict[str, str]]:
-        """Generate article using Gemini AI with enhanced prompt for tags"""
+        """Generate article using Gemini AI with enhanced prompt for category and tags"""
         try:
-            # Enhanced prompt to specifically request tags with categories and locations
+            # Enhanced prompt to specifically request category selection and tags
             enhanced_prompt = f"""{self.writer_prompt}
 
-IMPORTANT: Generate tags in the following format:
-- Include article category (e.g., sports, science, technology, politics, economy, health, etc.)
+IMPORTANT CATEGORY AND TAGS FORMAT:
+- Select ONE main category from: gündem, ekonomi, spor, siyaset, magazin, yaşam, eğitim, sağlık, astroloji
+- Generate additional tags as a JSON array (not comma-separated)
 - Include geographic location (city or country mentioned in the article)
 - Include other relevant keywords
-- Separate tags with commas
-- Example: "sports, Istanbul, football, championship"
+- Example output:
+  Category: spor
+  Tags: ["futbol", "İstanbul", "şampiyonluk", "galatasaray", "derbi"]
 
 Please rewrite the following articles:
 
@@ -399,7 +410,7 @@ Please rewrite the following articles:
             return None
     
     def _parse_ai_response(self, response_text: str) -> Optional[Dict[str, str]]:
-        """Parse AI response into structured format"""
+        """Parse AI response into structured format with category and tags"""
         try:
             lines = response_text.strip().split('\n')
             article_data = {}
@@ -424,6 +435,11 @@ Please rewrite the following articles:
                         article_data[current_section] = '\n'.join(current_content).strip()
                     current_section = 'body'
                     current_content = [line.replace('Body:', '').strip()]
+                elif line.startswith('Category:'):
+                    if current_section and current_content:
+                        article_data[current_section] = '\n'.join(current_content).strip()
+                    current_section = 'category'
+                    current_content = [line.replace('Category:', '').strip()]
                 elif line.startswith('Tags:'):
                     if current_section and current_content:
                         article_data[current_section] = '\n'.join(current_content).strip()
@@ -435,6 +451,33 @@ Please rewrite the following articles:
             # Add the last section
             if current_section and current_content:
                 article_data[current_section] = '\n'.join(current_content).strip()
+            
+            # Process tags - convert to JSON array if needed
+            if 'tags' in article_data:
+                tags_text = article_data['tags']
+                try:
+                    # Try to parse as JSON first
+                    tags_json = json.loads(tags_text)
+                    if isinstance(tags_json, list):
+                        article_data['tags'] = json.dumps(tags_json, ensure_ascii=False)
+                    else:
+                        # Convert single string to array
+                        article_data['tags'] = json.dumps([tags_json], ensure_ascii=False)
+                except (json.JSONDecodeError, TypeError):
+                    # Parse comma-separated tags
+                    tags_list = [tag.strip() for tag in tags_text.split(',') if tag.strip()]
+                    article_data['tags'] = json.dumps(tags_list, ensure_ascii=False)
+            
+            # Validate category is one of the allowed values
+            if 'category' in article_data:
+                category = article_data['category'].lower().strip()
+                allowed_categories = ['gündem', 'ekonomi', 'spor', 'siyaset', 'magazin', 'yaşam', 'eğitim', 'sağlık', 'astroloji']
+                if category not in allowed_categories:
+                    logger.warning(f"Invalid category '{category}', defaulting to 'gündem'")
+                    article_data['category'] = 'gündem'
+            else:
+                # Default category if not provided
+                article_data['category'] = 'gündem'
             
             # Validate required fields
             if 'title' in article_data and 'body' in article_data:
@@ -478,17 +521,19 @@ Please rewrite the following articles:
             title = article_data.get('title', '')
             description = article_data.get('description', '')
             body = article_data.get('body', '')
-            tags = article_data.get('tags', '')
+            category = article_data.get('category', 'gündem')
+            tags = article_data.get('tags', '[]')
             
             # Insert into our_articles
             cursor.execute('''
                 INSERT INTO our_articles 
-                (title, description, body, tags, images, date, source_group_id, source_article_ids)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                (title, description, body, category, tags, images, date, source_group_id, source_article_ids)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
             ''', (
                 title,
                 description,
                 body,
+                category,
                 tags,
                 images_json,
                 pub_date,
@@ -500,7 +545,7 @@ Please rewrite the following articles:
             conn.commit()
             
             logger.info(f"✓ Saved article ID {article_id}: '{title[:50]}...'")
-            logger.info(f"  - Images: {len(all_images)}, Tags: {tags}, Source IDs: {source_ids_str}")
+            logger.info(f"  - Category: {category}, Tags: {tags}, Images: {len(all_images)}, Source IDs: {source_ids_str}")
             
             return article_id
     
