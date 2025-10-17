@@ -3,12 +3,12 @@
 <style>
     .live-feed-container {
         --video-width: 720px;
-        --logo-width: 200px;
-        --logo-height: 60px;
+        --logo-width: 100px;
+        --logo-height: 30px;
         --logo-top-crop: 0px;
         --logo-bottom-crop: 0px;
-        --logo-position-x: 20px;
-        --logo-position-y: 20px;
+        --logo-position-x: 600px;
+        --logo-position-y: 60px;
         width: var(--video-width);
         aspect-ratio: 16/9;
         border-radius: 12px;
@@ -36,9 +36,15 @@
         background-position: center;
         background-repeat: no-repeat;
         z-index: 10;
-        pointer-events: none;
+        pointer-events: auto;
+        cursor: pointer;
         /* Crop top and bottom */
         clip-path: inset(var(--logo-top-crop) 0 var(--logo-bottom-crop) 0);
+        transition: opacity 0.3s ease;
+    }
+
+    .logo-overlay:hover {
+        opacity: 0.8;
     }
 
     @media (max-width: 768px) {
@@ -51,7 +57,7 @@
 </style>
 
 <div class="live-feed-container">
-    <iframe class="live-feed-player"
+    <iframe id="youtube-player" class="live-feed-player"
         src="https://www.youtube.com/embed/videoseries?list=PLtltY0dZ__aSNo70nmetBRkVVhK1v9tFL&autoplay=1&mute=1&loop=1&playlist=PLtltY0dZ__aSNo70nmetBRkVVhK1v9tFL&enablejsapi=1&controls=0"
         title="YouTube playlist player"
         frameborder="0"
@@ -61,12 +67,62 @@
     <div class="logo-overlay"></div>
 </div>
 
+<!-- YouTube Player API -->
+<script src="https://www.youtube.com/iframe_api"></script>
+
 <script>
-    // Ensure autoplay on page load
+    let player;
+    let isMuted = true;
+
+    // YouTube Player API callback
+    function onYouTubeIframeAPIReady() {
+        player = new YT.Player('youtube-player', {
+            events: {
+                'onReady': onPlayerReady
+            }
+        });
+    }
+
+    function onPlayerReady(event) {
+        // Player is ready, start muted
+        event.target.mute();
+    }
+
+    // Logo click handler for mute/unmute
     document.addEventListener('DOMContentLoaded', function() {
+        const logoOverlay = document.querySelector('.logo-overlay');
         const iframe = document.querySelector('.live-feed-player');
+        
+        if (logoOverlay) {
+            logoOverlay.addEventListener('click', function() {
+                if (player && player.mute) {
+                    if (isMuted) {
+                        player.unMute();
+                        isMuted = false;
+                        console.log('Ses açıldı');
+                    } else {
+                        player.mute();
+                        isMuted = true;
+                        console.log('Ses kapatıldı');
+                    }
+                } else {
+                    // Fallback: Toggle mute parameter in URL
+                    const currentSrc = iframe.src;
+                    if (currentSrc.includes('mute=1')) {
+                        iframe.src = currentSrc.replace('mute=1', 'mute=0');
+                        isMuted = false;
+                        console.log('Ses açıldı (fallback)');
+                    } else {
+                        iframe.src = currentSrc.replace('mute=0', 'mute=1');
+                        isMuted = true;
+                        console.log('Ses kapatıldı (fallback)');
+                    }
+                }
+            });
+        }
+
+        // Ensure autoplay on page load
         if (iframe) {
-            // Force reload the iframe to ensure autoplay works
             const currentSrc = iframe.src;
             iframe.src = '';
             setTimeout(() => {
