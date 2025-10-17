@@ -1,22 +1,59 @@
-<!-- Live Feed Video Element - Copy and paste this into your existing project -->
 
 <style>
-    .live-feed-container {
+    .live-feed-wrapper {
         --video-width: 720px;
         --logo-width: 100px;
-        --logo-height: 30px;
+        --logo-height: 35px;
         --logo-top-crop: 0px;
         --logo-bottom-crop: 0px;
-        --logo-position-x: 600px;
+        --logo-position-x: 20px;
         --logo-position-y: 60px;
+        --banner-height: 40px;
         width: var(--video-width);
+        margin: 0 auto;
+    }
+
+    .live-feed-container {
+        width: 100%;
         aspect-ratio: 16/9;
-        border-radius: 12px;
+        border-radius: 0 0 12px 12px;
         overflow: hidden;
         box-shadow: 0 8px 32px rgba(0,0,0,0.3);
         background: #000;
-        margin: 0 auto;
         position: relative;
+        cursor: pointer;
+    }
+
+    .live-banner {
+        height: var(--banner-height);
+        background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+        color: white;
+        padding: 8px 16px;
+        font-family: 'Arial', sans-serif;
+        font-size: 14px;
+        font-weight: bold;
+        text-align: center;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+        border-radius: 12px 12px 0 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .live-banner .live-indicator {
+        display: inline-block;
+        width: 8px;
+        height: 8px;
+        background: #ff4444;
+        border-radius: 50%;
+        margin-right: 8px;
+        animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+        0% { opacity: 1; }
+        50% { opacity: 0.5; }
+        100% { opacity: 1; }
     }
 
     .live-feed-container iframe {
@@ -48,23 +85,34 @@
     }
 
     @media (max-width: 768px) {
-        .live-feed-container {
+        .live-feed-wrapper {
             --video-width: 90vw;
             --logo-width: 150px;
             --logo-height: 45px;
         }
+        
+        .live-banner {
+            font-size: 12px;
+            padding: 6px 12px;
+        }
     }
 </style>
 
-<div class="live-feed-container">
-    <iframe id="youtube-player" class="live-feed-player"
-        src="https://www.youtube.com/embed/videoseries?list=PLtltY0dZ__aSNo70nmetBRkVVhK1v9tFL&autoplay=1&mute=1&loop=1&playlist=PLtltY0dZ__aSNo70nmetBRkVVhK1v9tFL&enablejsapi=1&controls=0"
-        title="YouTube playlist player"
-        frameborder="0"
-        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-        allowfullscreen>
-    </iframe>
-    <div class="logo-overlay"></div>
+<div class="live-feed-wrapper">
+    <div class="live-banner">
+        <span class="live-indicator"></span>
+        <span id="banner-text">UHA Canlı Yayın (Günün Önemli Gelişmeleri)</span>
+    </div>
+    <div class="live-feed-container">
+        <iframe id="youtube-player" class="live-feed-player"
+            src="https://www.youtube.com/embed/videoseries?list=PLtltY0dZ__aSNo70nmetBRkVVhK1v9tFL&autoplay=1&mute=1&loop=1&playlist=PLtltY0dZ__aSNo70nmetBRkVVhK1v9tFL&enablejsapi=1&controls=1"
+            title="YouTube playlist player"
+            frameborder="0"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+            allowfullscreen>
+        </iframe>
+        <div class="logo-overlay"></div>
+    </div>
 </div>
 
 <!-- YouTube Player API -->
@@ -88,36 +136,86 @@
         event.target.mute();
     }
 
-    // Logo click handler for mute/unmute
-    document.addEventListener('DOMContentLoaded', function() {
-        const logoOverlay = document.querySelector('.logo-overlay');
+    // Function to get current date in Turkish format
+    function getTurkishDate() {
+        const now = new Date();
+        const day = now.getDate();
+        const year = now.getFullYear();
+        
+        const turkishMonths = [
+            'Ocak', 'Şubat', 'Mart', 'Nisan', 'Mayıs', 'Haziran',
+            'Temmuz', 'Ağustos', 'Eylül', 'Ekim', 'Kasım', 'Aralık'
+        ];
+        
+        const turkishDays = [
+            'Pazar', 'Pazartesi', 'Salı', 'Çarşamba', 'Perşembe', 'Cuma', 'Cumartesi'
+        ];
+        
+        const month = turkishMonths[now.getMonth()];
+        const dayName = turkishDays[now.getDay()];
+        
+        return `${day} ${month} ${dayName} ${year}`;
+    }
+
+    // Update banner text with current date
+    function updateBannerDate() {
+        const bannerText = document.getElementById('banner-text');
+        if (bannerText) {
+            const turkishDate = getTurkishDate();
+            bannerText.textContent = `UHA Canlı Yayın (Günün Önemli Gelişmeleri ${turkishDate})`;
+        }
+    }
+
+    // Function to toggle mute/unmute
+    function toggleMute() {
         const iframe = document.querySelector('.live-feed-player');
         
+        if (player && player.mute) {
+            if (isMuted) {
+                player.unMute();
+                isMuted = false;
+                console.log('Ses açıldı');
+            } else {
+                player.mute();
+                isMuted = true;
+                console.log('Ses kapatıldı');
+            }
+        } else {
+            // Fallback: Toggle mute parameter in URL
+            const currentSrc = iframe.src;
+            if (currentSrc.includes('mute=1')) {
+                iframe.src = currentSrc.replace('mute=1', 'mute=0');
+                isMuted = false;
+                console.log('Ses açıldı (fallback)');
+            } else {
+                iframe.src = currentSrc.replace('mute=0', 'mute=1');
+                isMuted = true;
+                console.log('Ses kapatıldı (fallback)');
+            }
+        }
+    }
+
+    // Video click handler for mute/unmute
+    document.addEventListener('DOMContentLoaded', function() {
+        // Update banner date on page load
+        updateBannerDate();
+        
+        const logoOverlay = document.querySelector('.logo-overlay');
+        const iframe = document.querySelector('.live-feed-player');
+        const videoContainer = document.querySelector('.live-feed-container');
+        
+        // Add click handler to the entire video container
+        if (videoContainer) {
+            videoContainer.addEventListener('click', function(event) {
+                toggleMute();
+            });
+        }
+        
+        // Keep logo click handler for backward compatibility
         if (logoOverlay) {
-            logoOverlay.addEventListener('click', function() {
-                if (player && player.mute) {
-                    if (isMuted) {
-                        player.unMute();
-                        isMuted = false;
-                        console.log('Ses açıldı');
-                    } else {
-                        player.mute();
-                        isMuted = true;
-                        console.log('Ses kapatıldı');
-                    }
-                } else {
-                    // Fallback: Toggle mute parameter in URL
-                    const currentSrc = iframe.src;
-                    if (currentSrc.includes('mute=1')) {
-                        iframe.src = currentSrc.replace('mute=1', 'mute=0');
-                        isMuted = false;
-                        console.log('Ses açıldı (fallback)');
-                    } else {
-                        iframe.src = currentSrc.replace('mute=0', 'mute=1');
-                        isMuted = true;
-                        console.log('Ses kapatıldı (fallback)');
-                    }
-                }
+            logoOverlay.addEventListener('click', function(event) {
+                event.stopPropagation(); // Prevent container click
+                toggleMute();
             });
         }
 
