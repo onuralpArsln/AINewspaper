@@ -59,7 +59,7 @@ CREATE TABLE articles (
 CREATE TABLE our_articles (
     id INTEGER PRIMARY KEY,
     title TEXT NOT NULL,
-    description TEXT,
+    summary TEXT,
     body TEXT NOT NULL,
     tags TEXT,                    -- Categories + locations
     images TEXT,                  -- JSON array (sorted by resolution)

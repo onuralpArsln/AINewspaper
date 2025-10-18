@@ -428,11 +428,11 @@ Please rewrite the following articles:
                         article_data[current_section] = '\n'.join(current_content).strip()
                     current_section = 'title'
                     current_content = [line.replace('Title:', '').strip()]
-                elif line.startswith('Description:'):
+                elif line.startswith('Summary:'):
                     if current_section and current_content:
                         article_data[current_section] = '\n'.join(current_content).strip()
-                    current_section = 'description'
-                    current_content = [line.replace('Description:', '').strip()]
+                    current_section = 'summary'
+                    current_content = [line.replace('Summary:', '').strip()]
                 elif line.startswith('Body:'):
                     if current_section and current_content:
                         article_data[current_section] = '\n'.join(current_content).strip()
@@ -522,7 +522,7 @@ Please rewrite the following articles:
             
             # Extract data from AI response
             title = article_data.get('title', '')
-            summary = article_data.get('description', '')
+            summary = article_data.get('summary', '')
             body = article_data.get('body', '')
             category = article_data.get('category', 'gündem')
             tags = article_data.get('tags', '[]')

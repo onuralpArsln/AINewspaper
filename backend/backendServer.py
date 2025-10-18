@@ -10,6 +10,40 @@ from db_query import OurArticlesDatabaseQuery
 
 # uvicorn backendServer:app --reload
 
+# ============================================================================
+# API ENDPOINTS REFERENCE
+# ============================================================================
+# 
+# FRONTEND API ENDPOINTS:
+# GET  /                    - Root endpoint with server info and available endpoints
+# GET  /getOneNew          - Get next unserved article (for live feed)
+# GET  /articles           - Get articles with pagination (?limit=10&offset=0)
+# GET  /articles/{id}      - Get specific article by ID
+# GET  /search             - Search articles by keyword (?q=query&limit=20)
+# GET  /tags/{tag}         - Get articles by tag (?limit=20)
+# GET  /statistics         - Get database statistics
+# POST /reset              - Reset served status (allows articles to be served again)
+#
+# RSS FEED ENDPOINTS:
+# GET  /rss                - Main RSS feed (latest articles, ?limit=20)
+# GET  /rss/latest         - Latest 10 articles RSS feed (?limit=10)
+# GET  /rss/category/{name} - RSS feed by category (?limit=20)
+# GET  /rss/tag/{tag_name} - RSS feed by tag (?limit=20)
+# GET  /rss/search         - RSS feed with search results (?q=query&limit=20)
+#
+# VALID CATEGORIES: gündem, ekonomi, spor, siyaset, magazin, yaşam, eğitim, sağlık, astroloji
+#
+# USAGE EXAMPLES:
+# - Frontend: http://localhost:8000/getOneNew
+# - Articles: http://localhost:8000/articles?limit=5&offset=0
+# - Search: http://localhost:8000/search?q=teknoloji&limit=10
+# - RSS: http://localhost:8000/rss
+# - Category RSS: http://localhost:8000/rss/category/gündem
+# ============================================================================
+
+# Editor mode configuration
+EDITOR_ENABLED = False  # Set to True to enable editor mode (only serve accepted articles)
+
 # Database query interface
 db = OurArticlesDatabaseQuery('our_articles.db')
 
@@ -23,7 +57,7 @@ def load_articles_batch():
     """Load a batch of articles from database"""
     global articles_cache, current_offset
     
-    new_articles = db.get_recent_articles(limit=BATCH_SIZE, offset=current_offset)
+    new_articles = db.get_recent_articles(limit=BATCH_SIZE, offset=current_offset, editor_mode=EDITOR_ENABLED)
     
     if new_articles:
         # Process articles - parse JSON images field
@@ -151,7 +185,7 @@ def create_rss_feed(articles: List[Dict[str, Any]], feed_title: str = "AI Newspa
         
         # Basic item fields
         ET.SubElement(item, "title").text = article.get('title', 'Untitled')
-        ET.SubElement(item, "description").text = article.get('description', '')
+        ET.SubElement(item, "description").text = article.get('summary', '')
         ET.SubElement(item, "link").text = f"{feed_url}/articles/{article['id']}"
         ET.SubElement(item, "guid").text = f"{feed_url}/articles/{article['id']}"
         ET.SubElement(item, "pubDate").text = format_date_for_rss(article.get('date'))
@@ -227,7 +261,7 @@ def format_article_for_frontend(article: Dict[str, Any]) -> Dict[str, Any]:
     return {
         "id": article['id'],
         "title": article['title'],
-        "summary": article.get('description', ''),      # Frontend expects 'summary'
+        "summary": article.get('summary', ''),         # Frontend expects 'summary'
         "content": article['body'],                      # Frontend expects 'content'
         "tags": article.get('tags', ''),
         "published": article.get('date', ''),
@@ -253,9 +287,11 @@ async def lifespan(app: FastAPI):
     print(f"Loaded {loaded} articles on startup")
     
     # Print statistics
-    stats = db.get_statistics()
+    stats = db.get_statistics(editor_mode=EDITOR_ENABLED)
     print(f"Total articles in database: {stats['total_articles']}")
     print(f"Articles with images: {stats['articles_with_images']}")
+    if EDITOR_ENABLED:
+        print("Editor mode enabled - only serving accepted articles")
     
     yield  # Server is running
     
@@ -277,11 +313,12 @@ app.add_middleware(
 @app.get("/")
 def root():
     """Root endpoint with both frontend API and RSS feed information"""
-    stats = db.get_statistics()
+    stats = db.get_statistics(editor_mode=EDITOR_ENABLED)
     return {
         "message": "AI Newspaper Backend Server",
         "status": "running",
         "database": "our_articles.db",
+        "editor_enabled": EDITOR_ENABLED,
         "statistics": stats,
         "frontend_api": {
             "get_one_new": "/getOneNew",
@@ -328,7 +365,7 @@ def get_one_new():
 @app.get("/articles")
 def get_articles(limit: int = 10, offset: int = 0):
     """Get articles with pagination"""
-    articles = db.get_recent_articles(limit=limit, offset=offset)
+    articles = db.get_recent_articles(limit=limit, offset=offset, editor_mode=EDITOR_ENABLED)
     
     # Parse images for each article
     for article in articles:
@@ -339,7 +376,7 @@ def get_articles(limit: int = 10, offset: int = 0):
 @app.get("/articles/{article_id}")
 def get_article(article_id: int):
     """Get a specific article by ID"""
-    article = db.get_article_by_id(article_id)
+    article = db.get_article_by_id(article_id, editor_mode=EDITOR_ENABLED)
     
     if not article:
         raise HTTPException(status_code=404, detail="Makale bulunamadı")
@@ -355,7 +392,7 @@ def search_articles(q: str, limit: int = 20):
     if not q:
         raise HTTPException(status_code=400, detail="Arama sorgusu gerekli")
     
-    articles = db.search_articles(q, limit=limit)
+    articles = db.search_articles(q, limit=limit, editor_mode=EDITOR_ENABLED)
     
     # Parse images for each article
     for article in articles:
@@ -366,7 +403,7 @@ def search_articles(q: str, limit: int = 20):
 @app.get("/tags/{tag}")
 def get_articles_by_tag(tag: str, limit: int = 20):
     """Get articles by tag"""
-    articles = db.get_articles_by_tag(tag, limit=limit)
+    articles = db.get_articles_by_tag(tag, limit=limit, editor_mode=EDITOR_ENABLED)
     
     # Parse images for each article
     for article in articles:
@@ -377,7 +414,7 @@ def get_articles_by_tag(tag: str, limit: int = 20):
 @app.get("/statistics")
 def get_statistics():
     """Get database statistics"""
-    return db.get_statistics()
+    return db.get_statistics(editor_mode=EDITOR_ENABLED)
 
 @app.post("/reset")
 def reset_served():
@@ -395,7 +432,7 @@ def reset_served():
 def get_rss_feed(limit: int = 20):
     """Main RSS feed - returns latest articles"""
     try:
-        articles = db.get_recent_articles(limit=limit)
+        articles = db.get_recent_articles(limit=limit, editor_mode=EDITOR_ENABLED)
         
         # Parse data for each article
         for article in articles:
@@ -422,7 +459,7 @@ def get_rss_feed(limit: int = 20):
 def get_latest_rss_feed(limit: int = 10):
     """Latest articles RSS feed"""
     try:
-        articles = db.get_recent_articles(limit=limit)
+        articles = db.get_recent_articles(limit=limit, editor_mode=EDITOR_ENABLED)
         
         # Parse data for each article
         for article in articles:
@@ -454,7 +491,7 @@ def get_rss_feed_by_category(category_name: str, limit: int = 20):
         if category_name not in valid_categories:
             raise HTTPException(status_code=400, detail=f"Invalid category. Valid categories: {valid_categories}")
         
-        articles = db.get_articles_by_category(category_name, limit=limit)
+        articles = db.get_articles_by_category(category_name, limit=limit, editor_mode=EDITOR_ENABLED)
         
         # Parse data for each article
         for article in articles:
@@ -483,7 +520,7 @@ def get_rss_feed_by_category(category_name: str, limit: int = 20):
 def get_rss_feed_by_tag(tag_name: str, limit: int = 20):
     """RSS feed filtered by tag"""
     try:
-        articles = db.get_articles_by_tag(tag_name, limit=limit)
+        articles = db.get_articles_by_tag(tag_name, limit=limit, editor_mode=EDITOR_ENABLED)
         
         # Parse data for each article
         for article in articles:
@@ -513,7 +550,7 @@ def get_rss_feed_search(q: str, limit: int = 20):
         raise HTTPException(status_code=400, detail="Search query is required")
     
     try:
-        articles = db.search_articles(q, limit=limit)
+        articles = db.search_articles(q, limit=limit, editor_mode=EDITOR_ENABLED)
         
         # Parse data for each article
         for article in articles:

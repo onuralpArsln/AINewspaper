@@ -411,107 +411,181 @@ class OurArticlesDatabaseQuery:
             cursor.execute('SELECT COUNT(*) FROM our_articles')
             return cursor.fetchone()[0]
     
-    def get_recent_articles(self, limit: int = 10, offset: int = 0) -> List[Dict[str, Any]]:
+    def get_recent_articles(self, limit: int = 10, offset: int = 0, editor_mode: bool = False) -> List[Dict[str, Any]]:
         """Get recent articles ordered by date"""
         with self.get_connection() as conn:
             cursor = conn.cursor()
-            cursor.execute('''
-                SELECT id, title, description, body, category, tags, images, date, 
-                       source_group_id, source_article_ids, created_at
-                FROM our_articles 
-                ORDER BY date DESC, created_at DESC 
-                LIMIT ? OFFSET ?
-            ''', (limit, offset))
+            if editor_mode:
+                cursor.execute('''
+                    SELECT id, title, summary, body, category, tags, images, date, 
+                           source_group_id, source_article_ids, created_at
+                    FROM our_articles 
+                    WHERE article_state = 'accepted'
+                    ORDER BY date DESC, created_at DESC 
+                    LIMIT ? OFFSET ?
+                ''', (limit, offset))
+            else:
+                cursor.execute('''
+                    SELECT id, title, summary, body, category, tags, images, date, 
+                           source_group_id, source_article_ids, created_at
+                    FROM our_articles 
+                    ORDER BY date DESC, created_at DESC 
+                    LIMIT ? OFFSET ?
+                ''', (limit, offset))
             return [dict(row) for row in cursor.fetchall()]
     
-    def get_article_by_id(self, article_id: int) -> Dict[str, Any]:
+    def get_article_by_id(self, article_id: int, editor_mode: bool = False) -> Dict[str, Any]:
         """Get a specific article by ID"""
         with self.get_connection() as conn:
             cursor = conn.cursor()
-            cursor.execute('''
-                SELECT id, title, description, body, category, tags, images, date,
-                       source_group_id, source_article_ids, created_at
-                FROM our_articles 
-                WHERE id = ?
-            ''', (article_id,))
+            if editor_mode:
+                cursor.execute('''
+                    SELECT id, title, summary, body, category, tags, images, date,
+                           source_group_id, source_article_ids, created_at
+                    FROM our_articles 
+                    WHERE id = ? AND article_state = 'accepted'
+                ''', (article_id,))
+            else:
+                cursor.execute('''
+                    SELECT id, title, summary, body, category, tags, images, date,
+                           source_group_id, source_article_ids, created_at
+                    FROM our_articles 
+                    WHERE id = ?
+                ''', (article_id,))
             result = cursor.fetchone()
             return dict(result) if result else None
     
-    def get_articles_by_category(self, category: str, limit: int = 20) -> List[Dict[str, Any]]:
+    def get_articles_by_category(self, category: str, limit: int = 20, editor_mode: bool = False) -> List[Dict[str, Any]]:
         """Get articles by category"""
         with self.get_connection() as conn:
             cursor = conn.cursor()
-            cursor.execute('''
-                SELECT id, title, description, body, category, tags, images, date,
-                       source_group_id, source_article_ids, created_at
-                FROM our_articles 
-                WHERE category = ?
-                ORDER BY date DESC, created_at DESC 
-                LIMIT ?
-            ''', (category, limit))
+            if editor_mode:
+                cursor.execute('''
+                    SELECT id, title, summary, body, category, tags, images, date,
+                           source_group_id, source_article_ids, created_at
+                    FROM our_articles 
+                    WHERE category = ? AND article_state = 'accepted'
+                    ORDER BY date DESC, created_at DESC 
+                    LIMIT ?
+                ''', (category, limit))
+            else:
+                cursor.execute('''
+                    SELECT id, title, summary, body, category, tags, images, date,
+                           source_group_id, source_article_ids, created_at
+                    FROM our_articles 
+                    WHERE category = ?
+                    ORDER BY date DESC, created_at DESC 
+                    LIMIT ?
+                ''', (category, limit))
             return [dict(row) for row in cursor.fetchall()]
     
-    def get_articles_by_tag(self, tag: str, limit: int = 20) -> List[Dict[str, Any]]:
+    def get_articles_by_tag(self, tag: str, limit: int = 20, editor_mode: bool = False) -> List[Dict[str, Any]]:
         """Get articles by tag (searches in JSON tags array)"""
         with self.get_connection() as conn:
             cursor = conn.cursor()
-            cursor.execute('''
-                SELECT id, title, description, body, category, tags, images, date,
-                       source_group_id, source_article_ids, created_at
-                FROM our_articles 
-                WHERE tags LIKE ?
-                ORDER BY date DESC, created_at DESC 
-                LIMIT ?
-            ''', (f'%{tag}%', limit))
+            if editor_mode:
+                cursor.execute('''
+                    SELECT id, title, summary, body, category, tags, images, date,
+                           source_group_id, source_article_ids, created_at
+                    FROM our_articles 
+                    WHERE tags LIKE ? AND article_state = 'accepted'
+                    ORDER BY date DESC, created_at DESC 
+                    LIMIT ?
+                ''', (f'%{tag}%', limit))
+            else:
+                cursor.execute('''
+                    SELECT id, title, summary, body, category, tags, images, date,
+                           source_group_id, source_article_ids, created_at
+                    FROM our_articles 
+                    WHERE tags LIKE ?
+                    ORDER BY date DESC, created_at DESC 
+                    LIMIT ?
+                ''', (f'%{tag}%', limit))
             return [dict(row) for row in cursor.fetchall()]
     
-    def search_articles(self, search_term: str, limit: int = 20) -> List[Dict[str, Any]]:
-        """Search articles by title, description, or body"""
+    def search_articles(self, search_term: str, limit: int = 20, editor_mode: bool = False) -> List[Dict[str, Any]]:
+        """Search articles by title, summary, or body"""
         with self.get_connection() as conn:
             cursor = conn.cursor()
-            cursor.execute('''
-                SELECT id, title, description, body, category, tags, images, date,
-                       source_group_id, source_article_ids, created_at
-                FROM our_articles 
-                WHERE title LIKE ? OR description LIKE ? OR body LIKE ?
-                ORDER BY date DESC, created_at DESC 
-                LIMIT ?
-            ''', (f'%{search_term}%', f'%{search_term}%', f'%{search_term}%', limit))
+            if editor_mode:
+                cursor.execute('''
+                    SELECT id, title, summary, body, category, tags, images, date,
+                           source_group_id, source_article_ids, created_at
+                    FROM our_articles 
+                    WHERE (title LIKE ? OR summary LIKE ? OR body LIKE ?) AND article_state = 'accepted'
+                    ORDER BY date DESC, created_at DESC 
+                    LIMIT ?
+                ''', (f'%{search_term}%', f'%{search_term}%', f'%{search_term}%', limit))
+            else:
+                cursor.execute('''
+                    SELECT id, title, summary, body, category, tags, images, date,
+                           source_group_id, source_article_ids, created_at
+                    FROM our_articles 
+                    WHERE title LIKE ? OR summary LIKE ? OR body LIKE ?
+                    ORDER BY date DESC, created_at DESC 
+                    LIMIT ?
+                ''', (f'%{search_term}%', f'%{search_term}%', f'%{search_term}%', limit))
             return [dict(row) for row in cursor.fetchall()]
     
-    def get_articles_with_images(self, limit: int = 10, offset: int = 0) -> List[Dict[str, Any]]:
+    def get_articles_with_images(self, limit: int = 10, offset: int = 0, editor_mode: bool = False) -> List[Dict[str, Any]]:
         """Get articles that have images"""
         with self.get_connection() as conn:
             cursor = conn.cursor()
-            cursor.execute('''
-                SELECT id, title, description, body, category, tags, images, date,
-                       source_group_id, source_article_ids, created_at
-                FROM our_articles 
-                WHERE images IS NOT NULL AND images != '[]' AND images != 'null'
-                ORDER BY date DESC, created_at DESC 
-                LIMIT ? OFFSET ?
-            ''', (limit, offset))
+            if editor_mode:
+                cursor.execute('''
+                    SELECT id, title, summary, body, category, tags, images, date,
+                           source_group_id, source_article_ids, created_at
+                    FROM our_articles 
+                    WHERE images IS NOT NULL AND images != '[]' AND images != 'null' AND article_state = 'accepted'
+                    ORDER BY date DESC, created_at DESC 
+                    LIMIT ? OFFSET ?
+                ''', (limit, offset))
+            else:
+                cursor.execute('''
+                    SELECT id, title, summary, body, category, tags, images, date,
+                           source_group_id, source_article_ids, created_at
+                    FROM our_articles 
+                    WHERE images IS NOT NULL AND images != '[]' AND images != 'null'
+                    ORDER BY date DESC, created_at DESC 
+                    LIMIT ? OFFSET ?
+                ''', (limit, offset))
             return [dict(row) for row in cursor.fetchall()]
     
-    def get_statistics(self) -> Dict[str, Any]:
+    def get_statistics(self, editor_mode: bool = False) -> Dict[str, Any]:
         """Get statistics about our articles"""
         with self.get_connection() as conn:
             cursor = conn.cursor()
             
-            # Total articles
-            cursor.execute('SELECT COUNT(*) FROM our_articles')
-            total_count = cursor.fetchone()[0]
-            
-            # Articles with images
-            cursor.execute('''
-                SELECT COUNT(*) FROM our_articles 
-                WHERE images IS NOT NULL AND images != '[]' AND images != 'null'
-            ''')
-            with_images = cursor.fetchone()[0]
-            
-            # Oldest and newest articles
-            cursor.execute('SELECT MIN(date), MAX(date) FROM our_articles')
-            oldest, newest = cursor.fetchone()
+            if editor_mode:
+                # Total accepted articles
+                cursor.execute('SELECT COUNT(*) FROM our_articles WHERE article_state = \'accepted\'')
+                total_count = cursor.fetchone()[0]
+                
+                # Accepted articles with images
+                cursor.execute('''
+                    SELECT COUNT(*) FROM our_articles 
+                    WHERE images IS NOT NULL AND images != '[]' AND images != 'null' AND article_state = 'accepted'
+                ''')
+                with_images = cursor.fetchone()[0]
+                
+                # Oldest and newest accepted articles
+                cursor.execute('SELECT MIN(date), MAX(date) FROM our_articles WHERE article_state = \'accepted\'')
+                oldest, newest = cursor.fetchone()
+            else:
+                # Total articles
+                cursor.execute('SELECT COUNT(*) FROM our_articles')
+                total_count = cursor.fetchone()[0]
+                
+                # Articles with images
+                cursor.execute('''
+                    SELECT COUNT(*) FROM our_articles 
+                    WHERE images IS NOT NULL AND images != '[]' AND images != 'null'
+                ''')
+                with_images = cursor.fetchone()[0]
+                
+                # Oldest and newest articles
+                cursor.execute('SELECT MIN(date), MAX(date) FROM our_articles')
+                oldest, newest = cursor.fetchone()
             
             return {
                 'total_articles': total_count,

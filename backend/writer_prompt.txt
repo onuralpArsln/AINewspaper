@@ -12,7 +12,7 @@ Instructions:
 
 Article Structure Requirements:
 - Title: Clear, informative headline
-- Description: Brief summary (1-2 sentences)
+- Summary: Brief summary (1-2 sentences)
 - Body: Main article content with proper paragraphs
 - Category: Select ONE main category from: gündem, ekonomi, spor, siyaset, magazin, yaşam, eğitim, sağlık, astroloji
 - Tags: JSON array of additional relevant keywords
@@ -26,7 +26,7 @@ When combining multiple articles about the same event:
 
 Output Format:
 Title: [Your headline here]
-Description: [Brief summary here]
+Summary: [Brief summary here]
 Body: [Main article content here]
 Category: [One of: gündem, ekonomi, spor, siyaset, magazin, yaşam, eğitim, sağlık, astroloji]
 Tags: ["keyword1", "keyword2", "keyword3"]
