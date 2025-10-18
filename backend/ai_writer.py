@@ -132,7 +132,7 @@ class AIWriter:
                 CREATE TABLE IF NOT EXISTS our_articles (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     title TEXT NOT NULL,
-                    description TEXT,
+                    summary TEXT,
                     body TEXT NOT NULL,
                     category TEXT,  -- Main category (one of: gündem,ekonomi,spor,siyaset,magazin,yaşam,eğitim,sağlık,astroloji)
                     tags TEXT,  -- JSON array of additional tags
@@ -140,6 +140,9 @@ class AIWriter:
                     date DATETIME DEFAULT CURRENT_TIMESTAMP,
                     source_group_id INTEGER,  -- Reference to event group
                     source_article_ids TEXT,  -- JSON array of source article IDs
+                    article_state TEXT DEFAULT 'not_reviewed',  -- Review status: not_reviewed, accepted, rejected
+                    review_count INTEGER DEFAULT 0,  -- Number of times article has been reviewed
+                    editors_note TEXT,  -- JSON review data from editor AI (nullable)
                     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
                     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
                 )
@@ -519,7 +522,7 @@ Please rewrite the following articles:
             
             # Extract data from AI response
             title = article_data.get('title', '')
-            description = article_data.get('description', '')
+            summary = article_data.get('description', '')
             body = article_data.get('body', '')
             category = article_data.get('category', 'gündem')
             tags = article_data.get('tags', '[]')
@@ -527,18 +530,21 @@ Please rewrite the following articles:
             # Insert into our_articles
             cursor.execute('''
                 INSERT INTO our_articles 
-                (title, description, body, category, tags, images, date, source_group_id, source_article_ids)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                (title, summary, body, category, tags, images, date, source_group_id, source_article_ids, article_state, review_count, editors_note)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             ''', (
                 title,
-                description,
+                summary,
                 body,
                 category,
                 tags,
                 images_json,
                 pub_date,
                 source_group_id,
-                source_ids_str
+                source_ids_str,
+                'not_reviewed',  # article_state
+                0,               # review_count
+                None             # editors_note
             ))
             
             article_id = cursor.lastrowid
