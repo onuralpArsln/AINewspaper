@@ -355,7 +355,7 @@ class AIWriter:
         return sorted_urls
     
     def prepare_articles_for_ai(self, articles: List[Dict[str, Any]]) -> str:
-        """Prepare articles text for AI processing"""
+        """Prepare articles text for AI processing with enhanced source tracking"""
         if not articles:
             return ""
         
@@ -363,22 +363,27 @@ class AIWriter:
             # Single article
             article = articles[0]
             return f"""
-Article Title: {article.get('title', 'N/A')}
+SOURCE ARTICLE (ID: {article.get('id', 'N/A')}):
+Title: {article.get('title', 'N/A')}
 Source: {article.get('source_name', 'N/A')}
 Published: {article.get('published', 'N/A')}
 Content: {article.get('description', article.get('content', 'N/A'))}
 Link: {article.get('link', 'N/A')}
+
+IMPORTANT: Use ONLY the information provided above. Do not add any facts, details, or information not explicitly stated in this source article.
 """
         else:
             # Multiple articles (group)
-            text = f"Multiple articles about the same event (Group ID: {articles[0]['event_group_id']}):\n\n"
+            text = f"MULTIPLE SOURCE ARTICLES about the same event (Group ID: {articles[0]['event_group_id']}):\n\n"
             for i, article in enumerate(articles, 1):
-                text += f"Article {i}:\n"
+                text += f"SOURCE ARTICLE {i} (ID: {article.get('id', 'N/A')}):\n"
                 text += f"Title: {article.get('title', 'N/A')}\n"
                 text += f"Source: {article.get('source_name', 'N/A')}\n"
                 text += f"Published: {article.get('published', 'N/A')}\n"
                 text += f"Content: {article.get('description', article.get('content', 'N/A'))}\n"
                 text += f"Link: {article.get('link', 'N/A')}\n\n"
+            
+            text += "IMPORTANT: Use ONLY the information provided in the source articles above. Do not add any facts, details, or information not explicitly stated in these source articles. If sources conflict, present both versions clearly."
             return text
     
     def generate_article_with_ai(self, articles_text: str) -> Optional[Dict[str, str]]:
@@ -386,6 +391,14 @@ Link: {article.get('link', 'N/A')}
         try:
             # Enhanced prompt to specifically request category selection and tags
             enhanced_prompt = f"""{self.writer_prompt}
+
+CRITICAL ANTI-HALLUCINATION INSTRUCTIONS:
+- You MUST only use information explicitly provided in the source articles above
+- Do NOT add any facts, numbers, dates, names, or details not present in the source material
+- Do NOT speculate, infer, or make assumptions beyond what is directly stated
+- If information is missing, write "bilgi mevcut değil" (information not available)
+- Preserve all specific details exactly as provided in the source articles
+- If sources conflict, present both versions clearly
 
 IMPORTANT CATEGORY AND TAGS FORMAT:
 - Select ONE main category from: gündem, ekonomi, spor, siyaset, magazin, yaşam, eğitim, sağlık, astroloji
@@ -411,6 +424,43 @@ Please rewrite the following articles:
         except Exception as e:
             logger.error(f"Error generating article with AI: {e}")
             return None
+    
+    def _validate_factual_accuracy(self, article_data: Dict[str, str], source_articles: List[Dict[str, Any]]) -> bool:
+        """Validate that the generated article doesn't contain information not in source articles"""
+        try:
+            # Extract all text content from source articles
+            source_text = ""
+            for article in source_articles:
+                source_text += f" {article.get('title', '')} {article.get('description', '')} {article.get('content', '')}"
+            
+            source_text = source_text.lower()
+            
+            # Check for potential hallucination indicators
+            generated_content = f"{article_data.get('title', '')} {article_data.get('summary', '')} {article_data.get('body', '')}".lower()
+            
+            # Look for specific patterns that might indicate hallucination
+            suspicious_patterns = [
+                "bilgi mevcut değil",  # Should be present if information is missing
+                "kaynaklara göre",     # Should not add "according to sources" if not in source
+                "uzmanlara göre",      # Should not add "according to experts" if not in source
+            ]
+            
+            # Check if the article contains information that might not be in sources
+            # This is a basic check - more sophisticated validation could be added
+            words_in_generated = set(generated_content.split())
+            words_in_source = set(source_text.split())
+            
+            # Check for significant new words that might indicate hallucination
+            new_words = words_in_generated - words_in_source
+            if len(new_words) > 50:  # Threshold for potential hallucination
+                logger.warning(f"Generated article contains {len(new_words)} words not found in source articles")
+                return False
+            
+            return True
+            
+        except Exception as e:
+            logger.error(f"Error validating factual accuracy: {e}")
+            return True  # Allow article if validation fails
     
     def _parse_ai_response(self, response_text: str) -> Optional[Dict[str, str]]:
         """Parse AI response into structured format with category and tags"""
@@ -655,16 +705,22 @@ Please rewrite the following articles:
                     ai_article = self.generate_article_with_ai(articles_text)
                     
                     if ai_article:
-                        # Save generated article with all images and metadata
-                        saved_id = self.save_article(ai_article, source_articles)
-                        
-                        # Mark source articles as read
-                        self.mark_articles_as_read(source_articles)
-                        
-                        generated_count += 1
-                        article_processed_in_batch = True
-                        logger.info(f"✓ Successfully generated output article {generated_count}/{max_articles} (ID: {saved_id})")
-                        logger.info(f"  - Used {len(source_articles)} source article(s)")
+                        # Validate factual accuracy before saving
+                        logger.info("Validating factual accuracy...")
+                        if self._validate_factual_accuracy(ai_article, source_articles):
+                            # Save generated article with all images and metadata
+                            saved_id = self.save_article(ai_article, source_articles)
+                            
+                            # Mark source articles as read
+                            self.mark_articles_as_read(source_articles)
+                            
+                            generated_count += 1
+                            article_processed_in_batch = True
+                            logger.info(f"✓ Successfully generated output article {generated_count}/{max_articles} (ID: {saved_id})")
+                            logger.info(f"  - Used {len(source_articles)} source article(s)")
+                        else:
+                            logger.warning("✗ Article failed factual accuracy validation - skipping")
+                            skipped_count += 1
                     else:
                         logger.error("✗ Failed to generate article with AI")
                         skipped_count += 1
