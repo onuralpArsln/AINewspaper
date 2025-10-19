@@ -5,6 +5,7 @@ Simple script to query and display articles from the RSS database
 """
 
 import sqlite3
+import os
 from datetime import datetime, timedelta
 from typing import List, Dict, Any
 
@@ -12,7 +13,9 @@ class RSSDatabaseQuery:
     """Simple database query interface for RSS articles"""
     
     def __init__(self, db_path: str = 'rss_articles.db'):
-        self.db_path = db_path
+        # Resolve paths relative to script location
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        self.db_path = db_path if os.path.isabs(db_path) else os.path.join(script_dir, db_path)
     
     def get_connection(self):
         """Get database connection with row factory"""
@@ -396,7 +399,9 @@ class OurArticlesDatabaseQuery:
     """Database query interface for our generated articles"""
     
     def __init__(self, db_path: str = 'our_articles.db'):
-        self.db_path = db_path
+        # Resolve paths relative to script location
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        self.db_path = db_path if os.path.isabs(db_path) else os.path.join(script_dir, db_path)
     
     def get_connection(self):
         """Get database connection with row factory"""

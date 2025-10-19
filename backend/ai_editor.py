@@ -45,7 +45,9 @@ class AIEditor:
     """AI-powered article editor using Gemini for evaluation"""
     
     def __init__(self, our_articles_db_path: str = 'our_articles.db'):
-        self.our_articles_db_path = our_articles_db_path
+        # Resolve paths relative to script location
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        self.our_articles_db_path = our_articles_db_path if os.path.isabs(our_articles_db_path) else os.path.join(script_dir, our_articles_db_path)
         self.review_count = REVIEW_COUNT
         
         # Load environment variables
@@ -67,7 +69,9 @@ class AIEditor:
     def _load_editor_prompt(self) -> str:
         """Load the editor prompt from file"""
         try:
-            with open('editor_prompt.txt', 'r', encoding='utf-8') as f:
+            script_dir = os.path.dirname(os.path.abspath(__file__))
+            prompt_path = os.path.join(script_dir, 'editor_prompt.txt')
+            with open(prompt_path, 'r', encoding='utf-8') as f:
                 return f.read()
         except FileNotFoundError:
             logger.error("editor_prompt.txt not found!")

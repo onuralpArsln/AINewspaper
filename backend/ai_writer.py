@@ -58,8 +58,10 @@ class AIWriter:
     """AI-powered article writer using Gemini"""
     
     def __init__(self, rss_db_path: str = 'rss_articles.db', our_articles_db_path: str = 'our_articles.db'):
-        self.rss_db_path = rss_db_path
-        self.our_articles_db_path = our_articles_db_path
+        # Resolve paths relative to script location
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        self.rss_db_path = rss_db_path if os.path.isabs(rss_db_path) else os.path.join(script_dir, rss_db_path)
+        self.our_articles_db_path = our_articles_db_path if os.path.isabs(our_articles_db_path) else os.path.join(script_dir, our_articles_db_path)
         self.only_images = ONLY_IMAGES
         self.article_count = ARTICLE_COUNT
         
@@ -82,7 +84,9 @@ class AIWriter:
     def _load_writer_prompt(self) -> str:
         """Load the writer prompt from file"""
         try:
-            with open('writer_prompt.txt', 'r', encoding='utf-8') as f:
+            script_dir = os.path.dirname(os.path.abspath(__file__))
+            prompt_path = os.path.join(script_dir, 'writer_prompt.txt')
+            with open(prompt_path, 'r', encoding='utf-8') as f:
                 return f.read()
         except FileNotFoundError:
             logger.error("writer_prompt.txt not found!")

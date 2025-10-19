@@ -5,6 +5,7 @@ Scans the RSS articles database and groups similar articles from different sourc
 """
 
 import argparse
+import os
 import sys
 from datetime import datetime
 from typing import Dict, Any
@@ -16,8 +17,11 @@ class ArticleGrouper:
     """Main class for grouping similar articles"""
     
     def __init__(self, db_path: str = 'rss_articles.db'):
-        self.detector = ArticleSimilarityDetector(db_path)
-        self.db_query = RSSDatabaseQuery(db_path)
+        # Resolve paths relative to script location
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        resolved_db_path = db_path if os.path.isabs(db_path) else os.path.join(script_dir, db_path)
+        self.detector = ArticleSimilarityDetector(resolved_db_path)
+        self.db_query = RSSDatabaseQuery(resolved_db_path)
     
     def print_database_status(self):
         """Print current database status"""

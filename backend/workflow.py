@@ -9,6 +9,10 @@ import os
 from datetime import datetime
 from typing import Dict, Any
 
+# Resolve script directory for log file
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+LOG_FILE = os.path.join(SCRIPT_DIR, 'workflow_log.txt')
+
 # Import all modules
 import rss2db
 import group_articles
@@ -16,7 +20,7 @@ import ai_writer
 import ai_editor
 import ai_rewriter
 
-def log_to_file(message: str, log_file: str = 'workflow_log.txt'):
+def log_to_file(message: str, log_file: str = LOG_FILE):
     """Log message to file with timestamp"""
     timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
     log_entry = f"[{timestamp}] {message}\n"
@@ -30,7 +34,7 @@ def log_to_file(message: str, log_file: str = 'workflow_log.txt'):
 def run_workflow() -> Dict[str, Any]:
     """Execute complete workflow pipeline"""
     start_time = datetime.now()
-    log_file = 'workflow_log.txt'
+    log_file = LOG_FILE
     
     # Initialize log file
     log_to_file("=" * 80, log_file)
@@ -121,7 +125,7 @@ def run_workflow() -> Dict[str, Any]:
             
             results['success_count'] += 1
             
-            print(f"✓ {step_desc} completed successfully in {step_duration:.2f} seconds")
+            print(f"+ {step_desc} completed successfully in {step_duration:.2f} seconds")
             
         except Exception as e:
             step_end_time = datetime.now()
@@ -143,7 +147,7 @@ def run_workflow() -> Dict[str, Any]:
             
             results['failure_count'] += 1
             
-            print(f"✗ {step_desc} failed: {str(e)}")
+            print(f"- {step_desc} failed: {str(e)}")
             print(f"  Duration: {step_duration:.2f} seconds")
             print(f"  Continuing with next step...")
         
@@ -177,7 +181,7 @@ def run_workflow() -> Dict[str, Any]:
     print("STEP SUMMARY:")
     print("-" * 40)
     for step_name, step_result in results['steps'].items():
-        status_icon = "✓" if step_result['status'] == 'SUCCESS' else "✗"
+        status_icon = "+" if step_result['status'] == 'SUCCESS' else "-"
         duration = step_result['duration']
         print(f"{status_icon} {step_name}: {step_result['status']} ({duration:.2f}s)")
         if step_result['error']:
@@ -204,11 +208,11 @@ def main():
             
     except KeyboardInterrupt:
         print("\n\nWorkflow interrupted by user.")
-        log_to_file("Workflow interrupted by user", 'workflow_log.txt')
+        log_to_file("Workflow interrupted by user", LOG_FILE)
         return 1
     except Exception as e:
         print(f"\nUnexpected error in workflow: {e}")
-        log_to_file(f"Unexpected workflow error: {e}", 'workflow_log.txt')
+        log_to_file(f"Unexpected workflow error: {e}", LOG_FILE)
         return 1
 
 if __name__ == "__main__":

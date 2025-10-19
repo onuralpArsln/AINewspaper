@@ -9,6 +9,7 @@ import hashlib
 import json
 import re
 import time
+import os
 from datetime import datetime, timezone
 from typing import List, Dict, Optional, Any, Set, Tuple
 import logging
@@ -623,7 +624,9 @@ class RSSDatabase:
     """Database handler for RSS articles with duplicate prevention"""
     
     def __init__(self, db_path: str = 'rss_articles.db'):
-        self.db_path = db_path
+        # Resolve paths relative to script location
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        self.db_path = db_path if os.path.isabs(db_path) else os.path.join(script_dir, db_path)
         self.init_database()
     
     def init_database(self):
@@ -1210,11 +1213,18 @@ class RSSToDatabase:
     """Main class for processing RSS feeds and storing in database"""
     
     def __init__(self, db_path: str = 'rss_articles.db'):
-        self.db = RSSDatabase(db_path)
+        # Resolve paths relative to script location
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        resolved_db_path = db_path if os.path.isabs(db_path) else os.path.join(script_dir, db_path)
+        self.db = RSSDatabase(resolved_db_path)
         self.rss_reader = RSSFeedReader()
     
     def process_feeds_to_database(self, rss_list_file: str = 'rsslist.txt') -> Dict[str, Any]:
         """Process all RSS feeds and store articles in database"""
+        # Resolve rss_list_file path relative to script location
+        if not os.path.isabs(rss_list_file):
+            script_dir = os.path.dirname(os.path.abspath(__file__))
+            rss_list_file = os.path.join(script_dir, rss_list_file)
         logger.info("Starting RSS to database processing...")
         
         start_time = datetime.now()

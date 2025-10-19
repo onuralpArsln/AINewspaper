@@ -2,6 +2,7 @@ from fastapi import FastAPI, HTTPException, Response
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 import json
+import os
 import sqlite3
 import xml.etree.ElementTree as ET
 from datetime import datetime
@@ -50,8 +51,13 @@ from db_query import OurArticlesDatabaseQuery
 # Editor mode configuration
 EDITOR_ENABLED = False  # Set to True to enable editor mode (only serve accepted articles)
 
+# Resolve script directory for database paths
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+OUR_ARTICLES_DB = os.path.join(SCRIPT_DIR, 'our_articles.db')
+RSS_ARTICLES_DB = os.path.join(SCRIPT_DIR, 'rss_articles.db')
+
 # Database query interface
-db = OurArticlesDatabaseQuery('our_articles.db')
+db = OurArticlesDatabaseQuery(OUR_ARTICLES_DB)
 
 # Storage for articles and served tracking
 articles_cache = []
@@ -237,7 +243,7 @@ def get_source_article_link(source_article_ids: str) -> Optional[str]:
         first_id = source_article_ids.split(',')[0].strip()
         
         # Query RSS database for the original link
-        conn = sqlite3.connect('rss_articles.db')
+        conn = sqlite3.connect(RSS_ARTICLES_DB)
         cursor = conn.cursor()
         cursor.execute('SELECT link FROM articles WHERE id = ?', (first_id,))
         result = cursor.fetchone()

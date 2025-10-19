@@ -46,8 +46,10 @@ class AIRewriter:
     """AI-powered article rewriter using Gemini for enhancing rejected articles"""
     
     def __init__(self, our_articles_db_path: str = 'our_articles.db', rss_db_path: str = 'rss_articles.db'):
-        self.our_articles_db_path = our_articles_db_path
-        self.rss_db_path = rss_db_path
+        # Resolve paths relative to script location
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        self.our_articles_db_path = our_articles_db_path if os.path.isabs(our_articles_db_path) else os.path.join(script_dir, our_articles_db_path)
+        self.rss_db_path = rss_db_path if os.path.isabs(rss_db_path) else os.path.join(script_dir, rss_db_path)
         self.max_review_count = MAX_REVIEW_COUNT
         self.rewrite_batch_size = REWRITE_BATCH_SIZE
         
@@ -70,7 +72,9 @@ class AIRewriter:
     def _load_rewriter_prompt(self) -> str:
         """Load the rewriter prompt from file"""
         try:
-            with open('rewriter_prompt.txt', 'r', encoding='utf-8') as f:
+            script_dir = os.path.dirname(os.path.abspath(__file__))
+            prompt_path = os.path.join(script_dir, 'rewriter_prompt.txt')
+            with open(prompt_path, 'r', encoding='utf-8') as f:
                 return f.read()
         except FileNotFoundError:
             logger.error("rewriter_prompt.txt not found!")

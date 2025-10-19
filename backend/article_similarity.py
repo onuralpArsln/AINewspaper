@@ -6,6 +6,7 @@ Detects similar news articles from different sources using various text similari
 
 import re
 import math
+import os
 import sqlite3
 from datetime import datetime, timedelta
 from typing import List, Dict, Tuple, Set, Optional
@@ -20,7 +21,9 @@ class ArticleSimilarityDetector:
     """Detects similar articles using multiple text similarity algorithms"""
     
     def __init__(self, db_path: str = 'rss_articles.db'):
-        self.db_path = db_path
+        # Resolve paths relative to script location
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        self.db_path = db_path if os.path.isabs(db_path) else os.path.join(script_dir, db_path)
         
         # Turkish stop words for better similarity detection
         self.turkish_stop_words = {
