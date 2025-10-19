@@ -186,6 +186,17 @@ class ArticleGrouper:
         except Exception as e:
             print(f"Error resetting grouping: {e}")
 
+def run(db_path: str = 'rss_articles.db', similarity_threshold: float = 0.3, 
+        days_back: int = 7, min_group_size: int = 2, 
+        max_time_diff_days: int = 2, verbose: bool = False) -> Dict[str, Any]:
+    """Run article grouping process with optional parameters"""
+    grouper = ArticleGrouper(db_path)
+    grouper.print_database_status()
+    stats = grouper.run_grouping(similarity_threshold, days_back, 
+                                  min_group_size, max_time_diff_days, verbose)
+    grouper.print_grouping_results(stats)
+    return stats
+
 def main():
     """Main function with command line interface"""
     parser = argparse.ArgumentParser(description='Group similar RSS articles')

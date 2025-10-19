@@ -374,6 +374,28 @@ class AIEditor:
         print(f"Average review count: {stats['avg_review_count']}")
         print("=" * 80)
 
+def run(our_db: str = 'our_articles.db', stats_only: bool = False) -> int:
+    """Run AI editor process with optional parameters"""
+    editor = AIEditor(our_db)
+    
+    if stats_only:
+        editor.print_statistics()
+        return 0
+    
+    print("\n" + "="*80)
+    print("INITIAL DATABASE STATUS")
+    print("="*80)
+    editor.print_statistics()
+    
+    editor.process_reviews()
+    
+    print("\n" + "="*80)
+    print("FINAL DATABASE STATUS")
+    print("="*80)
+    editor.print_statistics()
+    
+    return 0
+
 def main():
     """Main function for command line usage"""
     parser = argparse.ArgumentParser(

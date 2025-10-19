@@ -779,6 +779,32 @@ Please rewrite the following articles:
         print(f"Processing percentage: {stats['processing_percentage']}%")
         print("=" * 80)
 
+def run(max_articles: int = None, rss_db: str = 'rss_articles.db', 
+        our_db: str = 'our_articles.db', stats_only: bool = False) -> int:
+    """Run AI writer process with optional parameters"""
+    if max_articles is None:
+        max_articles = ARTICLE_COUNT
+    
+    writer = AIWriter(rss_db, our_db)
+    
+    if stats_only:
+        writer.print_statistics()
+        return 0
+    
+    print("\n" + "="*80)
+    print("INITIAL DATABASE STATUS")
+    print("="*80)
+    writer.print_statistics()
+    
+    writer.process_articles(max_articles)
+    
+    print("\n" + "="*80)
+    print("FINAL DATABASE STATUS")
+    print("="*80)
+    writer.print_statistics()
+    
+    return 0
+
 def main():
     """Main function for command line usage"""
     import argparse

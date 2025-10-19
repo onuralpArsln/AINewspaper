@@ -1362,6 +1362,13 @@ class RSSToDatabase:
             'feed_stats': self.db.get_feed_stats()
         }
 
+def run(rss_list_file: str = 'rsslist.txt', db_path: str = 'rss_articles.db') -> Dict[str, Any]:
+    """Run RSS to database processing with optional parameters"""
+    rss2db = RSSToDatabase(db_path)
+    stats = rss2db.process_feeds_to_database(rss_list_file)
+    rss2db.print_processing_summary(stats)
+    return stats
+
 def main():
     """Main function to run RSS to database processing"""
     rss2db = RSSToDatabase()

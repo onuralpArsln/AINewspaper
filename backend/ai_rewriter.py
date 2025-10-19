@@ -475,6 +475,32 @@ Please enhance the rejected article to address the editorial concerns while main
         print(f"Average review count (rejected): {stats['avg_review_count_rejected']}")
         print("=" * 80)
 
+def run(max_rewrites: int = None, our_db: str = 'our_articles.db', 
+        rss_db: str = 'rss_articles.db', stats_only: bool = False) -> int:
+    """Run AI rewriter process with optional parameters"""
+    if max_rewrites is None:
+        max_rewrites = REWRITE_BATCH_SIZE
+    
+    rewriter = AIRewriter(our_db, rss_db)
+    
+    if stats_only:
+        rewriter.print_statistics()
+        return 0
+    
+    print("\n" + "="*80)
+    print("INITIAL DATABASE STATUS")
+    print("="*80)
+    rewriter.print_statistics()
+    
+    rewriter.process_rewrites(max_rewrites)
+    
+    print("\n" + "="*80)
+    print("FINAL DATABASE STATUS")
+    print("="*80)
+    rewriter.print_statistics()
+    
+    return 0
+
 def main():
     """Main function for command line usage"""
     parser = argparse.ArgumentParser(
