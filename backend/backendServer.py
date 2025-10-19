@@ -5,9 +5,11 @@ import json
 import os
 import sqlite3
 import xml.etree.ElementTree as ET
+import asyncio
 from datetime import datetime
 from typing import Dict, Any, Optional, List
 from db_query import OurArticlesDatabaseQuery
+import workflow
 
 # uvicorn backendServer:app --reload
 # POST /specialControls/killSwitchEngaged - Emergency killswitch (requires code parameter)
@@ -28,6 +30,7 @@ from db_query import OurArticlesDatabaseQuery
 # GET  /search             - Search articles by keyword (?q=query&limit=20)
 # GET  /tags/{tag}         - Get articles by tag (?limit=20)
 # GET  /statistics         - Get database statistics
+# GET  /workflow/status    - Get workflow automation status and timing
 # POST /reset              - Reset served status (allows articles to be served again)
 
 #
@@ -64,6 +67,12 @@ articles_cache = []
 served_indices = set()
 current_offset = 0
 BATCH_SIZE = 20  # Load articles in batches
+
+# Workflow automation tracking
+workflow_last_run = None
+workflow_next_run = None
+workflow_status = "not_started"
+workflow_task = None
 
 def load_articles_batch():
     """Load a batch of articles from database"""
@@ -285,12 +294,48 @@ def format_article_for_frontend(article: Dict[str, Any]) -> Dict[str, Any]:
         "created_at": article.get('created_at', '')
     }
 
+async def run_workflow_scheduler():
+    """Background task that runs workflow on startup and then every 10 minutes"""
+    global workflow_last_run, workflow_next_run, workflow_status
+    
+    while True:
+        try:
+            # Update status
+            workflow_status = "running"
+            workflow_last_run = datetime.now()
+            workflow_next_run = None
+            
+            print(f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] Starting automated workflow execution...")
+            
+            # Run the workflow
+            result = workflow.run_workflow()
+            
+            # Update status after completion
+            workflow_status = "completed" if result['failure_count'] == 0 else "completed_with_errors"
+            workflow_last_run = datetime.now()
+            
+            print(f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] Workflow completed. Success: {result['success_count']}/{result['total_steps']}, Failures: {result['failure_count']}")
+            
+            # Wait 10 minutes (600 seconds) before next execution
+            print(f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] Next workflow scheduled in 10 minutes...")
+            workflow_next_run = datetime.now().timestamp() + 600
+            await asyncio.sleep(600)
+            
+        except Exception as e:
+            # Handle errors gracefully - don't crash the scheduler
+            workflow_status = "error"
+            print(f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] Workflow scheduler error: {e}")
+            # Wait 5 minutes before retrying on error
+            await asyncio.sleep(300)
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """
     Lifespan event handler for FastAPI application.
     Handles startup and shutdown events using modern async context manager.
     """
+    global workflow_task
+    
     # Startup: Load initial batch of articles
     print("Starting backend server...")
     print("Loading articles from our_articles.db...")
@@ -305,10 +350,20 @@ async def lifespan(app: FastAPI):
     if EDITOR_ENABLED:
         print("Editor mode enabled - only serving accepted articles")
     
+    # Start workflow scheduler as background task
+    print("Starting automated workflow scheduler...")
+    workflow_task = asyncio.create_task(run_workflow_scheduler())
+    
     yield  # Server is running
     
-    # Shutdown: Cleanup code goes here (if needed)
+    # Shutdown: Cancel workflow task
     print("Shutting down backend server...")
+    if workflow_task:
+        workflow_task.cancel()
+        try:
+            await workflow_task
+        except asyncio.CancelledError:
+            print("Workflow scheduler cancelled successfully")
 
 # Initialize FastAPI app with lifespan handler
 app = FastAPI(lifespan=lifespan)
@@ -340,7 +395,8 @@ def root():
             "search": "/search?q={query}",
             "articles_by_tag": "/tags/{tag}",
             "statistics": "/statistics",
-            "reset": "/reset (POST)"
+            "reset": "/reset (POST)",
+            "workflow_status": "/workflow/status"
         },
         "rss_feeds": {
             "main_feed": "/rss",
@@ -459,6 +515,28 @@ def killswitch_endpoint(code: str):
         "status": "killswitch_engaged",
         "affected_articles": affected_rows,
         "message": "Tüm makale içerikleri değiştirildi"
+    }
+
+@app.get("/workflow/status")
+def get_workflow_status():
+    """Get workflow automation status and timing information"""
+    global workflow_last_run, workflow_next_run, workflow_status
+    
+    next_run_str = None
+    if workflow_next_run:
+        next_run_dt = datetime.fromtimestamp(workflow_next_run)
+        next_run_str = next_run_dt.strftime('%Y-%m-%d %H:%M:%S')
+    
+    last_run_str = None
+    if workflow_last_run:
+        last_run_str = workflow_last_run.strftime('%Y-%m-%d %H:%M:%S')
+    
+    return {
+        "status": workflow_status,
+        "last_run": last_run_str,
+        "next_run": next_run_str,
+        "automation_enabled": workflow_task is not None and not workflow_task.done(),
+        "server_time": datetime.now().strftime('%Y-%m-%d %H:%M:%S')
     }
 
 # RSS Feed Endpoints

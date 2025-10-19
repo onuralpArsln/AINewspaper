@@ -402,6 +402,46 @@ class OurArticlesDatabaseQuery:
         # Resolve paths relative to script location
         script_dir = os.path.dirname(os.path.abspath(__file__))
         self.db_path = db_path if os.path.isabs(db_path) else os.path.join(script_dir, db_path)
+        self.init_database()
+    
+    def init_database(self):
+        """Initialize database with required tables"""
+        try:
+            with sqlite3.connect(self.db_path) as conn:
+                cursor = conn.cursor()
+                
+                # Create our_articles table
+                cursor.execute('''
+                    CREATE TABLE IF NOT EXISTS our_articles (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        title TEXT NOT NULL,
+                        summary TEXT,
+                        body TEXT NOT NULL,
+                        category TEXT,  -- Main category (one of: gündem,ekonomi,spor,siyaset,magazin,yaşam,eğitim,sağlık,astroloji)
+                        tags TEXT,  -- JSON array of additional tags
+                        images TEXT,  -- JSON array of image URLs
+                        date DATETIME DEFAULT CURRENT_TIMESTAMP,
+                        source_group_id INTEGER,  -- Reference to event group
+                        source_article_ids TEXT,  -- JSON array of source article IDs
+                        article_state TEXT DEFAULT 'not_reviewed',  -- Review status: not_reviewed, accepted, rejected
+                        review_count INTEGER DEFAULT 0,  -- Number of times article has been reviewed
+                        editors_note TEXT,  -- JSON review data from editor AI (nullable)
+                        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+                    )
+                ''')
+                
+                # Add indexes for performance
+                cursor.execute('CREATE INDEX IF NOT EXISTS idx_our_articles_state ON our_articles(article_state, updated_at)')
+                cursor.execute('CREATE INDEX IF NOT EXISTS idx_our_articles_created ON our_articles(created_at)')
+                cursor.execute('CREATE INDEX IF NOT EXISTS idx_our_articles_category ON our_articles(category)')
+                
+                conn.commit()
+                print(f"Our articles database initialized successfully: {self.db_path}")
+                
+        except Exception as e:
+            print(f"Error initializing our articles database: {e}")
+            raise
     
     def get_connection(self):
         """Get database connection with row factory"""
