@@ -497,12 +497,19 @@ def reset_served():
 
 @app.post("/specialControls/killSwitchEngaged", include_in_schema=False)
 def killswitch_endpoint(code: str):
-    """Killswitch endpoint - replaces all article content with warning message"""
+    """Killswitch endpoint - replaces all article content with warning message and stops workflow"""
     if code != "1316":
         raise HTTPException(status_code=403, detail="Yetkisiz erişim")
     
     # Execute killswitch
     affected_rows = db.engage_killswitch()
+    
+    # Stop the workflow scheduler
+    global workflow_task, workflow_status
+    if workflow_task and not workflow_task.done():
+        workflow_task.cancel()
+        workflow_status = "stopped_by_killswitch"
+        print(f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] Workflow scheduler stopped by killswitch")
     
     # Clear the cache to reload articles
     global served_indices, current_offset, articles_cache
@@ -514,7 +521,8 @@ def killswitch_endpoint(code: str):
     return {
         "status": "killswitch_engaged",
         "affected_articles": affected_rows,
-        "message": "Tüm makale içerikleri değiştirildi"
+        "workflow_stopped": workflow_task is None or workflow_task.done(),
+        "message": "Tüm makale içerikleri değiştirildi ve workflow durduruldu"
     }
 
 @app.get("/workflow/status")
@@ -536,7 +544,8 @@ def get_workflow_status():
         "last_run": last_run_str,
         "next_run": next_run_str,
         "automation_enabled": workflow_task is not None and not workflow_task.done(),
-        "server_time": datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        "server_time": datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+        "killswitch_engaged": workflow_status == "stopped_by_killswitch"
     }
 
 # RSS Feed Endpoints
