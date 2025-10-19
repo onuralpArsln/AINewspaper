@@ -1,179 +1,205 @@
-# AI Newspaper Backend
+# 🤖 AI Newspaper Backend
 
-Unified backend server for AI-generated news articles with RSS feed support.
+> **Next-gen news automation** powered by Gemini AI with intelligent editorial workflow
 
-## 🚀 Quick Start
+[![Python](https://img.shields.io/badge/Python-3.11+-blue.svg)](https://python.org)
+[![FastAPI](https://img.shields.io/badge/FastAPI-0.118+-green.svg)](https://fastapi.tiangolo.com)
+[![Gemini AI](https://img.shields.io/badge/Gemini-AI-orange.svg)](https://ai.google.dev)
+
+## ⚡ Quick Start
 
 ```bash
-cd /home/onuralp/project/AINewspaper/backend
-source venv/bin/activate
+# 🚀 One-command setup
+cd /home/onuralp/project/AINewspaper/backend && source venv/bin/activate
 
-# 1. Collect RSS articles
-python rss2db.py
-
-# 2. Group similar articles (optional)
-python group_articles.py --threshold 0.3
-
-# 3. Generate AI articles
-python ai_writer.py --max-articles 10
-
-# 4. Start unified server (frontend API + RSS feeds)
-python -m uvicorn backendServer:app --reload --port 8000
+# 📰 Complete workflow
+python rss2db.py && python group_articles.py && python ai_writer.py --max-articles 10
+python ai_editor.py && python ai_rewriter.py && python -m uvicorn backendServer:app --reload --port 8000
 ```
 
-## 📋 Core Scripts
+## 🔥 Core Pipeline
 
-| Script | Purpose |
-|--------|---------|
-| **`rss2db.py`** | Fetches RSS feeds, extracts images, prevents duplicates |
-| **`group_articles.py`** | Groups similar articles from different sources |
-| **`ai_writer.py`** | Generates articles using Gemini AI with image sorting |
-| **`backendServer.py`** | Unified FastAPI server (frontend API + RSS feeds) |
-| **`db_query.py`** | Database queries and statistics |
+| 🛠️ Script | 🎯 Mission |
+|-----------|------------|
+| **`rss2db.py`** | 📡 RSS hunter - collects & deduplicates news |
+| **`group_articles.py`** | 🧠 Smart grouper - finds related stories |
+| **`ai_writer.py`** | ✍️ Gemini writer - creates unified articles |
+| **`ai_editor.py`** | 📝 AI editor - 13-metric quality control |
+| **`ai_rewriter.py`** | 🔄 Content enhancer - fixes rejected articles |
+| **`backendServer.py`** | 🚀 API server - serves news via REST/RSS |
 
-## 🗄️ Database Schema
+## 🗄️ Data Architecture
 
-### `rss_articles.db` - Source Articles
+### 📥 `rss_articles.db` - Raw News Feed
 ```sql
-CREATE TABLE articles (
-    id INTEGER PRIMARY KEY,
-    title TEXT NOT NULL,
-    description TEXT,
-    content TEXT,
-    link TEXT UNIQUE,
-    published DATETIME,
-    author TEXT,
-    category TEXT,
-    tags TEXT,                    -- JSON array
-    image_urls TEXT,              -- JSON array (ALL images)
-    source_name TEXT,
-    content_hash TEXT UNIQUE,     -- Duplicate detection
-    event_group_id INTEGER,       -- Group ID for similar articles
-    is_read BOOLEAN DEFAULT 0,
-    created_at DATETIME
-);
+articles (id, title, content, image_urls, event_group_id, is_read, ...)
 ```
 
-### `our_articles.db` - Generated Articles
+### 📤 `our_articles.db` - AI-Generated Content  
 ```sql
-CREATE TABLE our_articles (
-    id INTEGER PRIMARY KEY,
-    title TEXT NOT NULL,
-    summary TEXT,
-    body TEXT NOT NULL,
-    tags TEXT,                    -- Categories + locations
-    images TEXT,                  -- JSON array (sorted by resolution)
-    date DATETIME,
-    source_group_id INTEGER,
-    source_article_ids TEXT,
-    created_at DATETIME
-);
+our_articles (id, title, body, category, article_state, editors_note, ...)
 ```
 
-## 🔄 Workflow
+> **States**: `not_reviewed` → `accepted`/`rejected` → `enhanced`
 
+## 🔄 AI News Pipeline
+
+```mermaid
+graph LR
+    A[📡 RSS Feeds] --> B[🔍 rss2db.py]
+    B --> C[📊 rss_articles.db]
+    C --> D[🧠 group_articles.py]
+    D --> E[✍️ ai_writer.py]
+    E --> F[📝 ai_editor.py]
+    F --> G[🔄 ai_rewriter.py]
+    G --> H[📤 our_articles.db]
+    H --> I[🚀 backendServer.py]
+    I --> J[🌐 API + RSS]
 ```
-rsslist.txt → rss2db.py → rss_articles.db → group_articles.py → ai_writer.py → our_articles.db → backendServer.py
+
+### 🎯 Pipeline Stages
+
+| Stage | Action | Output |
+|-------|--------|--------|
+| **📡 Collect** | RSS feeds → database | Raw articles |
+| **🧠 Group** | Similarity detection | Event groups |
+| **✍️ Write** | Gemini AI generation | Unified articles |
+| **📝 Review** | 13-metric evaluation | Quality scores |
+| **🔄 Enhance** | AI improvement | Better content |
+| **🚀 Serve** | API + RSS delivery | Live news feed |
+
+## 🖼️ Smart Image Processing
+
+| Feature | Description |
+|---------|-------------|
+| **📡 Multi-Source** | Extracts from RSS, enclosures, media_content |
+| **🎯 Quality Sort** | Resolution-based ranking (highest first) |
+| **🔍 Smart Filter** | Removes <200×200px images |
+| **⭐ Best First** | `images[0]` = highest quality |
+
+## 📊 AI Editorial System
+
+### 🎭 Article States
+- **`not_reviewed`** → Fresh from AI writer
+- **`accepted`** → Passed quality control ✅
+- **`rejected`** → Needs improvement ❌
+
+### 🧠 13-Metric Evaluation
+| Category | Metrics |
+|----------|---------|
+| **📝 Content** | Word count, readability, sentence length |
+| **🎯 Structure** | Title relevance, coherence, clarity |
+| **✍️ Style** | Active voice, fact density, engagement |
+
+### ⚙️ Config
+```python
+ONLY_IMAGES = True      # Process only image-rich articles
+ARTICLE_COUNT = 2       # Articles per generation run
+REVIEW_COUNT = 2        # Articles per review run
+MAX_REVIEW_COUNT = 3    # Max enhancement attempts
 ```
 
-1. **Collect**: `rss2db.py` fetches RSS feeds, extracts images, prevents duplicates
-2. **Group**: `group_articles.py` groups similar articles (optional)
-3. **Generate**: `ai_writer.py` creates articles with sorted images
-4. **Serve**: `backendServer.py` serves both frontend API and RSS feeds
+## 🌐 API Endpoints
 
-## 🖼️ Image Handling
-
-- **Extraction**: From 3 sources (image_urls, enclosures, media_content)
-- **Sorting**: By resolution (highest first)
-- **Filtering**: Removes images <200×200 pixels
-- **Result**: `images[0]` is always the best quality image
-
-## 🌐 Backend Server API
-
-### Frontend API Endpoints
+### 🎯 Frontend API
 | Endpoint | Method | Description |
 |----------|--------|-------------|
-| `/` | GET | Server status and API info |
-| `/getOneNew` | GET | Next unserved article (frontend) |
-| `/articles` | GET | Paginated articles |
-| `/articles/{id}` | GET | Single article by ID |
-| `/search` | GET | Search articles |
-| `/tags/{tag}` | GET | Articles by tag |
-| `/statistics` | GET | Database statistics |
-| `/reset` | POST | Reset served status |
+| `/` | GET | 🏠 Server status |
+| `/getOneNew` | GET | 📰 Next article (live feed) |
+| `/articles` | GET | 📄 Paginated articles |
+| `/search` | GET | 🔍 Search articles |
+| `/statistics` | GET | 📊 Database stats |
 
-### RSS Feed Endpoints
+### 📡 RSS Feeds
 | Endpoint | Description |
 |----------|-------------|
-| `/rss` | Main RSS feed (20 articles) |
-| `/rss/latest` | Latest 10 articles RSS |
-| `/rss/category/{category}` | RSS by category |
-| `/rss/tag/{tag}` | RSS by tag |
-| `/rss/search?q={query}` | RSS search results |
+| `/rss` | 📰 Main feed (20 articles) |
+| `/rss/latest` | ⚡ Latest 10 articles |
+| `/rss/category/{cat}` | 🏷️ By category |
+| `/rss/search?q={query}` | 🔍 Search RSS |
 
-## ⚙️ Configuration
+### 🏷️ Categories
+`gündem` `ekonomi` `spor` `siyaset` `magazin` `yaşam` `eğitim` `sağlık` `astroloji`
 
-### Environment
+## 🧠 AI Editorial Metrics
+
+### 📊 13-Point Quality Assessment
+
+| Category | Metrics | Purpose |
+|----------|---------|---------|
+| **📝 Content** | Word count, readability, sentence length | Quality & complexity |
+| **🎯 Structure** | Title relevance, coherence, clarity | Organization |
+| **✍️ Style** | Active voice, fact density, engagement | Writing quality |
+
+> **Decision**: `accepted` ✅ or `rejected` ❌ based on total score
+
+## ⚙️ Setup
+
 ```bash
-# Python 3.11 virtual environment required
-source venv/bin/activate
-pip install -r requirements.txt
+# 🐍 Python 3.11+ required
+source venv/bin/activate && pip install -r requirements.txt
 ```
 
-### Key Files
+### 📁 Key Files
 | File | Purpose |
 |------|---------|
-| `rsslist.txt` | RSS feed URLs |
-| `writer_prompt.txt` | AI generation instructions |
-| `requirements.txt` | Dependencies |
-| `.env` | API keys (GEMINI_FREE_API) |
+| `rsslist.txt` | 📡 RSS feed URLs |
+| `writer_prompt.txt` | ✍️ AI generation prompts |
+| `.env` | 🔑 GEMINI_FREE_API key |
 
 ## 🎯 Features
 
-✅ Multi-format RSS support (RSS, Atom, RDF)  
-✅ Duplicate prevention  
-✅ Image extraction and sorting  
-✅ Article grouping and similarity detection  
-✅ AI-powered article generation  
-✅ Unified backend server (frontend + RSS)  
-✅ Turkish language support  
-✅ CORS enabled  
+| Feature | Status |
+|---------|--------|
+| **🤖 Gemini AI Integration** | ✅ |
+| **📡 Multi-format RSS** | ✅ |
+| **🧠 Smart Article Grouping** | ✅ |
+| **📝 13-Metric Editorial Review** | ✅ |
+| **🔄 AI Content Enhancement** | ✅ |
+| **🖼️ Smart Image Processing** | ✅ |
+| **🌐 REST + RSS API** | ✅ |
+| **🇹🇷 Turkish Language** | ✅ |
+| **🔒 Duplicate Prevention** | ✅ |
 
-## 🐛 Troubleshooting
+## 🚨 Quick Fixes
 
-**No groups created**: Lower threshold with `--threshold 0.2`  
-**Fewer articles generated**: Check unread articles with `python ai_writer.py --stats`  
-**Images filtered out**: Lower minimum resolution in `ai_writer.py`  
-**Import errors**: Reinstall dependencies with `pip install -r requirements.txt`  
+| Issue | Solution |
+|-------|----------|
+| **No groups** | `--threshold 0.2` |
+| **No articles** | `python ai_writer.py --stats` |
+| **No reviews** | `python ai_editor.py --stats` |
+| **Import errors** | `pip install -r requirements.txt` |
 
-## 📊 Example Usage
+## 🚀 Usage
 
+### 🔥 One-Liner Workflow
 ```bash
-# Get server status
-curl http://localhost:8000/
-
-# Get next article (frontend)
-curl http://localhost:8000/getOneNew
-
-# Get RSS feed
-curl http://localhost:8000/rss
-
-# Search articles
-curl http://localhost:8000/search?q=ekonomi
-
-# Reset served status
-curl -X POST http://localhost:8000/reset
+python rss2db.py && python group_articles.py && python ai_writer.py --max-articles 5 && python ai_editor.py && python ai_rewriter.py
 ```
 
-## 📝 Response Format
+### 📊 Check Status
+```bash
+python ai_writer.py --stats    # 📝 Writer stats
+python ai_editor.py --stats    # 📊 Editor stats  
+python ai_rewriter.py --stats  # 🔄 Rewriter stats
+```
 
-### Frontend API
+### 🌐 API Examples
+```bash
+curl http://localhost:8000/getOneNew              # 📰 Next article
+curl http://localhost:8000/rss                    # 📡 RSS feed
+curl http://localhost:8000/search?q=ekonomi       # 🔍 Search
+curl http://localhost:8000/rss/category/spor      # 🏷️ Category
+```
+
+## 📝 API Response
+
 ```json
 {
   "news": {
     "id": 2,
     "title": "Article Title",
-    "summary": "Brief description",
+    "summary": "Brief description", 
     "content": "Full article content",
     "tags": "category, location, keywords",
     "published": "2025-10-08T14:38:00+03:00",
@@ -184,5 +210,26 @@ curl -X POST http://localhost:8000/reset
 }
 ```
 
-### RSS Feed
-Standard RSS 2.0 format with media content support, proper date formatting, and Turkish language support.
+## ⏰ Automation
+
+### 🤖 Cron Schedule
+```bash
+*/30 * * * * python rss2db.py                    # 📡 Every 30min
+0 * * * * python group_articles.py               # 🧠 Every hour  
+0 */2 * * * * python ai_writer.py --max-articles 3 # ✍️ Every 2hrs
+0 */3 * * * * python ai_editor.py                # 📝 Every 3hrs
+0 */4 * * * * python ai_rewriter.py              # 🔄 Every 4hrs
+```
+
+## 📊 Monitoring
+
+| Metric | Track |
+|--------|-------|
+| **📡 RSS** | Collection rate, feed success |
+| **✍️ Generation** | Output/input ratio, processing time |
+| **📝 Editorial** | Acceptance rate, average scores |
+| **🗄️ Database** | Size growth, state distribution |
+
+---
+
+> **🚀 Ready to revolutionize news?** Start with `python rss2db.py` and watch the AI magic happen!
