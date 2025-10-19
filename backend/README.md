@@ -5,17 +5,34 @@
 [![Python](https://img.shields.io/badge/Python-3.11+-blue.svg)](https://python.org)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.118+-green.svg)](https://fastapi.tiangolo.com)
 [![Gemini AI](https://img.shields.io/badge/Gemini-AI-orange.svg)](https://ai.google.dev)
+[![SQLite](https://img.shields.io/badge/SQLite-3+-lightblue.svg)](https://sqlite.org)
+[![Status](https://img.shields.io/badge/Status-Active-brightgreen.svg)](https://github.com)
 
 ## ⚡ Quick Start
 
 ```bash
 # 🚀 One-command setup
-cd /home/onuralp/project/AINewspaper/backend && source venv/bin/activate
+cd backend && source venv/bin/activate
 
 # 📰 Complete workflow
 python rss2db.py && python group_articles.py && python ai_writer.py --max-articles 10
 python ai_editor.py && python ai_rewriter.py && python -m uvicorn backendServer:app --reload --port 8000
 ```
+
+## 🎯 Current System Status
+
+### ✅ Active Components
+- **RSS Collection**: 30+ Turkish news sources via `rsslist.txt`
+- **AI Pipeline**: Gemini-powered article generation and editing
+- **Quality Control**: 13-metric editorial review system
+- **API Server**: FastAPI with REST and RSS endpoints
+- **Database**: SQLite with dual-database architecture
+
+### 📊 System Metrics
+- **RSS Sources**: 30+ active Turkish news feeds
+- **Processing**: Real-time article grouping and AI rewriting
+- **Quality**: Multi-stage editorial review with enhancement
+- **Performance**: Optimized for continuous operation
 
 ## 🔥 Core Pipeline
 
@@ -32,12 +49,21 @@ python ai_editor.py && python ai_rewriter.py && python -m uvicorn backendServer:
 
 ### 📥 `rss_articles.db` - Raw News Feed
 ```sql
-articles (id, title, content, image_urls, event_group_id, is_read, ...)
+articles (
+  id, title, description, content, summary,
+  link, published, author, source_name,
+  image_url, image_urls, media_content,
+  event_group_id, is_read, content_hash
+)
 ```
 
 ### 📤 `our_articles.db` - AI-Generated Content  
 ```sql
-our_articles (id, title, body, category, article_state, editors_note, ...)
+our_articles (
+  id, title, description, body, tags,
+  images, date, source_group_id, source_article_ids,
+  article_state, editors_note, quality_score
+)
 ```
 
 > **States**: `not_reviewed` → `accepted`/`rejected` → `enhanced`
@@ -109,6 +135,7 @@ MAX_REVIEW_COUNT = 3    # Max enhancement attempts
 | `/articles` | GET | 📄 Paginated articles |
 | `/search` | GET | 🔍 Search articles |
 | `/statistics` | GET | 📊 Database stats |
+| `/health` | GET | 💚 System health check |
 
 ### 📡 RSS Feeds
 | Endpoint | Description |
@@ -120,6 +147,13 @@ MAX_REVIEW_COUNT = 3    # Max enhancement attempts
 
 ### 🏷️ Categories
 `gündem` `ekonomi` `spor` `siyaset` `magazin` `yaşam` `eğitim` `sağlık` `astroloji`
+
+### 🔧 Management API
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/admin/stats` | GET | 📊 Detailed system statistics |
+| `/admin/process` | POST | 🔄 Trigger manual processing |
+| `/admin/reset` | POST | 🔄 Reset processing flags |
 
 ## 🧠 AI Editorial Metrics
 
@@ -221,6 +255,12 @@ curl http://localhost:8000/rss/category/spor      # 🏷️ Category
 0 */4 * * * * python ai_rewriter.py              # 🔄 Every 4hrs
 ```
 
+### 🔄 Workflow Automation
+```bash
+# Complete automated workflow
+python workflow.py --auto --max-articles 5
+```
+
 ## 📊 Monitoring
 
 | Metric | Track |
@@ -229,6 +269,22 @@ curl http://localhost:8000/rss/category/spor      # 🏷️ Category
 | **✍️ Generation** | Output/input ratio, processing time |
 | **📝 Editorial** | Acceptance rate, average scores |
 | **🗄️ Database** | Size growth, state distribution |
+| **🤖 AI Performance** | API response times, success rates |
+
+## 🔧 Development Tools
+
+### 📝 Logging
+- **Workflow Log**: `workflow_log.txt` - Complete processing history
+- **Error Tracking**: Comprehensive error logging with stack traces
+- **Performance Metrics**: Processing time and success rate tracking
+
+### 🧪 Testing
+```bash
+# Test individual components
+python rss2db.py --test
+python group_articles.py --test
+python ai_writer.py --test
+```
 
 ---
 
