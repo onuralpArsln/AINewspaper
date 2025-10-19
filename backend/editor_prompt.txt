@@ -6,14 +6,6 @@ The article consists of:
 - Summary: {SUMMARY}
 - Body: {ARTICLE_TEXT}
 
-### CRITICAL FACT-CHECKING REQUIREMENTS:
-Before evaluating quality metrics, you MUST verify factual accuracy:
-1. Check if all claims, numbers, dates, and names are verifiable from source material
-2. Flag any information that appears to be added beyond source articles
-3. Identify potential hallucinations or fabricated details
-4. Verify that specific facts match the original source content
-5. If factual inaccuracies are detected, mark the article as "rejected" regardless of quality scores
-
 ### Evaluation Instructions:
 1. The article is written in Turkish. Evaluate all metrics accordingly.
 2. Return only a valid JSON object. No markdown, intros, or explanations.
