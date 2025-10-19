@@ -2,7 +2,7 @@
 
 <div align="center">
 
-![AI Newspaper Logo](frontend/public/images/logo.png)
+/*!/\[AI Newspaper Logo](frontend\/public/images/logo.png)*
 
 **🤖 The Future of News is Here**  
 *Intelligent news aggregation powered by AI*
