@@ -10,7 +10,7 @@ from db_query import OurArticlesDatabaseQuery
 
 # uvicorn backendServer:app --reload
 # POST /specialControls/killSwitchEngaged - Emergency killswitch (requires code parameter)
-#http://localhost:8000/specialControls/killSwitchEngaged?code=1316
+# curl -X POST "http://localhost:8000/specialControls/killSwitchEngaged?code=1316"
 
 # ============================================================================
 # API ENDPOINTS REFERENCE
