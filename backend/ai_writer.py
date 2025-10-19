@@ -580,8 +580,8 @@ Please rewrite the following articles:
             # Insert into our_articles
             cursor.execute('''
                 INSERT INTO our_articles 
-                (title, summary, body, category, tags, images, date, source_group_id, source_article_ids, article_state, review_count, editors_note)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                (title, summary, body, category, tags, images, date, source_group_id, source_article_ids, article_state, review_count, editors_note, updated_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
             ''', (
                 title,
                 summary,

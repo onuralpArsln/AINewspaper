@@ -91,7 +91,7 @@ class AIEditor:
             
             # Add indexes for performance
             try:
-                cursor.execute('CREATE INDEX IF NOT EXISTS idx_our_articles_state ON our_articles(article_state, created_at)')
+                cursor.execute('CREATE INDEX IF NOT EXISTS idx_our_articles_state ON our_articles(article_state, updated_at)')
                 conn.commit()
             except sqlite3.OperationalError as e:
                 logger.debug(f"Index might already exist: {e}")
@@ -103,18 +103,19 @@ class AIEditor:
         return conn
     
     def get_articles_to_review(self, limit: int = 10) -> List[Dict[str, Any]]:
-        """Get articles with 'not_reviewed' status for evaluation"""
+        """Get articles with 'not_reviewed' status for evaluation (max 48 hours old)"""
         with self.get_connection(self.our_articles_db_path) as conn:
             cursor = conn.cursor()
             cursor.execute('''
                 SELECT * FROM our_articles 
                 WHERE article_state = 'not_reviewed' 
-                ORDER BY created_at DESC 
+                    AND created_at >= datetime('now', '-48 hours')
+                ORDER BY updated_at DESC 
                 LIMIT ?
             ''', (limit,))
             
             articles = [dict(row) for row in cursor.fetchall()]
-            logger.info(f"Found {len(articles)} articles to review")
+            logger.info(f"Found {len(articles)} articles to review (within 48 hours)")
             return articles
     
     def prepare_article_for_evaluation(self, article: Dict[str, Any]) -> str:
@@ -329,8 +330,8 @@ class AIEditor:
             cursor.execute('SELECT COUNT(*) FROM our_articles')
             total_count = cursor.fetchone()[0]
             
-            # Not reviewed
-            cursor.execute("SELECT COUNT(*) FROM our_articles WHERE article_state = 'not_reviewed'")
+            # Not reviewed (within 48 hours)
+            cursor.execute("SELECT COUNT(*) FROM our_articles WHERE article_state = 'not_reviewed' AND created_at >= datetime('now', '-48 hours')")
             not_reviewed_count = cursor.fetchone()[0]
             
             # Accepted
@@ -364,7 +365,7 @@ class AIEditor:
         print("AI EDITOR STATISTICS")
         print("=" * 80)
         print(f"Total articles: {stats['total_articles']:,}")
-        print(f"Not reviewed: {stats['not_reviewed']:,}")
+        print(f"Not reviewed (within 48h): {stats['not_reviewed']:,}")
         print(f"Reviewed: {stats['reviewed']:,}")
         print(f"  - Accepted: {stats['accepted']:,}")
         print(f"  - Rejected: {stats['rejected']:,}")

@@ -412,179 +412,203 @@ class OurArticlesDatabaseQuery:
             return cursor.fetchone()[0]
     
     def get_recent_articles(self, limit: int = 10, offset: int = 0, editor_mode: bool = False) -> List[Dict[str, Any]]:
-        """Get recent articles ordered by date"""
+        """Get recent articles ordered by updated_at (within 48 hours of creation)"""
         with self.get_connection() as conn:
             cursor = conn.cursor()
             if editor_mode:
                 cursor.execute('''
                     SELECT id, title, summary, body, category, tags, images, date, 
-                           source_group_id, source_article_ids, created_at
+                           source_group_id, source_article_ids, created_at, updated_at
                     FROM our_articles 
                     WHERE article_state = 'accepted'
-                    ORDER BY date DESC, created_at DESC 
+                        AND created_at >= datetime('now', '-48 hours')
+                    ORDER BY updated_at DESC 
                     LIMIT ? OFFSET ?
                 ''', (limit, offset))
             else:
                 cursor.execute('''
                     SELECT id, title, summary, body, category, tags, images, date, 
-                           source_group_id, source_article_ids, created_at
+                           source_group_id, source_article_ids, created_at, updated_at
                     FROM our_articles 
-                    ORDER BY date DESC, created_at DESC 
+                    WHERE created_at >= datetime('now', '-48 hours')
+                    ORDER BY updated_at DESC 
                     LIMIT ? OFFSET ?
                 ''', (limit, offset))
             return [dict(row) for row in cursor.fetchall()]
     
     def get_article_by_id(self, article_id: int, editor_mode: bool = False) -> Dict[str, Any]:
-        """Get a specific article by ID"""
+        """Get a specific article by ID (within 48 hours of creation)"""
         with self.get_connection() as conn:
             cursor = conn.cursor()
             if editor_mode:
                 cursor.execute('''
                     SELECT id, title, summary, body, category, tags, images, date,
-                           source_group_id, source_article_ids, created_at
+                           source_group_id, source_article_ids, created_at, updated_at
                     FROM our_articles 
                     WHERE id = ? AND article_state = 'accepted'
+                        AND created_at >= datetime('now', '-48 hours')
                 ''', (article_id,))
             else:
                 cursor.execute('''
                     SELECT id, title, summary, body, category, tags, images, date,
-                           source_group_id, source_article_ids, created_at
+                           source_group_id, source_article_ids, created_at, updated_at
                     FROM our_articles 
-                    WHERE id = ?
+                    WHERE id = ? AND created_at >= datetime('now', '-48 hours')
                 ''', (article_id,))
             result = cursor.fetchone()
             return dict(result) if result else None
     
     def get_articles_by_category(self, category: str, limit: int = 20, editor_mode: bool = False) -> List[Dict[str, Any]]:
-        """Get articles by category"""
+        """Get articles by category (within 48 hours of creation)"""
         with self.get_connection() as conn:
             cursor = conn.cursor()
             if editor_mode:
                 cursor.execute('''
                     SELECT id, title, summary, body, category, tags, images, date,
-                           source_group_id, source_article_ids, created_at
+                           source_group_id, source_article_ids, created_at, updated_at
                     FROM our_articles 
                     WHERE category = ? AND article_state = 'accepted'
-                    ORDER BY date DESC, created_at DESC 
+                        AND created_at >= datetime('now', '-48 hours')
+                    ORDER BY updated_at DESC 
                     LIMIT ?
                 ''', (category, limit))
             else:
                 cursor.execute('''
                     SELECT id, title, summary, body, category, tags, images, date,
-                           source_group_id, source_article_ids, created_at
+                           source_group_id, source_article_ids, created_at, updated_at
                     FROM our_articles 
-                    WHERE category = ?
-                    ORDER BY date DESC, created_at DESC 
+                    WHERE category = ? AND created_at >= datetime('now', '-48 hours')
+                    ORDER BY updated_at DESC 
                     LIMIT ?
                 ''', (category, limit))
             return [dict(row) for row in cursor.fetchall()]
     
     def get_articles_by_tag(self, tag: str, limit: int = 20, editor_mode: bool = False) -> List[Dict[str, Any]]:
-        """Get articles by tag (searches in JSON tags array)"""
+        """Get articles by tag (searches in JSON tags array, within 48 hours of creation)"""
         with self.get_connection() as conn:
             cursor = conn.cursor()
             if editor_mode:
                 cursor.execute('''
                     SELECT id, title, summary, body, category, tags, images, date,
-                           source_group_id, source_article_ids, created_at
+                           source_group_id, source_article_ids, created_at, updated_at
                     FROM our_articles 
                     WHERE tags LIKE ? AND article_state = 'accepted'
-                    ORDER BY date DESC, created_at DESC 
+                        AND created_at >= datetime('now', '-48 hours')
+                    ORDER BY updated_at DESC 
                     LIMIT ?
                 ''', (f'%{tag}%', limit))
             else:
                 cursor.execute('''
                     SELECT id, title, summary, body, category, tags, images, date,
-                           source_group_id, source_article_ids, created_at
+                           source_group_id, source_article_ids, created_at, updated_at
                     FROM our_articles 
-                    WHERE tags LIKE ?
-                    ORDER BY date DESC, created_at DESC 
+                    WHERE tags LIKE ? AND created_at >= datetime('now', '-48 hours')
+                    ORDER BY updated_at DESC 
                     LIMIT ?
                 ''', (f'%{tag}%', limit))
             return [dict(row) for row in cursor.fetchall()]
     
     def search_articles(self, search_term: str, limit: int = 20, editor_mode: bool = False) -> List[Dict[str, Any]]:
-        """Search articles by title, summary, or body"""
+        """Search articles by title, summary, or body (within 48 hours of creation)"""
         with self.get_connection() as conn:
             cursor = conn.cursor()
             if editor_mode:
                 cursor.execute('''
                     SELECT id, title, summary, body, category, tags, images, date,
-                           source_group_id, source_article_ids, created_at
+                           source_group_id, source_article_ids, created_at, updated_at
                     FROM our_articles 
                     WHERE (title LIKE ? OR summary LIKE ? OR body LIKE ?) AND article_state = 'accepted'
-                    ORDER BY date DESC, created_at DESC 
+                        AND created_at >= datetime('now', '-48 hours')
+                    ORDER BY updated_at DESC 
                     LIMIT ?
                 ''', (f'%{search_term}%', f'%{search_term}%', f'%{search_term}%', limit))
             else:
                 cursor.execute('''
                     SELECT id, title, summary, body, category, tags, images, date,
-                           source_group_id, source_article_ids, created_at
+                           source_group_id, source_article_ids, created_at, updated_at
                     FROM our_articles 
-                    WHERE title LIKE ? OR summary LIKE ? OR body LIKE ?
-                    ORDER BY date DESC, created_at DESC 
+                    WHERE (title LIKE ? OR summary LIKE ? OR body LIKE ?)
+                        AND created_at >= datetime('now', '-48 hours')
+                    ORDER BY updated_at DESC 
                     LIMIT ?
                 ''', (f'%{search_term}%', f'%{search_term}%', f'%{search_term}%', limit))
             return [dict(row) for row in cursor.fetchall()]
     
     def get_articles_with_images(self, limit: int = 10, offset: int = 0, editor_mode: bool = False) -> List[Dict[str, Any]]:
-        """Get articles that have images"""
+        """Get articles that have images (within 48 hours of creation)"""
         with self.get_connection() as conn:
             cursor = conn.cursor()
             if editor_mode:
                 cursor.execute('''
                     SELECT id, title, summary, body, category, tags, images, date,
-                           source_group_id, source_article_ids, created_at
+                           source_group_id, source_article_ids, created_at, updated_at
                     FROM our_articles 
-                    WHERE images IS NOT NULL AND images != '[]' AND images != 'null' AND article_state = 'accepted'
-                    ORDER BY date DESC, created_at DESC 
+                    WHERE images IS NOT NULL AND images != '[]' AND images != 'null' 
+                        AND article_state = 'accepted'
+                        AND created_at >= datetime('now', '-48 hours')
+                    ORDER BY updated_at DESC 
                     LIMIT ? OFFSET ?
                 ''', (limit, offset))
             else:
                 cursor.execute('''
                     SELECT id, title, summary, body, category, tags, images, date,
-                           source_group_id, source_article_ids, created_at
+                           source_group_id, source_article_ids, created_at, updated_at
                     FROM our_articles 
                     WHERE images IS NOT NULL AND images != '[]' AND images != 'null'
-                    ORDER BY date DESC, created_at DESC 
+                        AND created_at >= datetime('now', '-48 hours')
+                    ORDER BY updated_at DESC 
                     LIMIT ? OFFSET ?
                 ''', (limit, offset))
             return [dict(row) for row in cursor.fetchall()]
     
     def get_statistics(self, editor_mode: bool = False) -> Dict[str, Any]:
-        """Get statistics about our articles"""
+        """Get statistics about our articles (within 48 hours of creation)"""
         with self.get_connection() as conn:
             cursor = conn.cursor()
             
             if editor_mode:
-                # Total accepted articles
-                cursor.execute('SELECT COUNT(*) FROM our_articles WHERE article_state = \'accepted\'')
-                total_count = cursor.fetchone()[0]
-                
-                # Accepted articles with images
+                # Total accepted articles within 48 hours
                 cursor.execute('''
                     SELECT COUNT(*) FROM our_articles 
-                    WHERE images IS NOT NULL AND images != '[]' AND images != 'null' AND article_state = 'accepted'
+                    WHERE article_state = 'accepted' AND created_at >= datetime('now', '-48 hours')
+                ''')
+                total_count = cursor.fetchone()[0]
+                
+                # Accepted articles with images within 48 hours
+                cursor.execute('''
+                    SELECT COUNT(*) FROM our_articles 
+                    WHERE images IS NOT NULL AND images != '[]' AND images != 'null' 
+                        AND article_state = 'accepted' AND created_at >= datetime('now', '-48 hours')
                 ''')
                 with_images = cursor.fetchone()[0]
                 
-                # Oldest and newest accepted articles
-                cursor.execute('SELECT MIN(date), MAX(date) FROM our_articles WHERE article_state = \'accepted\'')
+                # Oldest and newest accepted articles within 48 hours
+                cursor.execute('''
+                    SELECT MIN(date), MAX(date) FROM our_articles 
+                    WHERE article_state = 'accepted' AND created_at >= datetime('now', '-48 hours')
+                ''')
                 oldest, newest = cursor.fetchone()
             else:
-                # Total articles
-                cursor.execute('SELECT COUNT(*) FROM our_articles')
+                # Total articles within 48 hours
+                cursor.execute('''
+                    SELECT COUNT(*) FROM our_articles 
+                    WHERE created_at >= datetime('now', '-48 hours')
+                ''')
                 total_count = cursor.fetchone()[0]
                 
-                # Articles with images
+                # Articles with images within 48 hours
                 cursor.execute('''
                     SELECT COUNT(*) FROM our_articles 
                     WHERE images IS NOT NULL AND images != '[]' AND images != 'null'
+                        AND created_at >= datetime('now', '-48 hours')
                 ''')
                 with_images = cursor.fetchone()[0]
                 
-                # Oldest and newest articles
-                cursor.execute('SELECT MIN(date), MAX(date) FROM our_articles')
+                # Oldest and newest articles within 48 hours
+                cursor.execute('''
+                    SELECT MIN(date), MAX(date) FROM our_articles 
+                    WHERE created_at >= datetime('now', '-48 hours')
+                ''')
                 oldest, newest = cursor.fetchone()
             
             return {
@@ -592,8 +616,21 @@ class OurArticlesDatabaseQuery:
                 'articles_with_images': with_images,
                 'articles_without_images': total_count - with_images,
                 'oldest_article': oldest,
-                'newest_article': newest
+                'newest_article': newest,
+                'filter_note': 'Statistics show only articles created within the last 48 hours'
             }
+    
+    def engage_killswitch(self) -> int:
+        """Replace all article content with warning message"""
+        warning_text = "Bu haberler çalıntı ve yapay zeka üretimidir"
+        with self.get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute('''
+                UPDATE our_articles 
+                SET title = ?, summary = ?, body = ?, updated_at = CURRENT_TIMESTAMP
+            ''', (warning_text, warning_text, warning_text))
+            conn.commit()
+            return cursor.rowcount
 
 def main():
     """Main function"""

@@ -9,11 +9,16 @@ from typing import Dict, Any, Optional, List
 from db_query import OurArticlesDatabaseQuery
 
 # uvicorn backendServer:app --reload
+# POST /specialControls/killSwitchEngaged - Emergency killswitch (requires code parameter)
+#http://localhost:8000/specialControls/killSwitchEngaged?code=1316
 
 # ============================================================================
 # API ENDPOINTS REFERENCE
 # ============================================================================
 # 
+# IMPORTANT: All endpoints now filter articles to show only those created within 
+# the last 48 hours and order them by updated_at (newest first).
+#
 # FRONTEND API ENDPOINTS:
 # GET  /                    - Root endpoint with server info and available endpoints
 # GET  /getOneNew          - Get next unserved article (for live feed)
@@ -23,6 +28,7 @@ from db_query import OurArticlesDatabaseQuery
 # GET  /tags/{tag}         - Get articles by tag (?limit=20)
 # GET  /statistics         - Get database statistics
 # POST /reset              - Reset served status (allows articles to be served again)
+
 #
 # RSS FEED ENDPOINTS:
 # GET  /rss                - Main RSS feed (latest articles, ?limit=20)
@@ -319,6 +325,7 @@ def root():
         "status": "running",
         "database": "our_articles.db",
         "editor_enabled": EDITOR_ENABLED,
+        "filtering": "Articles filtered to show only those created within the last 48 hours, ordered by updated_at (newest first)",
         "statistics": stats,
         "frontend_api": {
             "get_one_new": "/getOneNew",
@@ -425,6 +432,28 @@ def reset_served():
     articles_cache = []
     load_articles_batch()
     return {"message": "Sunum durumu sıfırlandı", "articles_loaded": len(articles_cache)}
+
+@app.post("/specialControls/killSwitchEngaged", include_in_schema=False)
+def killswitch_endpoint(code: str):
+    """Killswitch endpoint - replaces all article content with warning message"""
+    if code != "1316":
+        raise HTTPException(status_code=403, detail="Yetkisiz erişim")
+    
+    # Execute killswitch
+    affected_rows = db.engage_killswitch()
+    
+    # Clear the cache to reload articles
+    global served_indices, current_offset, articles_cache
+    served_indices.clear()
+    current_offset = 0
+    articles_cache = []
+    load_articles_batch()
+    
+    return {
+        "status": "killswitch_engaged",
+        "affected_articles": affected_rows,
+        "message": "Tüm makale içerikleri değiştirildi"
+    }
 
 # RSS Feed Endpoints
 
