@@ -15,10 +15,25 @@ LOG_FILE = os.path.join(SCRIPT_DIR, 'workflow_log.txt')
 
 # Import all modules
 import rss2db
+import scraper2db
 import group_articles
 import ai_writer
 import ai_editor
 import ai_rewriter
+
+# =============================================================================
+# WORKFLOW CONFIGURATION
+# =============================================================================
+
+# Source Configuration - Enable/Disable Data Sources
+ENABLE_RSS_SOURCE = False      # Enable RSS feed processing (rss2db.py)
+ENABLE_SCRAPER_SOURCE = True  # Enable web scraper processing (scraper2db.py)
+
+# AI Processing Configuration - Enable/Disable AI Components
+ENABLE_AI_EDITOR = False    # Enable AI article editor (ai_editor.py)
+ENABLE_AI_REWRITER = ENABLE_AI_EDITOR      # Enable AI article rewriter (ai_rewriter.py)
+
+# =============================================================================
 
 def log_to_file(message: str, log_file: str = LOG_FILE):
     """Log message to file with timestamp"""
@@ -39,24 +54,34 @@ def run_workflow() -> Dict[str, Any]:
     # Initialize log file
     log_to_file("=" * 80, log_file)
     log_to_file("WORKFLOW EXECUTION STARTED", log_file)
+    log_to_file(f"RSS Source: {'ENABLED' if ENABLE_RSS_SOURCE else 'DISABLED'}", log_file)
+    log_to_file(f"Scraper Source: {'ENABLED' if ENABLE_SCRAPER_SOURCE else 'DISABLED'}", log_file)
+    log_to_file(f"AI Editor: {'ENABLED' if ENABLE_AI_EDITOR else 'DISABLED'}", log_file)
+    log_to_file(f"AI Rewriter: {'ENABLED' if ENABLE_AI_REWRITER else 'DISABLED'}", log_file)
     log_to_file("=" * 80, log_file)
     
-    results = {
-        'start_time': start_time.isoformat(),
-        'steps': {},
-        'success_count': 0,
-        'failure_count': 0,
-        'total_steps': 5
-    }
-    
-    # Define workflow steps
-    workflow_steps = [
-        {
+    # Define workflow steps - conditionally include sources
+    workflow_steps = []
+
+    # Add data collection sources based on configuration
+    if ENABLE_RSS_SOURCE:
+        workflow_steps.append({
             'name': 'rss2db',
             'description': 'RSS to Database Processing',
             'function': rss2db.run,
             'args': {}
-        },
+        })
+
+    if ENABLE_SCRAPER_SOURCE:
+        workflow_steps.append({
+            'name': 'scraper2db',
+            'description': 'Web Scraper to Database Processing',
+            'function': scraper2db.run,
+            'args': {}
+        })
+
+    # Add processing steps (always enabled)
+    workflow_steps.extend([
         {
             'name': 'group_articles',
             'description': 'Article Grouping',
@@ -68,20 +93,33 @@ def run_workflow() -> Dict[str, Any]:
             'description': 'AI Article Writing',
             'function': ai_writer.run,
             'args': {}
-        },
-        {
+        }
+    ])
+    
+    # Add AI processing steps based on configuration
+    if ENABLE_AI_EDITOR:
+        workflow_steps.append({
             'name': 'ai_editor',
             'description': 'AI Article Editing',
             'function': ai_editor.run,
             'args': {}
-        },
-        {
+        })
+    
+    if ENABLE_AI_REWRITER:
+        workflow_steps.append({
             'name': 'ai_rewriter',
             'description': 'AI Article Rewriting',
             'function': ai_rewriter.run,
             'args': {}
-        }
-    ]
+        })
+    
+    results = {
+        'start_time': start_time.isoformat(),
+        'steps': {},
+        'success_count': 0,
+        'failure_count': 0,
+        'total_steps': len(workflow_steps)  # Dynamic count
+    }
     
     print("=" * 80)
     print("WORKFLOW EXECUTION STARTED")

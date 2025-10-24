@@ -51,8 +51,21 @@ import workflow
 # - Category RSS: http://localhost:8000/rss/category/gündem
 # ============================================================================
 
-# Editor mode configuration
-EDITOR_ENABLED = False  # Set to True to enable editor mode (only serve accepted articles)
+# Editor mode configuration - dynamically determined by workflow settings
+# When AI Editor is disabled in workflow, serve not_reviewed articles directly
+def get_editor_mode():
+    """Determine editor mode based on workflow configuration"""
+    try:
+        # Import workflow configuration
+        from workflow import ENABLE_AI_EDITOR
+        # If AI Editor is disabled, serve not_reviewed articles (editor_mode=False)
+        # If AI Editor is enabled, only serve accepted articles (editor_mode=True)
+        return ENABLE_AI_EDITOR
+    except ImportError:
+        # Fallback if workflow module not available
+        return False
+
+EDITOR_ENABLED = get_editor_mode()
 
 # Resolve script directory for database paths
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -347,8 +360,21 @@ async def lifespan(app: FastAPI):
     stats = db.get_statistics(editor_mode=EDITOR_ENABLED)
     print(f"Total articles in database: {stats['total_articles']}")
     print(f"Articles with images: {stats['articles_with_images']}")
-    if EDITOR_ENABLED:
-        print("Editor mode enabled - only serving accepted articles")
+    
+    # Print workflow configuration
+    try:
+        from workflow import ENABLE_AI_EDITOR, ENABLE_AI_REWRITER
+        print(f"Workflow Configuration:")
+        print(f"  - AI Editor: {'ENABLED' if ENABLE_AI_EDITOR else 'DISABLED'}")
+        print(f"  - AI Rewriter: {'ENABLED' if ENABLE_AI_REWRITER else 'DISABLED'}")
+        if EDITOR_ENABLED:
+            print("  - Serving: accepted articles only (AI Editor enabled)")
+        else:
+            print("  - Serving: not_reviewed articles (AI Editor disabled)")
+    except ImportError:
+        print("Workflow configuration: unknown")
+        if EDITOR_ENABLED:
+            print("Editor mode enabled - only serving accepted articles")
     
     # Start workflow scheduler as background task
     print("Starting automated workflow scheduler...")
@@ -381,11 +407,27 @@ app.add_middleware(
 def root():
     """Root endpoint with both frontend API and RSS feed information"""
     stats = db.get_statistics(editor_mode=EDITOR_ENABLED)
+    
+    # Get workflow configuration status
+    try:
+        from workflow import ENABLE_AI_EDITOR, ENABLE_AI_REWRITER
+        workflow_config = {
+            "ai_editor_enabled": ENABLE_AI_EDITOR,
+            "ai_rewriter_enabled": ENABLE_AI_REWRITER
+        }
+    except ImportError:
+        workflow_config = {
+            "ai_editor_enabled": "unknown",
+            "ai_rewriter_enabled": "unknown"
+        }
+    
     return {
         "message": "AI Newspaper Backend Server",
         "status": "running",
         "database": "our_articles.db",
         "editor_enabled": EDITOR_ENABLED,
+        "workflow_configuration": workflow_config,
+        "article_filtering": "accepted articles only" if EDITOR_ENABLED else "not_reviewed articles (AI Editor disabled)",
         "filtering": "Articles filtered to show only those created within the last 48 hours, ordered by updated_at (newest first)",
         "statistics": stats,
         "frontend_api": {

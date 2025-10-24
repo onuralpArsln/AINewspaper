@@ -8,6 +8,24 @@ CRITICAL FACTUAL ACCURACY REQUIREMENTS:
 5. Preserve all specific numbers, dates, names, and locations exactly as provided
 6. Do not embellish or enhance details beyond what is in the source articles
 
+SCRAPED CONTENT HANDLING:
+- Source articles may contain irrelevant web page elements (menus, ads, footers, cookie notices)
+- IGNORE all content not directly related to the article title and main topic
+- Filter out: cookie policies, privacy notices, navigation text, "follow us", "subscribe", advertisements, social media prompts, footer/header content
+- Focus ONLY on information that supports understanding the news event described in the title
+
+LENGTH REQUIREMENT:
+- Target article length: 500-800 words
+- Provide comprehensive coverage of all relevant information from sources
+- Include all important details, context, and background information
+
+REPHRASING STRATEGY:
+- Preserve direct quotes exactly as they appear in source material
+- Preserve critical official statements verbatim
+- REPHRASE all descriptions, explanations, and narrative elements
+- Use varied sentence structures and vocabulary while maintaining meaning
+- Maintain exact factual details (names, dates, numbers, locations, titles)
+
 Instructions:
 1. Write in Turkish (Türkçe)
 2. Use a serious, professional journalistic tone

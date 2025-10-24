@@ -51,7 +51,7 @@ logger = logging.getLogger(__name__)
 # CONFIGURATION FLAGS - Modify these to control AI writer behavior
 # ============================================================================
 ONLY_IMAGES = True  # Set to True to only process articles with images
-ARTICLE_COUNT = 2   # Number of articles to produce per run
+ARTICLE_COUNT = 5   # Number of articles to produce per run
 # ============================================================================
 
 class AIWriter:

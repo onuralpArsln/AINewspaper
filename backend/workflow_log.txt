@@ -94,3 +94,63 @@
 [2025-10-19 19:26:54] Starting step 2: Article Grouping
 [2025-10-19 19:26:54] Step 2 COMPLETED SUCCESSFULLY in 0.01 seconds
 [2025-10-19 19:26:54] Starting step 3: AI Article Writing
+[2025-10-25 00:33:24] ================================================================================
+[2025-10-25 00:33:24] WORKFLOW EXECUTION STARTED
+[2025-10-25 00:33:24] RSS Source: DISABLED
+[2025-10-25 00:33:24] Scraper Source: ENABLED
+[2025-10-25 00:33:24] ================================================================================
+[2025-10-25 00:33:24] Unexpected workflow error: cannot access local variable 'workflow_steps' where it is not associated with a value
+[2025-10-25 00:34:47] ================================================================================
+[2025-10-25 00:34:47] WORKFLOW EXECUTION STARTED
+[2025-10-25 00:34:47] RSS Source: DISABLED
+[2025-10-25 00:34:47] Scraper Source: ENABLED
+[2025-10-25 00:34:47] ================================================================================
+[2025-10-25 00:34:47] Starting step 1: Web Scraper to Database Processing
+[2025-10-25 00:34:55] Step 1 COMPLETED SUCCESSFULLY in 8.01 seconds
+[2025-10-25 00:34:55] Starting step 2: Article Grouping
+[2025-10-25 00:34:55] Step 2 COMPLETED SUCCESSFULLY in 0.01 seconds
+[2025-10-25 00:34:55] Starting step 3: AI Article Writing
+[2025-10-25 00:35:14] Step 3 COMPLETED SUCCESSFULLY in 18.51 seconds
+[2025-10-25 00:35:14] Starting step 4: AI Article Editing
+[2025-10-25 00:37:23] Step 4 COMPLETED SUCCESSFULLY in 129.13 seconds
+[2025-10-25 00:37:23] Starting step 5: AI Article Rewriting
+[2025-10-25 00:37:27] ================================================================================
+[2025-10-25 00:37:27] WORKFLOW EXECUTION STARTED
+[2025-10-25 00:37:27] RSS Source: DISABLED
+[2025-10-25 00:37:27] Scraper Source: ENABLED
+[2025-10-25 00:37:27] ================================================================================
+[2025-10-25 00:37:27] Starting step 1: Web Scraper to Database Processing
+[2025-10-25 00:37:33] Step 1 COMPLETED SUCCESSFULLY in 5.53 seconds
+[2025-10-25 00:37:33] Starting step 2: Article Grouping
+[2025-10-25 00:37:33] Step 2 COMPLETED SUCCESSFULLY in 0.01 seconds
+[2025-10-25 00:37:33] Starting step 3: AI Article Writing
+[2025-10-25 00:37:57] Step 3 COMPLETED SUCCESSFULLY in 24.50 seconds
+[2025-10-25 00:37:57] Starting step 4: AI Article Editing
+[2025-10-25 00:39:52] Step 4 COMPLETED SUCCESSFULLY in 115.04 seconds
+[2025-10-25 00:39:52] Starting step 5: AI Article Rewriting
+[2025-10-25 00:42:19] Step 5 COMPLETED SUCCESSFULLY in 296.75 seconds
+[2025-10-25 00:42:19] ================================================================================
+[2025-10-25 00:42:19] WORKFLOW EXECUTION COMPLETED
+[2025-10-25 00:42:19] Total duration: 452.42 seconds
+[2025-10-25 00:42:19] Successful steps: 5/5
+[2025-10-25 00:42:19] Failed steps: 0/5
+[2025-10-25 00:42:19] ================================================================================
+[2025-10-25 00:43:00] Step 5 COMPLETED SUCCESSFULLY in 188.17 seconds
+[2025-10-25 00:43:00] ================================================================================
+[2025-10-25 00:43:00] WORKFLOW EXECUTION COMPLETED
+[2025-10-25 00:43:00] Total duration: 333.25 seconds
+[2025-10-25 00:43:00] Successful steps: 5/5
+[2025-10-25 00:43:00] Failed steps: 0/5
+[2025-10-25 00:43:00] ================================================================================
+[2025-10-25 01:01:43] ================================================================================
+[2025-10-25 01:01:43] WORKFLOW EXECUTION STARTED
+[2025-10-25 01:01:43] RSS Source: DISABLED
+[2025-10-25 01:01:43] Scraper Source: ENABLED
+[2025-10-25 01:01:43] AI Editor: DISABLED
+[2025-10-25 01:01:43] AI Rewriter: DISABLED
+[2025-10-25 01:01:43] ================================================================================
+[2025-10-25 01:01:43] Starting step 1: Web Scraper to Database Processing
+[2025-10-25 01:01:51] Step 1 COMPLETED SUCCESSFULLY in 8.07 seconds
+[2025-10-25 01:01:51] Starting step 2: Article Grouping
+[2025-10-25 01:01:51] Step 2 COMPLETED SUCCESSFULLY in 0.01 seconds
+[2025-10-25 01:01:51] Starting step 3: AI Article Writing

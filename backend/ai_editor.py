@@ -38,7 +38,7 @@ logger = logging.getLogger(__name__)
 # ============================================================================
 # CONFIGURATION FLAGS - Modify these to control AI editor behavior
 # ============================================================================
-REVIEW_COUNT = 2   # Number of articles to review per run
+REVIEW_COUNT = 5   # Number of articles to review per run
 # ============================================================================
 
 class AIEditor:

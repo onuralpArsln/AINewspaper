@@ -22,6 +22,16 @@ import html
 # Import existing RSS classes
 from rss2db import RSSArticle, RSSDatabase
 
+# =============================================================================
+# CONFIGURATION FLAGS
+# =============================================================================
+
+# Minimum content length threshold (in characters) for articles to be added to database
+# Articles with content shorter than this will be skipped
+MIN_CONTENT_LENGTH_THRESHOLD = 200  # Set to 0 to disable filtering
+
+# =============================================================================
+
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
@@ -896,6 +906,7 @@ class ScraperToDatabase:
             'total_articles_found': 0,
             'new_articles_added': 0,
             'duplicates_skipped': 0,
+            'short_content_skipped': 0,
             'errors': 0,
             'processing_time': 0
         }
@@ -939,6 +950,7 @@ class ScraperToDatabase:
                     # Process each article
                     articles_added = 0
                     duplicates_skipped = 0
+                    short_content_skipped = 0
                     
                     for article_url in article_urls:
                         try:
@@ -956,6 +968,13 @@ class ScraperToDatabase:
                             
                             # Extract article content
                             article_data = self.content_parser.extract_article_content(article_soup, article_url)
+                            
+                            # Check content length threshold
+                            content_length = len(article_data['content'])
+                            if MIN_CONTENT_LENGTH_THRESHOLD > 0 and content_length < MIN_CONTENT_LENGTH_THRESHOLD:
+                                logger.warning(f"Skipping article due to short content ({content_length} chars < {MIN_CONTENT_LENGTH_THRESHOLD} threshold): {article_data['title'][:50]}...")
+                                short_content_skipped += 1
+                                continue
                             
                             # Create RSSArticle object
                             article = RSSArticle()
@@ -980,7 +999,7 @@ class ScraperToDatabase:
                             # Insert into database
                             if self.db.insert_article(article):
                                 articles_added += 1
-                                logger.info(f"Added article: {article.title[:50]}...")
+                                logger.info(f"Added article: {article.title[:50]}... ({content_length} chars)")
                             else:
                                 duplicates_skipped += 1
                                 logger.debug(f"Article already exists (content hash): {article.title[:50]}...")
@@ -993,6 +1012,7 @@ class ScraperToDatabase:
                     # Update statistics
                     total_stats['new_articles_added'] += articles_added
                     total_stats['duplicates_skipped'] += duplicates_skipped
+                    total_stats['short_content_skipped'] += short_content_skipped
                     
                     # Update source info
                     source_info['article_count'] = articles_added
@@ -1007,7 +1027,7 @@ class ScraperToDatabase:
                     
                     total_stats['sources_successful'] += 1
                     
-                    logger.info(f"Source {source_url}: {articles_added} new, {duplicates_skipped} duplicates")
+                    logger.info(f"Source {source_url}: {articles_added} new, {duplicates_skipped} duplicates, {short_content_skipped} short content skipped")
                     
                 except Exception as e:
                     logger.error(f"Error processing source {source_url}: {e}")
@@ -1043,6 +1063,7 @@ class ScraperToDatabase:
         print(f"Total articles found: {stats['total_articles_found']}")
         print(f"New articles added: {stats['new_articles_added']}")
         print(f"Duplicates skipped: {stats['duplicates_skipped']}")
+        print(f"Short content skipped: {stats['short_content_skipped']}")
         print(f"Errors: {stats['errors']}")
         print(f"Processing time: {stats['processing_time']:.2f} seconds")
         
