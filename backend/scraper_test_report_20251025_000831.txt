@@ -1,0 +1,214 @@
+================================================================================
+SCRAPER2DB EXTRACTION ACCURACY TEST REPORT
+================================================================================
+Generated: 2025-10-25 00:08:31
+
+SUMMARY STATISTICS
+----------------------------------------
+Total articles analyzed: 15
+
+Title Extraction Accuracy:
+  Average score: 1.0
+  Good extractions: 15/15 (100.0%)
+
+Content Extraction Accuracy:
+  Average score: 0.927
+  Good extractions: 15/15 (100.0%)
+
+Image Extraction Accuracy:
+  Average score: 1.0
+  Good extractions: 15/15 (100.0%)
+
+Overall Extraction Accuracy:
+  Good extractions: 15/15 (100.0%)
+
+DETAILED PER-ARTICLE ANALYSIS
+----------------------------------------
+
+Article 1: https://www.internethaber.com/sondakika-haberleri-son-haberler
+Overall Accuracy: ✓
+  Title: exact_match (score: 1.00)
+    Scraped: Günün Sondakika Haberleri - En son haber...
+    Manual:  Günün Sondakika Haberleri - En son haber...
+  Content: both_empty (score: 1.00)
+    Scraped: 0 chars
+    Manual:  0 chars
+  Image: exact_match (score: 1.00)
+    Scraped: https://img.internethaber.com/rcman/Cw1280h720q95gm/assets/w...
+    Manual:  https://img.internethaber.com/rcman/Cw1280h720q95gm/assets/w...
+
+Article 2: https://www.internethaber.com/son-dakika
+Overall Accuracy: ✓
+  Title: exact_match (score: 1.00)
+    Scraped: Son dakika güncel haberler...
+    Manual:  Son dakika güncel haberler...
+  Content: excellent (score: 0.90)
+    Scraped: 268 chars
+    Manual:  268 chars
+  Image: exact_match (score: 1.00)
+    Scraped: https://img.internethaber.com/rcman/Cw1280h720q95gm/assets/w...
+    Manual:  https://img.internethaber.com/rcman/Cw1280h720q95gm/assets/w...
+
+Article 3: https://www.internethaber.com/guncel-haberler
+Overall Accuracy: ✓
+  Title: exact_match (score: 1.00)
+    Scraped: Güncel Haberler I Türkiye gündem haberi - internet haber...
+    Manual:  Güncel Haberler I Türkiye gündem haberi - internet haber...
+  Content: both_empty (score: 1.00)
+    Scraped: 0 chars
+    Manual:  0 chars
+  Image: exact_match (score: 1.00)
+    Scraped: https://img.internethaber.com/rcman/Cw1280h720q95gc/assets/w...
+    Manual:  https://img.internethaber.com/rcman/Cw1280h720q95gc/assets/w...
+
+Article 4: https://www.internethaber.com/spor
+Overall Accuracy: ✓
+  Title: exact_match (score: 1.00)
+    Scraped: Spor haberleri I Son dakika spor haberi I internet haber spo...
+    Manual:  Spor haberleri I Son dakika spor haberi I internet haber spo...
+  Content: both_empty (score: 1.00)
+    Scraped: 0 chars
+    Manual:  0 chars
+  Image: exact_match (score: 1.00)
+    Scraped: https://img.internethaber.com/rcman/Cw1280h720q95gc/assets/w...
+    Manual:  https://img.internethaber.com/rcman/Cw1280h720q95gc/assets/w...
+
+Article 5: https://www.internethaber.com/ekonomi
+Overall Accuracy: ✓
+  Title: exact_match (score: 1.00)
+    Scraped: Ekonomi Haberleri I İş ekonomi haberi - İnternet Haber...
+    Manual:  Ekonomi Haberleri I İş ekonomi haberi - İnternet Haber...
+  Content: both_empty (score: 1.00)
+    Scraped: 0 chars
+    Manual:  0 chars
+  Image: exact_match (score: 1.00)
+    Scraped: https://img.internethaber.com/rcman/Cw1280h720q95gc/assets/w...
+    Manual:  https://img.internethaber.com/rcman/Cw1280h720q95gc/assets/w...
+
+Article 6: https://www.yeniakit.com.tr/haber/ankara-merkezli-dev-dolandiricilik-operasyonu-19-kisi-tutuklandi-1961000.html
+Overall Accuracy: ✓
+  Title: exact_match (score: 1.00)
+    Scraped: Ankara merkezli dev dolandırıcılık operasyonu: 19 kişi tutuk...
+    Manual:  Ankara merkezli dev dolandırıcılık operasyonu: 19 kişi tutuk...
+  Content: excellent (score: 0.90)
+    Scraped: 2484 chars
+    Manual:  2484 chars
+  Image: exact_match (score: 1.00)
+    Scraped: https://cdn.yeniakit.com.tr/cdn-cgi/image/format=webp/images...
+    Manual:  https://cdn.yeniakit.com.tr/cdn-cgi/image/format=webp/images...
+
+Article 7: https://www.yeniakit.com.tr/haber/turk-profesor-turkiyede-bosanmalarin-neden-kaynaklandigini-acikladi-1960993.html
+Overall Accuracy: ✓
+  Title: exact_match (score: 1.00)
+    Scraped: Türk profesör Türkiye'de boşanmaların neden kaynaklandığını ...
+    Manual:  Türk profesör Türkiye'de boşanmaların neden kaynaklandığını ...
+  Content: excellent (score: 0.90)
+    Scraped: 4982 chars
+    Manual:  4982 chars
+  Image: exact_match (score: 1.00)
+    Scraped: https://cdn.yeniakit.com.tr/cdn-cgi/image/format=webp/images...
+    Manual:  https://cdn.yeniakit.com.tr/cdn-cgi/image/format=webp/images...
+
+Article 8: https://www.yeniakit.com.tr/haber/bakan-murat-kurum-yuzyilin-konut-projesinin-detaylarini-canli-yayinda-acikliyor-1960989.html
+Overall Accuracy: ✓
+  Title: exact_match (score: 1.00)
+    Scraped: Bakan Murat Kurum, Yüzyılın Konut Projesi'nin tüm detayların...
+    Manual:  Bakan Murat Kurum, Yüzyılın Konut Projesi'nin tüm detayların...
+  Content: excellent (score: 0.90)
+    Scraped: 7666 chars
+    Manual:  7666 chars
+  Image: exact_match (score: 1.00)
+    Scraped: https://cdn.yeniakit.com.tr/cdn-cgi/image/format=webp/images...
+    Manual:  https://cdn.yeniakit.com.tr/cdn-cgi/image/format=webp/images...
+
+Article 9: https://www.yeniakit.com.tr/haber/karar-aciklandi-marti-e-ulasim-lisansini-almaya-hak-kazandi-1960979.html
+Overall Accuracy: ✓
+  Title: exact_match (score: 1.00)
+    Scraped: Karar açıklandı: Martı, E-Ulaşım Lisansını almaya hak kazand...
+    Manual:  Karar açıklandı: Martı, E-Ulaşım Lisansını almaya hak kazand...
+  Content: excellent (score: 0.90)
+    Scraped: 1615 chars
+    Manual:  1615 chars
+  Image: exact_match (score: 1.00)
+    Scraped: https://cdn.yeniakit.com.tr/cdn-cgi/image/format=webp/images...
+    Manual:  https://cdn.yeniakit.com.tr/cdn-cgi/image/format=webp/images...
+
+Article 10: https://www.yeniakit.com.tr/haber/baskan-erdogandan-bm-mesaji-1960978.html
+Overall Accuracy: ✓
+  Title: exact_match (score: 1.00)
+    Scraped: Başkan Erdoğan'dan BM mesajı...
+    Manual:  Başkan Erdoğan'dan BM mesajı...
+  Content: excellent (score: 0.90)
+    Scraped: 2725 chars
+    Manual:  2725 chars
+  Image: exact_match (score: 1.00)
+    Scraped: https://cdn.yeniakit.com.tr/cdn-cgi/image/format=webp/images...
+    Manual:  https://cdn.yeniakit.com.tr/cdn-cgi/image/format=webp/images...
+
+Article 11: https://www.yirmidort.tv/gundem/chp-yonetimi-yine-uc-maymunu-oynuyor-tek-itiraz-gelmedi-246604
+Overall Accuracy: ✓
+  Title: exact_match (score: 1.00)
+    Scraped: CHP yönetimi yine üç maymunu oynuyor! Tek itiraz gelmedi...
+    Manual:  CHP yönetimi yine üç maymunu oynuyor! Tek itiraz gelmedi...
+  Content: excellent (score: 0.90)
+    Scraped: 2137 chars
+    Manual:  2137 chars
+  Image: exact_match (score: 1.00)
+    Scraped: https://mediacdn.yirmidort.tv/Documents/yirmidorthaber/image...
+    Manual:  https://mediacdn.yirmidort.tv/Documents/yirmidorthaber/image...
+
+Article 12: https://www.yirmidort.tv/gundem/bogazda-50-milyon-dolarlik-rusvet-carki-paralar-chpli-baskana-akti-246602
+Overall Accuracy: ✓
+  Title: exact_match (score: 1.00)
+    Scraped: Boğaz'da 50 milyon dolarlık rüşvet çarkı! Paralar CHP'li baş...
+    Manual:  Boğaz'da 50 milyon dolarlık rüşvet çarkı! Paralar CHP'li baş...
+  Content: excellent (score: 0.90)
+    Scraped: 6763 chars
+    Manual:  6763 chars
+  Image: exact_match (score: 1.00)
+    Scraped: https://mediacdn.yirmidort.tv/Documents/yirmidorthaber/image...
+    Manual:  https://mediacdn.yirmidort.tv/Documents/yirmidorthaber/image...
+
+Article 13: https://www.yirmidort.tv/gundem/yolyemezler-cetesine-yasadisi-bahis-operasyonu-yakalama-kararlari-var-246597
+Overall Accuracy: ✓
+  Title: exact_match (score: 1.00)
+    Scraped: ''Yolyemezler Çetesi''ne yasadışı bahis operasyonu! Yakalama...
+    Manual:  ''Yolyemezler Çetesi''ne yasadışı bahis operasyonu! Yakalama...
+  Content: excellent (score: 0.90)
+    Scraped: 1421 chars
+    Manual:  1421 chars
+  Image: exact_match (score: 1.00)
+    Scraped: https://mediacdn.yirmidort.tv/Documents/yirmidorthaber/image...
+    Manual:  https://mediacdn.yirmidort.tv/Documents/yirmidorthaber/image...
+
+Article 14: https://www.yirmidort.tv/gundem/ekrem-imamoglu-necati-ozkan-ve-merdan-yanardag-hakkinda-casusluk-sorusturmasi-246595
+Overall Accuracy: ✓
+  Title: exact_match (score: 1.00)
+    Scraped: Ekrem İmamoğlu, Necati Özkan ve Merdan Yanardağ hakkında ''c...
+    Manual:  Ekrem İmamoğlu, Necati Özkan ve Merdan Yanardağ hakkında ''c...
+  Content: excellent (score: 0.90)
+    Scraped: 9324 chars
+    Manual:  9324 chars
+  Image: exact_match (score: 1.00)
+    Scraped: https://mediacdn.yirmidort.tv/Documents/yirmidorthaber/image...
+    Manual:  https://mediacdn.yirmidort.tv/Documents/yirmidorthaber/image...
+
+Article 15: https://www.yirmidort.tv/gundem/29-ekim-cumhuriyet-bayraminda-bazi-metro-seferleri-ucretsiz-246589
+Overall Accuracy: ✓
+  Title: exact_match (score: 1.00)
+    Scraped: 29 Ekim Cumhuriyet Bayramı'nda bazı metro seferleri ücretsiz...
+    Manual:  29 Ekim Cumhuriyet Bayramı'nda bazı metro seferleri ücretsiz...
+  Content: excellent (score: 0.90)
+    Scraped: 1178 chars
+    Manual:  1178 chars
+  Image: exact_match (score: 1.00)
+    Scraped: https://mediacdn.yirmidort.tv/Documents/yirmidorthaber/image...
+    Manual:  https://mediacdn.yirmidort.tv/Documents/yirmidorthaber/image...
+
+IMPROVEMENT RECOMMENDATIONS
+----------------------------------------
+General Improvements:
+  - Add retry logic for failed page fetches
+  - Implement better error handling and logging
+  - Consider adding content quality scoring
+  - Add support for more Turkish news site patterns

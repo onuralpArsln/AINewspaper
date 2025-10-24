@@ -666,14 +666,14 @@ class OurArticlesDatabaseQuery:
             }
     
     def engage_killswitch(self) -> int:
-        """Replace all article content with warning message"""
-        warning_text = "Bu haberler çalıntı ve yapay zeka üretimidir"
+        """Replace all article content with error message"""
+        error_text = "hata"
         with self.get_connection() as conn:
             cursor = conn.cursor()
             cursor.execute('''
                 UPDATE our_articles 
                 SET title = ?, summary = ?, body = ?, updated_at = CURRENT_TIMESTAMP
-            ''', (warning_text, warning_text, warning_text))
+            ''', (error_text, error_text, error_text))
             conn.commit()
             return cursor.rowcount
 
