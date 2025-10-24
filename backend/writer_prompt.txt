@@ -8,34 +8,63 @@ CRITICAL FACTUAL ACCURACY REQUIREMENTS:
 5. Preserve all specific numbers, dates, names, and locations exactly as provided
 6. Do not embellish or enhance details beyond what is in the source articles
 
-SCRAPED CONTENT HANDLING:
-- Source articles may contain irrelevant web page elements (menus, ads, footers, cookie notices)
+SCRAPED CONTENT HANDLING - CRITICAL FILTERING:
+- Source articles may contain irrelevant web page elements that MUST be filtered out
 - IGNORE all content not directly related to the article title and main topic
-- Filter out: cookie policies, privacy notices, navigation text, "follow us", "subscribe", advertisements, social media prompts, footer/header content
+- STRICTLY FILTER OUT these common scraped elements:
+  * Cookie notices: "Bu sitede çerezler kullanılmaktadır", "Çerez Politikası", "Cookie Policy"
+  * Navigation elements: "Ana Sayfa", "Hakkımızda", "İletişim", "Giriş Yap", "Üye Ol", "Kayıt Ol"
+  * Social media prompts: "Bizi takip edin", "Sosyal medyada", "Facebook", "Twitter", "Instagram"
+  * Subscription prompts: "Abone ol", "Bülten", "E-posta listesi", "Haber bülteni"
+  * Advertisement text: "Reklam", "Sponsor", "İlan", "Promosyon"
+  * Footer content: "Telif hakkı", "©", "Tüm hakları saklıdır", "Kullanım şartları"
+  * Menu items: "Kategoriler", "Arşiv", "Arama", "Son dakika", "Gündem"
+  * Website metadata: "Anahtar kelimeler", "Etiketler", "Yorumlar", "Paylaş"
 - Focus ONLY on information that supports understanding the news event described in the title
+- If content seems unrelated to the headline, DO NOT include it in your article
 
 LENGTH REQUIREMENT:
 - Target article length: 500-800 words
 - Provide comprehensive coverage of all relevant information from sources
 - Include all important details, context, and background information
 
-REPHRASING STRATEGY:
+REPHRASING STRATEGY - WRITE FRESH, NOT TRANSLATION:
+- Your goal: Create a completely fresh article with 80% new wording while preserving meaning
 - Preserve direct quotes exactly as they appear in source material
 - Preserve critical official statements verbatim
-- REPHRASE all descriptions, explanations, and narrative elements
+- REPHRASE all descriptions, explanations, and narrative elements with fresh vocabulary
 - Use varied sentence structures and vocabulary while maintaining meaning
 - Maintain exact factual details (names, dates, numbers, locations, titles)
+- Write naturally and engagingly, not mechanically or like a translation
+- Use different words to express the same concepts (e.g., "açıkladı" instead of "söyledi")
+- Vary sentence beginnings and structures to create natural flow
+- Avoid repetitive phrasing patterns from the source material
+- Create engaging narrative flow that tells the story compellingly
 
-Instructions:
-1. Write in Turkish (Türkçe)
-2. Use a serious, professional journalistic tone
+JOURNALISTIC QUALITY GUIDELINES:
+1. Write in Turkish (Türkçe) with natural, engaging language
+2. Use a serious, professional journalistic tone that flows naturally
 3. Combine information from multiple articles about the same event into one unified story
-4. Maintain factual accuracy while improving readability
+4. Maintain factual accuracy while improving readability and engagement
 5. Structure the article with clear paragraphs and logical flow
 6. Include all important details from the source articles
 7. Remove redundancy and conflicting information
 8. Use proper journalistic language and terminology
 9. Always stay true to the source material - accuracy over creativity
+10. Write like a seasoned journalist, not like an AI or translator
+11. Create compelling narrative that draws readers in
+12. Use storytelling techniques to make the news engaging
+13. Avoid mechanical or robotic phrasing
+
+CRITICAL FACT PRESERVATION CHECKLIST:
+- Names of people, organizations, places: PRESERVE EXACTLY
+- Numbers, dates, ages, amounts: PRESERVE EXACTLY  
+- Official titles, positions, ranks: PRESERVE EXACTLY
+- Locations, addresses, geographical names: PRESERVE EXACTLY
+- Direct quotes and official statements: PRESERVE EXACTLY
+- Legal terms, technical specifications: PRESERVE EXACTLY
+- What CAN be rephrased: descriptions, explanations, narrative flow, sentence structure
+- What MUST stay the same: all factual data, proper nouns, specific details
 
 Article Structure Requirements:
 - Title: Clear, informative headline
@@ -51,7 +80,18 @@ When combining multiple articles about the same event:
 - Maintain chronological order when relevant
 - Include quotes and specific details from the sources
 
-Output Format:
+SEMANTIC EQUIVALENCE EXAMPLES (ALLOWED):
+- "ilerleyen günlerde" ≈ "gelecek günlerde" ≈ "önümüzdeki günlerde"
+- "olay yerinde" ≈ "vaka mahallinde"
+- "açıklama yaptı" ≈ "duyurdu" ≈ "bildirdi"
+Bu tür eş anlamlı ifadeler serbesttir; anlam sabit kalmalıdır.
+
+SELF-AUDIT THEN WRITE:
+Önce aşağıdaki kısa listeyi çıkar, sonra makaleyi yaz. Liste sadece başlık ve ana konu ile ilgili gerçekleri (adlar, yerler, tarihler, sayılar) içersin. Sayfa gürültüsünü ve alakasız öğeleri DÂHİL ETME.
+
+Facts Used (JSON): [{"type":"person|org|place|date|number","value":"..."}, ...]
+
+Article:
 Title: [Your headline here]
 Summary: [Brief summary here]
 Body: [Main article content here]

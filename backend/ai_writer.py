@@ -52,6 +52,8 @@ logger = logging.getLogger(__name__)
 # ============================================================================
 ONLY_IMAGES = True  # Set to True to only process articles with images
 ARTICLE_COUNT = 5   # Number of articles to produce per run
+# Validation mode: when False (default), allow semantic rephrasing and rely on prompt; keep minimal safeguards
+STRICT_FACT_VALIDATION = False
 # ============================================================================
 
 class AIWriter:
@@ -430,38 +432,63 @@ Please rewrite the following articles:
             return None
     
     def _validate_factual_accuracy(self, article_data: Dict[str, str], source_articles: List[Dict[str, Any]]) -> bool:
-        """Validate that the generated article doesn't contain information not in source articles"""
+        """Minimal-safe validation: allow semantic rephrasing; block only explicit hallucination patterns.
+
+        In non-strict mode (STRICT_FACT_VALIDATION=False):
+        - Do not compare large sets of words/entities/numbers.
+        - Fail only if forbidden phrases appear that are not in sources.
+        - Warn (do not fail) if title anchor entities seem missing.
+        """
         try:
-            # Extract all text content from source articles
-            source_text = ""
-            for article in source_articles:
-                source_text += f" {article.get('title', '')} {article.get('description', '')} {article.get('content', '')}"
-            
-            source_text = source_text.lower()
-            
-            # Check for potential hallucination indicators
-            generated_content = f"{article_data.get('title', '')} {article_data.get('summary', '')} {article_data.get('body', '')}".lower()
-            
-            # Look for specific patterns that might indicate hallucination
-            suspicious_patterns = [
-                "bilgi mevcut değil",  # Should be present if information is missing
-                "kaynaklara göre",     # Should not add "according to sources" if not in source
-                "uzmanlara göre",      # Should not add "according to experts" if not in source
+            import re
+
+            if not STRICT_FACT_VALIDATION:
+                # Merge source text for phrase checks
+                source_text = " ".join([
+                    f"{a.get('title','')} {a.get('description','')} {a.get('content','')}" for a in source_articles
+                ]).lower()
+
+                generated_content = f"{article_data.get('title','')} {article_data.get('summary','')} {article_data.get('body','')}".lower()
+
+                # Forbidden hallucination cues that must not appear unless present in sources
+                forbidden_phrases = [
+                    "kaynaklara göre", "uzmanlara göre", "iddialara göre", "henüz doğrulanmayan",
+                    "resmi olmayan", "güvenilir kaynaklar", "kulislere göre"
+                ]
+
+                for phrase in forbidden_phrases:
+                    if phrase in generated_content and phrase not in source_text:
+                        logger.warning(f"Generated article contains forbidden phrase not in sources: '{phrase}'")
+                        return False
+
+                # Warn-only: ensure title anchor tokens present
+                titles = " ".join([a.get('title','') for a in source_articles])
+                # Extract simple anchor tokens from titles (capitalized words, >=3 chars)
+                title_tokens = set(re.findall(r"\b[A-ZÇĞIİÖŞÜ][a-zçğıiöşü]{2,}\b", titles))
+                missing = []
+                for tok in title_tokens:
+                    if tok.lower() not in generated_content:
+                        missing.append(tok)
+                if len(missing) > 0:
+                    logger.info(f"Title anchor tokens possibly missing (warn-only): {missing[:5]}")
+
+                return True
+
+            # STRICT mode (debug): basic check only; still avoid broad count diffs
+            source_text = " ".join([
+                f"{a.get('title','')} {a.get('description','')} {a.get('content','')}" for a in source_articles
+            ]).lower()
+            generated_content = f"{article_data.get('title','')} {article_data.get('summary','')} {article_data.get('body','')}".lower()
+            forbidden_phrases = [
+                "kaynaklara göre", "uzmanlara göre", "iddialara göre", "henüz doğrulanmayan",
+                "resmi olmayan", "güvenilir kaynaklar", "kulislere göre"
             ]
-            
-            # Check if the article contains information that might not be in sources
-            # This is a basic check - more sophisticated validation could be added
-            words_in_generated = set(generated_content.split())
-            words_in_source = set(source_text.split())
-            
-            # Check for significant new words that might indicate hallucination
-            new_words = words_in_generated - words_in_source
-            if len(new_words) > 50:  # Threshold for potential hallucination
-                logger.warning(f"Generated article contains {len(new_words)} words not found in source articles")
-                return False
-            
+            for phrase in forbidden_phrases:
+                if phrase in generated_content and phrase not in source_text:
+                    logger.warning(f"[STRICT] Forbidden phrase not in sources: '{phrase}'")
+                    return False
             return True
-            
+
         except Exception as e:
             logger.error(f"Error validating factual accuracy: {e}")
             return True  # Allow article if validation fails
@@ -471,35 +498,80 @@ Please rewrite the following articles:
         try:
             lines = response_text.strip().split('\n')
             article_data = {}
+            facts_used = []
             
             current_section = None
             current_content = []
             
             for line in lines:
                 line = line.strip()
-                if line.startswith('Title:'):
+                # Capture optional self-audit facts section
+                if line.startswith('Facts Used'):
+                    # Accumulate the JSON block on the same or following lines
+                    current_section = 'facts'
+                    current_content = [line.split(':',1)[1].strip()] if ':' in line else []
+                elif current_section == 'facts' and (line.startswith('[') or line.startswith('{') or line.endswith(']') or line.endswith('}')):
+                    current_content.append(line)
+                elif current_section == 'facts' and line and not line.startswith(('Title:','Summary:','Body:','Category:','Tags:')):
+                    current_content.append(line)
+                elif line.startswith('Title:'):
                     if current_section and current_content:
-                        article_data[current_section] = '\n'.join(current_content).strip()
+                        if current_section == 'facts':
+                            try:
+                                facts_text = '\n'.join(current_content).strip()
+                                facts_used = json.loads(facts_text)
+                            except Exception:
+                                facts_used = []
+                        else:
+                            article_data[current_section] = '\n'.join(current_content).strip()
                     current_section = 'title'
                     current_content = [line.replace('Title:', '').strip()]
                 elif line.startswith('Summary:'):
                     if current_section and current_content:
-                        article_data[current_section] = '\n'.join(current_content).strip()
+                        if current_section == 'facts':
+                            try:
+                                facts_text = '\n'.join(current_content).strip()
+                                facts_used = json.loads(facts_text)
+                            except Exception:
+                                facts_used = []
+                        else:
+                            article_data[current_section] = '\n'.join(current_content).strip()
                     current_section = 'summary'
                     current_content = [line.replace('Summary:', '').strip()]
                 elif line.startswith('Body:'):
                     if current_section and current_content:
-                        article_data[current_section] = '\n'.join(current_content).strip()
+                        if current_section == 'facts':
+                            try:
+                                facts_text = '\n'.join(current_content).strip()
+                                facts_used = json.loads(facts_text)
+                            except Exception:
+                                facts_used = []
+                        else:
+                            article_data[current_section] = '\n'.join(current_content).strip()
                     current_section = 'body'
                     current_content = [line.replace('Body:', '').strip()]
                 elif line.startswith('Category:'):
                     if current_section and current_content:
-                        article_data[current_section] = '\n'.join(current_content).strip()
+                        if current_section == 'facts':
+                            try:
+                                facts_text = '\n'.join(current_content).strip()
+                                facts_used = json.loads(facts_text)
+                            except Exception:
+                                facts_used = []
+                        else:
+                            article_data[current_section] = '\n'.join(current_content).strip()
                     current_section = 'category'
                     current_content = [line.replace('Category:', '').strip()]
                 elif line.startswith('Tags:'):
                     if current_section and current_content:
-                        article_data[current_section] = '\n'.join(current_content).strip()
+                        if current_section == 'facts':
+                            try:
+                                facts_text = '\n'.join(current_content).strip()
+                                facts_used = json.loads(facts_text)
+                            except Exception:
+                                facts_used = []
+                        else:
+                            article_data[current_section] = '\n'.join(current_content).strip()
                     current_section = 'tags'
                     current_content = [line.replace('Tags:', '').strip()]
                 elif line and current_section:
@@ -507,7 +579,14 @@ Please rewrite the following articles:
             
             # Add the last section
             if current_section and current_content:
-                article_data[current_section] = '\n'.join(current_content).strip()
+                if current_section == 'facts':
+                    try:
+                        facts_text = '\n'.join(current_content).strip()
+                        facts_used = json.loads(facts_text)
+                    except Exception:
+                        facts_used = []
+                else:
+                    article_data[current_section] = '\n'.join(current_content).strip()
             
             # Process tags - convert to JSON array if needed
             if 'tags' in article_data:
@@ -525,6 +604,14 @@ Please rewrite the following articles:
                     tags_list = [tag.strip() for tag in tags_text.split(',') if tag.strip()]
                     article_data['tags'] = json.dumps(tags_list, ensure_ascii=False)
             
+            # Log self-audit facts if provided
+            if facts_used:
+                try:
+                    sample = facts_used[:5] if isinstance(facts_used, list) else str(facts_used)[:200]
+                    logger.info(f"Self-audit facts used (sample): {sample}")
+                except Exception:
+                    pass
+
             # Validate category is one of the allowed values
             if 'category' in article_data:
                 category = article_data['category'].lower().strip()
