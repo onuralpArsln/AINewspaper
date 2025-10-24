@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>WhatsApp Chat Floating Button - Copy/Paste Widget</title>
+  <style>
+    .whatsapp-float {
+      position: fixed;
+      right: 16px;
+      bottom: 16px;
+      width: 56px;
+      height: 56px;
+      border-radius: 50%;
+      background-color: #25D366;
+      color: #fff;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2), 0 2px 6px rgba(0, 0, 0, 0.15);
+      z-index: 2147483647;
+      cursor: pointer;
+      text-decoration: none;
+      transition: transform 120ms ease, box-shadow 120ms ease, opacity 120ms ease;
+    }
+
+    .whatsapp-float:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 28px rgba(0, 0, 0, 0.24), 0 3px 8px rgba(0, 0, 0, 0.18);
+    }
+
+    .whatsapp-float:active {
+      transform: translateY(0);
+    }
+
+    .whatsapp-float:focus-visible {
+      outline: 3px solid rgba(37, 211, 102, 0.5);
+      outline-offset: 2px;
+    }
+
+    .whatsapp-float img,
+    .whatsapp-float svg {
+      width: 28px;
+      height: 28px;
+      pointer-events: none;
+    }
+
+    /* Optional subtle pulse effect */
+    .whatsapp-pulse::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      border-radius: 50%;
+      box-shadow: 0 0 0 0 rgba(37, 211, 102, 0.5);
+      animation: whatsapp-pulse 2s infinite;
+    }
+
+    @keyframes whatsapp-pulse {
+      0% { box-shadow: 0 0 0 0 rgba(37, 211, 102, 0.5); }
+      70% { box-shadow: 0 0 0 14px rgba(37, 211, 102, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(37, 211, 102, 0); }
+    }
+
+    @media (max-width: 480px) {
+      .whatsapp-float {
+        width: 52px;
+        height: 52px;
+        right: 12px;
+        bottom: 12px;
+      }
+      .whatsapp-float img,
+      .whatsapp-float svg {
+        width: 26px;
+        height: 26px;
+      }
+    }
+  </style>
+  <!--
+    How to use:
+    - Copy the <a id="whatsapp-float-button" ...> element (and the <style> + <script> blocks)
+      into your website. Set your full international number (no +, no spaces) in data-phone.
+    - Optional: customize data-message to prefill the message.
+    Example:
+      data-phone="905551112233" data-message="Merhaba! Bilgi almak istiyorum."
+  -->
+</head>
+<body>
+  <!-- Floating WhatsApp button -->
+  <a id="whatsapp-float-button"
+     class="whatsapp-float whatsapp-pulse"
+     href="#"
+     target="_blank"
+     rel="noopener"
+     aria-label="Chat on WhatsApp"
+     data-phone="905531094640"
+     data-message="Hello! I'd like to chat via WhatsApp.">
+    <!-- Using Simple Icons via CDN; inverted to white over green background -->
+    <img src="https://cdn.jsdelivr.net/npm/simple-icons@v11/icons/whatsapp.svg" alt="WhatsApp icon" style="filter: invert(1);" />
+  </a>
+
+  <script>
+    (function () {
+      function buildWaLink(phone, message) {
+        var numeric = (phone || "").replace(/[^\d]/g, "");
+        if (!numeric) return "#";
+        var base = "https://wa.me/" + numeric;
+        if (message && message.length) {
+          return base + "?text=" + encodeURIComponent(message);
+        }
+        return base;
+      }
+
+      function initWhatsAppButton() {
+        var el = document.getElementById("whatsapp-float-button");
+        if (!el) return;
+        var phone = el.getAttribute("data-phone") || "";
+        var message = el.getAttribute("data-message") || "";
+        if (!phone) {
+          console.warn("[WhatsAppWidget] Missing data-phone on #whatsapp-float-button");
+          el.style.display = "none";
+          return;
+        }
+        el.setAttribute("href", buildWaLink(phone, message));
+      }
+
+      if (document.readyState === "loading") {
+        document.addEventListener("DOMContentLoaded", initWhatsAppButton);
+      } else {
+        initWhatsAppButton();
+      }
+    })();
+  </script>
+</body>
+</html>
+
+
