@@ -12,6 +12,8 @@ from db_query import OurArticlesDatabaseQuery
 import workflow
 
 # uvicorn backendServer:app --reload
+# server start 
+# uvicorn backendServer:app --host 0.0.0.0 --port 8000
 # POST /specialControls/killSwitchEngaged - Emergency killswitch (requires code parameter)
 # curl -X POST "http://localhost:8000/specialControls/killSwitchEngaged?code=1316"
 
@@ -314,8 +316,25 @@ def create_tebilisim_rss_feed(
 
         # Core fields
         ET.SubElement(item, "title").text = a.get('title', 'Untitled')
-        ET.SubElement(item, "spot").text = a.get('summary', '')
-        ET.SubElement(item, "description").text = a.get('summary', '')
+
+        # Compute short and long summaries
+        body_text = (a.get('body', '') or '').strip()
+        given_summary = (a.get('summary', '') or '').strip()
+
+        def _excerpt(text: str, max_chars: int) -> str:
+            if not text:
+                return ""
+            if len(text) <= max_chars:
+                return text
+            cut = text.rfind(' ', 0, max_chars)
+            cut = cut if cut != -1 else max_chars
+            return text[:cut].rstrip() + "..."
+
+        short_summary = given_summary if given_summary else _excerpt(body_text, 180)
+        long_summary = _excerpt(body_text, 520) if body_text else given_summary
+
+        ET.SubElement(item, "spot").text = short_summary or ''
+        ET.SubElement(item, "description").text = long_summary or ''
 
         content_el = ET.SubElement(item, "content:encoded")
         content_el.text = a.get('body', '') or ''
@@ -334,6 +353,14 @@ def create_tebilisim_rss_feed(
             for tag in tags:
                 if isinstance(tag, str) and tag.strip():
                     ET.SubElement(item, "category").text = tag.strip()
+
+        # Explicit tags element (comma-separated)
+        if isinstance(tags, list) and len(tags) > 0:
+            tags_text = ", ".join([t.strip() for t in tags if isinstance(t, str) and t.strip()])
+            if tags_text:
+                ET.SubElement(item, "tags").text = tags_text
+        elif isinstance(tags, str) and tags.strip():
+            ET.SubElement(item, "tags").text = tags.strip()
 
         # Image fields
         images = a.get('images') or []

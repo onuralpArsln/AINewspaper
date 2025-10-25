@@ -610,22 +610,34 @@ Please rewrite the following articles:
                 except Exception:
                     pass
 
-            # Validate category is one of the allowed values
-            if 'category' in article_data:
-                category = article_data['category'].lower().strip()
-                allowed_categories = ['gündem', 'ekonomi', 'spor', 'siyaset', 'magazin', 'yaşam', 'eğitim', 'sağlık', 'astroloji']
-                if category not in allowed_categories:
-                    logger.warning(f"Invalid category '{category}', defaulting to 'gündem'")
-                    article_data['category'] = 'gündem'
+            # Validate and normalize category to canonical capitalized set
+            canonical_categories = {
+                'gündem': 'Gündem',
+                'ekonomi': 'Ekonomi',
+                'spor': 'Spor',
+                'siyaset': 'Siyaset',
+                'magazin': 'Magazin',
+                'yaşam': 'Yaşam',
+                'eğitim': 'Eğitim',
+                'sağlık': 'Sağlık',
+                'astroloji': 'Astroloji'
+            }
+            if 'category' in article_data and article_data['category']:
+                raw_category = str(article_data['category']).strip().lower()
+                article_data['category'] = canonical_categories.get(raw_category, 'Gündem')
+                if article_data['category'] == 'Gündem' and raw_category not in canonical_categories:
+                    logger.warning(f"Invalid category '{raw_category}', defaulting to 'Gündem'")
             else:
                 # Default category if not provided
-                article_data['category'] = 'gündem'
+                article_data['category'] = 'Gündem'
             
-            # Validate required fields
-            if 'title' in article_data and 'body' in article_data:
+            # Validate required fields (category is auto-fallbacked to 'Gündem')
+            required_fields = ['title', 'body']
+            missing_fields = [f for f in required_fields if not article_data.get(f) or not str(article_data.get(f)).strip()]
+            if len(missing_fields) == 0:
                 return article_data
             else:
-                logger.warning(f"AI response missing required fields: {list(article_data.keys())}")
+                logger.warning(f"AI response missing required fields: {missing_fields}")
                 return None
                 
         except Exception as e:
@@ -663,7 +675,7 @@ Please rewrite the following articles:
             title = article_data.get('title', '')
             summary = article_data.get('summary', '')
             body = article_data.get('body', '')
-            category = article_data.get('category', 'gündem')
+            category = article_data.get('category', 'Gündem')
             tags = article_data.get('tags', '[]')
             
             # Insert into our_articles

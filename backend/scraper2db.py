@@ -21,6 +21,13 @@ import html
 
 # Import existing RSS classes
 from rss2db import RSSArticle, RSSDatabase
+# Optional parser detection: prefer lxml if available, else fallback to built-in html.parser
+try:
+    import lxml  # noqa: F401
+    _HAS_LXML = True
+except Exception:
+    _HAS_LXML = False
+
 
 # =============================================================================
 # CONFIGURATION FLAGS
@@ -80,7 +87,10 @@ class WebScraper:
                 response.raise_for_status()
                 
                 # Parse with BeautifulSoup
-                soup = BeautifulSoup(response.content, 'lxml')
+                parser_to_use = 'lxml' if _HAS_LXML else 'html.parser'
+                if not _HAS_LXML:
+                    logger.warning("lxml parser not available; falling back to html.parser")
+                soup = BeautifulSoup(response.content, parser_to_use)
                 return soup
                 
             except requests.exceptions.RequestException as e:
@@ -511,7 +521,7 @@ class ArticleContentParser:
             logger.debug(f"Content quality score: {quality_validation['quality_score']:.2f}")
         
         # Extract image
-        result['image_url'] = self._extract_image(soup, article_url)
+        result['image_url'] = self._extract_image(soup, article_url, result['title'])
         logger.debug(f"Extracted image: {result['image_url'][:50]}...")
         
         # Extract metadata
@@ -624,21 +634,23 @@ class ArticleContentParser:
         text = element.get_text()
         return self.scraper.clean_text(text)
     
-    def _extract_image(self, soup: BeautifulSoup, article_url: str) -> str:
-        """Extract article image with safest approach"""
+    def _extract_image(self, soup: BeautifulSoup, article_url: str, title: str = "") -> str:
+        """Extract article image while avoiding default/placeholder images and preferring title-related ones"""
         # Strategy 1: Open Graph image
         og_image = soup.find('meta', property='og:image')
         if og_image and og_image.get('content'):
-            img_url = og_image['content']
-            if self._is_valid_image_url(img_url):
-                return urljoin(article_url, img_url)
+            img_url = urljoin(article_url, og_image['content'])
+            if self._is_valid_image_url(img_url) and not self._looks_like_default_image(img_url):
+                if not title or self._is_related_to_title(img_url, title):
+                    return img_url
         
         # Strategy 2: Twitter Card image
         twitter_image = soup.find('meta', name='twitter:image')
         if twitter_image and twitter_image.get('content'):
-            img_url = twitter_image['content']
-            if self._is_valid_image_url(img_url):
-                return urljoin(article_url, img_url)
+            img_url = urljoin(article_url, twitter_image['content'])
+            if self._is_valid_image_url(img_url) and not self._looks_like_default_image(img_url):
+                if not title or self._is_related_to_title(img_url, title):
+                    return img_url
         
         # Strategy 3: First large image in article content
         article = soup.find('article')
@@ -646,7 +658,7 @@ class ArticleContentParser:
             images = article.find_all('img')
             for img in images:
                 src = img.get('src') or img.get('data-src') or img.get('data-lazy')
-                if src and self._is_valid_image_url(src):
+                if src and self._is_valid_image_url(src) and not self._looks_like_default_image(src):
                     # Check if image is reasonably sized (not a tiny icon)
                     width = img.get('width')
                     height = img.get('height')
@@ -658,15 +670,17 @@ class ArticleContentParser:
                         except ValueError:
                             pass
                     else:
-                        # If no size info, assume it's okay if it's in article
-                        return urljoin(article_url, src)
+                        # If no size info, assume it's okay if it's in article and looks related
+                        if not title or self._is_related_to_title(src, title):
+                            return urljoin(article_url, src)
         
         # Strategy 4: Schema.org image
         schema_image = soup.find('meta', property='image')
         if schema_image and schema_image.get('content'):
-            img_url = schema_image['content']
-            if self._is_valid_image_url(img_url):
-                return urljoin(article_url, img_url)
+            img_url = urljoin(article_url, schema_image['content'])
+            if self._is_valid_image_url(img_url) and not self._looks_like_default_image(img_url):
+                if not title or self._is_related_to_title(img_url, title):
+                    return img_url
         
         return ""
     
@@ -679,25 +693,12 @@ class ArticleContentParser:
         if url.startswith('data:') or len(url) < 10:
             return False
         
-        # Skip common non-image patterns
+        # Skip common non-image and placeholder patterns
         skip_patterns = [
-            'logo',
-            'icon',
-            'avatar',
-            'profile',
-            'banner',
-            'advertisement',
-            'ad-',
-            'sponsor',
-            'social',
-            'share',
-            'button',
-            'arrow',
-            'bullet',
-            'dot',
-            'pixel',
-            'tracking',
-            'beacon'
+            'logo', 'icon', 'avatar', 'profile', 'banner', 'advertisement', 'ad-', 'ads/', 'sponsor',
+            'social', 'share', 'button', 'arrow', 'bullet', 'dot', 'pixel', 'tracking', 'beacon',
+            'placeholder', 'place-holder', 'noimage', 'no-image', 'default', 'dummy', 'blank', 'fallback',
+            '/assets/web/images/default', '/defaults/', '/static/img/default', '/img/default'
         ]
         
         url_lower = url.lower()
@@ -707,6 +708,29 @@ class ArticleContentParser:
         
         # Must be HTTP/HTTPS
         return url.startswith('http://') or url.startswith('https://')
+
+    def _looks_like_default_image(self, url: str) -> bool:
+        """Heuristic check for default/placeholder images by URL patterns"""
+        u = url.lower()
+        default_markers = [
+            'default.png', 'default.jpg', 'placeholder', 'noimage', 'no-image', '/assets/web/images/default',
+            '/img/default', '/images/default', '/static/default', 'generic', 'blank'
+        ]
+        return any(marker in u for marker in default_markers)
+
+    def _is_related_to_title(self, url: str, title: str) -> bool:
+        """Prefer images whose URL contains words from the title (>=4 chars). Not strict, used for ranking."""
+        try:
+            if not title:
+                return True
+            u = url.lower()
+            # Extract candidate tokens from title
+            tokens = [t for t in re.split(r"[^a-zA-ZçğıöşüÇĞİÖŞÜ0-9]+", title.lower()) if len(t) >= 4]
+            if not tokens:
+                return True
+            return any(t in u for t in tokens)
+        except Exception:
+            return True
     
     def _extract_published_date(self, soup: BeautifulSoup) -> Optional[datetime]:
         """Extract article publication date"""
