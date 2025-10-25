@@ -5,10 +5,17 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>WhatsApp Chat Floating Button - Copy/Paste Widget</title>
   <style>
-    .whatsapp-float {
+    .whatsapp-widget {
       position: fixed;
       right: 16px;
       bottom: 16px;
+      z-index: 2147483647;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .whatsapp-float {
       width: 56px;
       height: 56px;
       border-radius: 50%;
@@ -18,10 +25,46 @@
       align-items: center;
       justify-content: center;
       box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2), 0 2px 6px rgba(0, 0, 0, 0.15);
-      z-index: 2147483647;
       cursor: pointer;
       text-decoration: none;
       transition: transform 120ms ease, box-shadow 120ms ease, opacity 120ms ease;
+    }
+
+    .whatsapp-label {
+      background-color: rgba(0, 0, 0, 0.8);
+      color: #fff;
+      padding: 8px 12px;
+      border-radius: 20px;
+      font-size: 14px;
+      font-weight: 500;
+      white-space: nowrap;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+      opacity: 1;
+      transform: translateX(0);
+      transition: opacity 200ms ease, transform 200ms ease;
+      pointer-events: none;
+      animation: label-glow 2s ease-in-out infinite alternate;
+    }
+
+    .whatsapp-label.hidden {
+      opacity: 0;
+      transform: translateX(10px);
+      animation: none;
+    }
+
+    @keyframes label-glow {
+      0% {
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3), 0 0 10px rgba(37, 211, 102, 0.3);
+      }
+      100% {
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3), 0 0 20px rgba(37, 211, 102, 0.6);
+      }
+    }
+
+    .whatsapp-widget:hover .whatsapp-label {
+      opacity: 1;
+      transform: translateX(0);
+      animation: none;
     }
 
     .whatsapp-float:hover {
@@ -62,16 +105,23 @@
     }
 
     @media (max-width: 480px) {
+      .whatsapp-widget {
+        right: 12px;
+        bottom: 12px;
+        gap: 8px;
+      }
       .whatsapp-float {
         width: 52px;
         height: 52px;
-        right: 12px;
-        bottom: 12px;
       }
       .whatsapp-float img,
       .whatsapp-float svg {
         width: 26px;
         height: 26px;
+      }
+      .whatsapp-label {
+        font-size: 12px;
+        padding: 6px 10px;
       }
     }
   </style>
@@ -85,18 +135,21 @@
   -->
 </head>
 <body>
-  <!-- Floating WhatsApp button -->
-  <a id="whatsapp-float-button"
-     class="whatsapp-float whatsapp-pulse"
-     href="#"
-     target="_blank"
-     rel="noopener"
-     aria-label="Chat on WhatsApp"
-     data-phone="905531094640"
-     data-message="Hello! I'd like to chat via WhatsApp.">
-    <!-- Using Simple Icons via CDN; inverted to white over green background -->
-    <img src="https://cdn.jsdelivr.net/npm/simple-icons@v11/icons/whatsapp.svg" alt="WhatsApp icon" style="filter: invert(1);" />
-  </a>
+  <!-- Floating WhatsApp widget with label -->
+  <div class="whatsapp-widget">
+    <span class="whatsapp-label">WhatsApp İhbat Hattı</span>
+    <a id="whatsapp-float-button"
+       class="whatsapp-float"
+       href="#"
+       target="_blank"
+       rel="noopener"
+       aria-label="WhatsApp'ta Sohbet Et"
+        data-phone="905531094640"
+        data-message="Merhaba! WhatsApp üzerinden sohbet etmek istiyorum.">
+      <!-- Using Simple Icons via CDN; inverted to white over green background -->
+       <img src="https://cdn.jsdelivr.net/npm/simple-icons@v11/icons/whatsapp.svg" alt="WhatsApp ikonu" style="filter: invert(1);" />
+    </a>
+  </div>
 
   <script>
     (function () {
@@ -121,6 +174,32 @@
           return;
         }
         el.setAttribute("href", buildWaLink(phone, message));
+        
+        // Handle label visibility and timing
+        var label = document.querySelector('.whatsapp-label');
+        var widget = document.querySelector('.whatsapp-widget');
+        var isHidden = false;
+        
+        if (label && widget) {
+          // Hide label after 10 seconds
+          setTimeout(function() {
+            label.classList.add('hidden');
+            isHidden = true;
+          }, 10000);
+          
+          // Handle hover behavior
+          widget.addEventListener('mouseenter', function() {
+            if (isHidden) {
+              label.classList.remove('hidden');
+            }
+          });
+          
+          widget.addEventListener('mouseleave', function() {
+            if (isHidden) {
+              label.classList.add('hidden');
+            }
+          });
+        }
       }
 
       if (document.readyState === "loading") {
