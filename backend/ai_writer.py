@@ -34,7 +34,7 @@ USAGE:
 import os
 import sqlite3
 import json
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import List, Dict, Any, Optional, Tuple
 from dotenv import load_dotenv
 from google import genai
@@ -654,12 +654,8 @@ Please rewrite the following articles:
             source_article_ids = [str(article['id']) for article in source_articles]
             source_ids_str = ','.join(source_article_ids)
             
-            # Get publication date from the earliest article
-            pub_date = None
-            for article in sorted(source_articles, key=lambda x: x.get('published', '') or '', reverse=True):
-                if article.get('published'):
-                    pub_date = article['published']
-                    break
+            # Publication date: always use AI writer creation time in Istanbul (GMT+3)
+            pub_date = (datetime.utcnow() + timedelta(hours=3)).strftime('%Y-%m-%d %H:%M:%S')
             
             # Collect all images from source articles (from all three image columns)
             all_images = self._collect_images_from_articles(source_articles)
