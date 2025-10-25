@@ -1,4 +1,4 @@
-from fastapi import FastAPI, HTTPException, Response
+from fastapi import FastAPI, HTTPException, Response, Request
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 import json
@@ -86,6 +86,17 @@ workflow_last_run = None
 workflow_next_run = None
 workflow_status = "not_started"
 workflow_task = None
+
+# Public base URL helper
+def get_public_base_url_env_default() -> Optional[str]:
+    base = os.getenv('PUBLIC_BASE_URL')
+    if base:
+        return base.rstrip('/')
+    return None
+
+def get_base_url_from_request(request: Request) -> str:
+    base = str(request.base_url)
+    return base[:-1] if base.endswith('/') else base
 
 def load_articles_batch():
     """Load a batch of articles from database"""
@@ -252,6 +263,95 @@ def create_rss_feed(articles: List[Dict[str, Any]], feed_title: str = "AI Newspa
     dom = xml.dom.minidom.parseString(rough_string)
     return dom.toprettyxml(indent="  ")
 
+def create_tebilisim_rss_feed(
+    articles: List[Dict[str, Any]],
+    feed_title: str = "AI Newspaper - UHA",
+    feed_description: str = "TE Bilişim uyumlu RSS",
+    feed_url: str = "http://localhost:8000",
+    default_category: str = "gündem"
+) -> str:
+    """Create TE Bilişim compatible RSS XML feed from articles.
+
+    Item field mapping:
+      - spot: summary
+      - description: summary
+      - content:encoded: body (full content)
+      - image: first image url
+      - video: optional video url if present
+    """
+    # Create RSS root element with required namespaces
+    rss = ET.Element("rss")
+    rss.set("version", "2.0")
+    rss.set("xmlns:atom", "http://www.w3.org/2005/Atom")
+    rss.set("xmlns:media", "http://search.yahoo.com/mrss/")
+    rss.set("xmlns:content", "http://purl.org/rss/1.0/modules/content/")
+
+    # Channel
+    channel = ET.SubElement(rss, "channel")
+
+    ET.SubElement(channel, "title").text = feed_title
+    ET.SubElement(channel, "description").text = feed_description
+    ET.SubElement(channel, "link").text = feed_url
+    ET.SubElement(channel, "language").text = "tr-TR"
+    ET.SubElement(channel, "lastBuildDate").text = datetime.now().strftime("%a, %d %b %Y %H:%M:%S GMT")
+    ET.SubElement(channel, "generator").text = "AI Newspaper Backend Server"
+
+    # Legal disclaimer
+    ET.SubElement(channel, "copyright").text = (
+        "Girilen bu kaynaklardan alınan içeriklerden TE Bilişim sorumluluk kabul etmez. "
+        "Hukukî bir sorun olduğu takdirde TE Bilişim müşteri gizliliğini ihlâl etme hakkına sahiptir."
+    )
+
+    # Self reference
+    atom_link = ET.SubElement(channel, "atom:link")
+    atom_link.set("href", f"{feed_url}/rss/uha.xml")
+    atom_link.set("rel", "self")
+    atom_link.set("type", "application/rss+xml")
+
+    # Items
+    for a in articles:
+        item = ET.SubElement(channel, "item")
+
+        # Core fields
+        ET.SubElement(item, "title").text = a.get('title', 'Untitled')
+        ET.SubElement(item, "spot").text = a.get('summary', '')
+        ET.SubElement(item, "description").text = a.get('summary', '')
+
+        content_el = ET.SubElement(item, "content:encoded")
+        content_el.text = a.get('body', '') or ''
+
+        ET.SubElement(item, "link").text = f"{feed_url}/articles/{a['id']}"
+        ET.SubElement(item, "guid").text = f"{feed_url}/articles/{a['id']}"
+        ET.SubElement(item, "pubDate").text = format_date_for_rss(a.get('date'))
+
+        # Category with fallback
+        category_value = a.get('category') or default_category
+        ET.SubElement(item, "category").text = category_value
+
+        # Image fields
+        images = a.get('images') or []
+        if images:
+            # custom image element (first image)
+            ET.SubElement(item, "image").text = images[0]
+            # also include media:content for compatibility
+            for image_url in images[:3]:
+                if image_url:
+                    media_content = ET.SubElement(item, "media:content")
+                    media_content.set("url", image_url)
+                    media_content.set("type", "image/jpeg")
+                    media_content.set("medium", "image")
+
+        # Optional video element if present on article
+        video_url = a.get('video')
+        if video_url:
+            ET.SubElement(item, "video").text = video_url
+
+    # Convert to string and pretty print
+    rough_string = ET.tostring(rss, encoding='unicode')
+    import xml.dom.minidom
+    dom = xml.dom.minidom.parseString(rough_string)
+    return dom.toprettyxml(indent="  ")
+
 def get_source_article_link(source_article_ids: str) -> Optional[str]:
     """
     Retrieve the original article link from RSS database using source article IDs.
@@ -379,6 +479,11 @@ async def lifespan(app: FastAPI):
     # Start workflow scheduler as background task
     print("Starting automated workflow scheduler...")
     workflow_task = asyncio.create_task(run_workflow_scheduler())
+    
+    # Log UHA RSS endpoint availability with dynamic/public base URL
+    public_base = get_public_base_url_env_default()
+    base_url = public_base if public_base else "http://localhost:8000"
+    print(f"UHA RSS feed available at: {base_url}/rss/uha.xml")
     
     yield  # Server is running
     
@@ -593,7 +698,7 @@ def get_workflow_status():
 # RSS Feed Endpoints
 
 @app.get("/rss", response_class=Response)
-def get_rss_feed(limit: int = 20):
+def get_rss_feed(request: Request, limit: int = 20):
     """Main RSS feed - returns latest articles"""
     try:
         articles = db.get_recent_articles(limit=limit, editor_mode=EDITOR_ENABLED)
@@ -603,11 +708,12 @@ def get_rss_feed(limit: int = 20):
             parse_article_data(article)
         
         # Create RSS feed
+        feed_url = get_public_base_url_env_default() or get_base_url_from_request(request)
         rss_content = create_rss_feed(
             articles=articles,
             feed_title="AI Newspaper - Latest News",
             feed_description="Latest AI-generated news articles",
-            feed_url="http://localhost:8000"
+            feed_url=feed_url
         )
         
         return Response(
@@ -620,7 +726,7 @@ def get_rss_feed(limit: int = 20):
         raise HTTPException(status_code=500, detail=f"Error generating RSS feed: {str(e)}")
 
 @app.get("/rss/latest", response_class=Response)
-def get_latest_rss_feed(limit: int = 10):
+def get_latest_rss_feed(request: Request, limit: int = 10):
     """Latest articles RSS feed"""
     try:
         articles = db.get_recent_articles(limit=limit, editor_mode=EDITOR_ENABLED)
@@ -630,11 +736,12 @@ def get_latest_rss_feed(limit: int = 10):
             parse_article_data(article)
         
         # Create RSS feed
+        feed_url = get_public_base_url_env_default() or get_base_url_from_request(request)
         rss_content = create_rss_feed(
             articles=articles,
             feed_title="AI Newspaper - Latest 10",
             feed_description="Latest 10 AI-generated news articles",
-            feed_url="http://localhost:8000"
+            feed_url=feed_url
         )
         
         return Response(
@@ -647,7 +754,7 @@ def get_latest_rss_feed(limit: int = 10):
         raise HTTPException(status_code=500, detail=f"Error generating RSS feed: {str(e)}")
 
 @app.get("/rss/category/{category_name}", response_class=Response)
-def get_rss_feed_by_category(category_name: str, limit: int = 20):
+def get_rss_feed_by_category(request: Request, category_name: str, limit: int = 20):
     """RSS feed filtered by category"""
     try:
         # Validate category
@@ -662,11 +769,12 @@ def get_rss_feed_by_category(category_name: str, limit: int = 20):
             parse_article_data(article)
         
         # Create RSS feed
+        feed_url = get_public_base_url_env_default() or get_base_url_from_request(request)
         rss_content = create_rss_feed(
             articles=articles,
             feed_title=f"AI Newspaper - {category_name.title()}",
             feed_description=f"AI-generated news articles in category '{category_name}'",
-            feed_url="http://localhost:8000"
+            feed_url=feed_url
         )
         
         return Response(
@@ -681,7 +789,7 @@ def get_rss_feed_by_category(category_name: str, limit: int = 20):
         raise HTTPException(status_code=500, detail=f"Error generating RSS feed: {str(e)}")
 
 @app.get("/rss/tag/{tag_name}", response_class=Response)
-def get_rss_feed_by_tag(tag_name: str, limit: int = 20):
+def get_rss_feed_by_tag(request: Request, tag_name: str, limit: int = 20):
     """RSS feed filtered by tag"""
     try:
         articles = db.get_articles_by_tag(tag_name, limit=limit, editor_mode=EDITOR_ENABLED)
@@ -691,11 +799,12 @@ def get_rss_feed_by_tag(tag_name: str, limit: int = 20):
             parse_article_data(article)
         
         # Create RSS feed
+        feed_url = get_public_base_url_env_default() or get_base_url_from_request(request)
         rss_content = create_rss_feed(
             articles=articles,
             feed_title=f"AI Newspaper - {tag_name.title()}",
             feed_description=f"AI-generated news articles tagged with '{tag_name}'",
-            feed_url="http://localhost:8000"
+            feed_url=feed_url
         )
         
         return Response(
@@ -708,7 +817,7 @@ def get_rss_feed_by_tag(tag_name: str, limit: int = 20):
         raise HTTPException(status_code=500, detail=f"Error generating RSS feed: {str(e)}")
 
 @app.get("/rss/search", response_class=Response)
-def get_rss_feed_search(q: str, limit: int = 20):
+def get_rss_feed_search(request: Request, q: str, limit: int = 20):
     """RSS feed with search results"""
     if not q:
         raise HTTPException(status_code=400, detail="Search query is required")
@@ -721,11 +830,12 @@ def get_rss_feed_search(q: str, limit: int = 20):
             parse_article_data(article)
         
         # Create RSS feed
+        feed_url = get_public_base_url_env_default() or get_base_url_from_request(request)
         rss_content = create_rss_feed(
             articles=articles,
             feed_title=f"AI Newspaper - Search: {q}",
             feed_description=f"AI-generated news articles matching '{q}'",
-            feed_url="http://localhost:8000"
+            feed_url=feed_url
         )
         
         return Response(
@@ -736,6 +846,35 @@ def get_rss_feed_search(q: str, limit: int = 20):
     
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error generating RSS feed: {str(e)}")
+
+@app.get("/rss/uha.xml", response_class=Response)
+def get_uha_rss_feed(request: Request, limit: int = 20):
+    """TE Bilişim (UHA) compatible RSS feed"""
+    try:
+        articles = db.get_recent_articles(limit=limit, editor_mode=EDITOR_ENABLED)
+
+        # Parse data for each article
+        for article in articles:
+            parse_article_data(article)
+
+        # Create TE Bilişim RSS feed
+        feed_url = get_public_base_url_env_default() or get_base_url_from_request(request)
+        rss_content = create_tebilisim_rss_feed(
+            articles=articles,
+            feed_title="AI Newspaper - UHA",
+            feed_description="TE Bilişim uyumlu RSS",
+            feed_url=feed_url,
+            default_category="gündem"
+        )
+
+        return Response(
+            content=rss_content,
+            media_type="application/rss+xml",
+            headers={"Content-Type": "application/rss+xml; charset=utf-8"}
+        )
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error generating UHA RSS feed: {str(e)}")
 
 if __name__ == "__main__":
     import uvicorn

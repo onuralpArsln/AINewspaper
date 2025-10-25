@@ -705,6 +705,7 @@ npm run dev  # Auto-reload enabled
 | **🤖 Backend API** | `http://localhost:8000` | REST API endpoints | ![Backend](https://img.shields.io/badge/Backend-FastAPI-blue) |
 | **📚 API Docs** | `http://localhost:8000/docs` | Interactive API documentation | ![Docs](https://img.shields.io/badge/Docs-Swagger-orange) |
 | **📡 RSS Feed** | `http://localhost:8000/rss` | RSS news feed | ![RSS](https://img.shields.io/badge/RSS-Feed-purple) |
+| **📡 UHA RSS** | `http://localhost:8000/rss/uha.xml` | TE Bilişim formatlı RSS (spot, description, content:encoded, image, video) | ![RSS](https://img.shields.io/badge/RSS-UHA-blue) |
 
 </div>
 
