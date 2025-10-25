@@ -268,7 +268,7 @@ def create_tebilisim_rss_feed(
     feed_title: str = "AI Newspaper - UHA",
     feed_description: str = "TE Bilişim uyumlu RSS",
     feed_url: str = "http://localhost:8000",
-    default_category: str = "gündem"
+    default_category: str = "Gündem"
 ) -> str:
     """Create TE Bilişim compatible RSS XML feed from articles.
 
@@ -871,7 +871,7 @@ def get_uha_rss_feed(request: Request, limit: int = 20):
             feed_title="AI Newspaper - UHA",
             feed_description="TE Bilişim uyumlu RSS",
             feed_url=feed_url,
-            default_category="gündem"
+            default_category="Gündem"
         )
 
         return Response(

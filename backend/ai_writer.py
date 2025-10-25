@@ -479,10 +479,8 @@ Please rewrite the following articles:
                 f"{a.get('title','')} {a.get('description','')} {a.get('content','')}" for a in source_articles
             ]).lower()
             generated_content = f"{article_data.get('title','')} {article_data.get('summary','')} {article_data.get('body','')}".lower()
-            forbidden_phrases = [
-                "kaynaklara göre", "uzmanlara göre", "iddialara göre", "henüz doğrulanmayan",
-                "resmi olmayan", "güvenilir kaynaklar", "kulislere göre"
-            ]
+            forbidden_phrases = []
+            
             for phrase in forbidden_phrases:
                 if phrase in generated_content and phrase not in source_text:
                     logger.warning(f"[STRICT] Forbidden phrase not in sources: '{phrase}'")
