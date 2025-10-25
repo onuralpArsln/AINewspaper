@@ -328,6 +328,13 @@ def create_tebilisim_rss_feed(
         category_value = a.get('category') or default_category
         ET.SubElement(item, "category").text = category_value
 
+        # Additional categories from tags if available
+        tags = a.get('tags')
+        if isinstance(tags, list):
+            for tag in tags:
+                if isinstance(tag, str) and tag.strip():
+                    ET.SubElement(item, "category").text = tag.strip()
+
         # Image fields
         images = a.get('images') or []
         if images:
