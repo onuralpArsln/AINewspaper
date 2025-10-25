@@ -89,9 +89,14 @@ Bu tür eş anlamlı ifadeler serbesttir; anlam sabit kalmalıdır.
 SELF-AUDIT THEN WRITE:
 Önce aşağıdaki kısa listeyi çıkar, sonra makaleyi yaz. Liste sadece başlık ve ana konu ile ilgili gerçekleri (adlar, yerler, tarihler, sayılar) içersin. Sayfa gürültüsünü ve alakasız öğeleri DÂHİL ETME.
 
+CRITICAL FORMAT REQUIREMENTS:
+- Return ONLY the exact structure below, no other text
+- Do not use markdown formatting, code fences, or any other formatting
+- Use exactly these field names: Title, Summary, Body, Category, Tags
+- Do not add commentary, explanations, or additional text
+
 Facts Used (JSON): [{"type":"person|org|place|date|number","value":"..."}, ...]
 
-Article:
 Title: [Your headline here]
 Summary: [Brief summary here]
 Body: [Main article content here]

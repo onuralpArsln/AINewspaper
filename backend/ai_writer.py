@@ -494,12 +494,33 @@ Please rewrite the following articles:
     def _parse_ai_response(self, response_text: str) -> Optional[Dict[str, str]]:
         """Parse AI response into structured format with category and tags"""
         try:
+            import re
             lines = response_text.strip().split('\n')
             article_data = {}
             facts_used = []
             
             current_section = None
             current_content = []
+            
+            # Helper function to check if line matches field patterns
+            def matches_field(line, field_name, turkish_name=None):
+                # Remove markdown artifacts and normalize
+                clean_line = re.sub(r'^\*+\s*|\s*\*+$|^`+\s*|\s*`+$', '', line.strip())
+                # Check for various patterns: "Title:", "Title -", "**Title:**", "Başlık:", etc.
+                patterns = [
+                    rf'^\*?\*?\s*{field_name}\s*[:\\-]\s*',
+                    rf'^\*?\*?\s*{field_name}\s*[:\\-]\s*',
+                ]
+                if turkish_name:
+                    patterns.extend([
+                        rf'^\*?\*?\s*{turkish_name}\s*[:\\-]\s*',
+                        rf'^\*?\*?\s*{turkish_name}\s*[:\\-]\s*',
+                    ])
+                
+                for pattern in patterns:
+                    if re.match(pattern, clean_line, re.IGNORECASE):
+                        return True, clean_line
+                return False, clean_line
             
             for line in lines:
                 line = line.strip()
@@ -510,9 +531,9 @@ Please rewrite the following articles:
                     current_content = [line.split(':',1)[1].strip()] if ':' in line else []
                 elif current_section == 'facts' and (line.startswith('[') or line.startswith('{') or line.endswith(']') or line.endswith('}')):
                     current_content.append(line)
-                elif current_section == 'facts' and line and not line.startswith(('Title:','Summary:','Body:','Category:','Tags:')):
+                elif current_section == 'facts' and line and not any(matches_field(line, field)[0] for field in ['Title', 'Summary', 'Body', 'Category', 'Tags']):
                     current_content.append(line)
-                elif line.startswith('Title:'):
+                elif matches_field(line, 'Title', 'Başlık')[0]:
                     if current_section and current_content:
                         if current_section == 'facts':
                             try:
@@ -523,8 +544,11 @@ Please rewrite the following articles:
                         else:
                             article_data[current_section] = '\n'.join(current_content).strip()
                     current_section = 'title'
-                    current_content = [line.replace('Title:', '').strip()]
-                elif line.startswith('Summary:'):
+                    # Extract content after the field marker
+                    _, clean_line = matches_field(line, 'Title', 'Başlık')
+                    content = re.sub(r'^(title|başlık)\s*[:\\-]\s*', '', clean_line, flags=re.IGNORECASE).strip()
+                    current_content = [content] if content else []
+                elif matches_field(line, 'Summary', 'Özet')[0]:
                     if current_section and current_content:
                         if current_section == 'facts':
                             try:
@@ -535,8 +559,11 @@ Please rewrite the following articles:
                         else:
                             article_data[current_section] = '\n'.join(current_content).strip()
                     current_section = 'summary'
-                    current_content = [line.replace('Summary:', '').strip()]
-                elif line.startswith('Body:'):
+                    # Extract content after the field marker
+                    _, clean_line = matches_field(line, 'Summary', 'Özet')
+                    content = re.sub(r'^(summary|özet)\s*[:\\-]\s*', '', clean_line, flags=re.IGNORECASE).strip()
+                    current_content = [content] if content else []
+                elif matches_field(line, 'Body', 'İçerik')[0]:
                     if current_section and current_content:
                         if current_section == 'facts':
                             try:
@@ -547,8 +574,11 @@ Please rewrite the following articles:
                         else:
                             article_data[current_section] = '\n'.join(current_content).strip()
                     current_section = 'body'
-                    current_content = [line.replace('Body:', '').strip()]
-                elif line.startswith('Category:'):
+                    # Extract content after the field marker
+                    _, clean_line = matches_field(line, 'Body', 'İçerik')
+                    content = re.sub(r'^(body|içerik)\s*[:\\-]\s*', '', clean_line, flags=re.IGNORECASE).strip()
+                    current_content = [content] if content else []
+                elif matches_field(line, 'Category', 'Kategori')[0]:
                     if current_section and current_content:
                         if current_section == 'facts':
                             try:
@@ -559,8 +589,11 @@ Please rewrite the following articles:
                         else:
                             article_data[current_section] = '\n'.join(current_content).strip()
                     current_section = 'category'
-                    current_content = [line.replace('Category:', '').strip()]
-                elif line.startswith('Tags:'):
+                    # Extract content after the field marker
+                    _, clean_line = matches_field(line, 'Category', 'Kategori')
+                    content = re.sub(r'^(category|kategori)\s*[:\\-]\s*', '', clean_line, flags=re.IGNORECASE).strip()
+                    current_content = [content] if content else []
+                elif matches_field(line, 'Tags', 'Etiketler')[0]:
                     if current_section and current_content:
                         if current_section == 'facts':
                             try:
@@ -571,7 +604,10 @@ Please rewrite the following articles:
                         else:
                             article_data[current_section] = '\n'.join(current_content).strip()
                     current_section = 'tags'
-                    current_content = [line.replace('Tags:', '').strip()]
+                    # Extract content after the field marker
+                    _, clean_line = matches_field(line, 'Tags', 'Etiketler')
+                    content = re.sub(r'^(tags|etiketler)\s*[:\\-]\s*', '', clean_line, flags=re.IGNORECASE).strip()
+                    current_content = [content] if content else []
                 elif line and current_section:
                     current_content.append(line)
             
@@ -638,10 +674,16 @@ Please rewrite the following articles:
                 return article_data
             else:
                 logger.warning(f"AI response missing required fields: {missing_fields}")
+                # Log raw response and parsed data for debugging
+                logger.warning(f"Raw AI response (first 500 chars): {response_text[:500]}")
+                logger.warning(f"Parsed article_data keys: {list(article_data.keys())}")
+                logger.warning(f"Parsed article_data values: {[(k, str(v)[:100] + '...' if len(str(v)) > 100 else v) for k, v in article_data.items()]}")
                 return None
                 
         except Exception as e:
             logger.error(f"Error parsing AI response: {e}")
+            # Log raw response for debugging when parsing completely fails
+            logger.error(f"Raw AI response (first 500 chars): {response_text[:500]}")
             return None
     
     def save_article(self, article_data: Dict[str, str], source_articles: List[Dict[str, Any]]) -> int:

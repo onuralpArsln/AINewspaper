@@ -180,7 +180,7 @@ def parse_article_data(article: Dict[str, Any]) -> Dict[str, Any]:
 def format_date_for_rss(date_str: str) -> str:
     """Format date string for RSS (RFC 2822 format)"""
     if not date_str:
-        return datetime.now().strftime("%a, %d %b %Y %H:%M:%S GMT")
+        return datetime.utcnow().strftime("%a, %d %b %Y %H:%M:%S GMT")
     
     try:
         # Try to parse the date string
@@ -194,9 +194,9 @@ def format_date_for_rss(date_str: str) -> str:
                     continue
         
         # If all parsing fails, return current time
-        return datetime.now().strftime("%a, %d %b %Y %H:%M:%S GMT")
+        return datetime.utcnow().strftime("%a, %d %b %Y %H:%M:%S GMT")
     except Exception:
-        return datetime.now().strftime("%a, %d %b %Y %H:%M:%S GMT")
+        return datetime.utcnow().strftime("%a, %d %b %Y %H:%M:%S GMT")
 
 def create_rss_feed(articles: List[Dict[str, Any]], feed_title: str = "AI Newspaper", 
                    feed_description: str = "AI-generated news articles", 
@@ -217,7 +217,7 @@ def create_rss_feed(articles: List[Dict[str, Any]], feed_title: str = "AI Newspa
     ET.SubElement(channel, "description").text = feed_description
     ET.SubElement(channel, "link").text = feed_url
     ET.SubElement(channel, "language").text = "tr-TR"
-    ET.SubElement(channel, "lastBuildDate").text = datetime.now().strftime("%a, %d %b %Y %H:%M:%S GMT")
+    ET.SubElement(channel, "lastBuildDate").text = datetime.utcnow().strftime("%a, %d %b %Y %H:%M:%S GMT")
     ET.SubElement(channel, "generator").text = "AI Newspaper Backend Server"
     
     # Add atom:link for self-reference
@@ -295,7 +295,7 @@ def create_tebilisim_rss_feed(
     ET.SubElement(channel, "description").text = feed_description
     ET.SubElement(channel, "link").text = feed_url
     ET.SubElement(channel, "language").text = "tr-TR"
-    ET.SubElement(channel, "lastBuildDate").text = datetime.now().strftime("%a, %d %b %Y %H:%M:%S GMT")
+    ET.SubElement(channel, "lastBuildDate").text = datetime.utcnow().strftime("%a, %d %b %Y %H:%M:%S GMT")
     ET.SubElement(channel, "generator").text = "AI Newspaper Backend Server"
 
     # Legal disclaimer
