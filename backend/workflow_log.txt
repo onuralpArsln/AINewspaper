@@ -605,3 +605,41 @@
 [2025-10-25 15:07:11] Successful steps: 3/3
 [2025-10-25 15:07:11] Failed steps: 0/3
 [2025-10-25 15:07:11] ================================================================================
+[2025-10-26 12:56:49] ================================================================================
+[2025-10-26 12:56:49] WORKFLOW EXECUTION STARTED
+[2025-10-26 12:56:49] RSS Source: DISABLED
+[2025-10-26 12:56:49] Scraper Source: ENABLED
+[2025-10-26 12:56:49] AI Editor: DISABLED
+[2025-10-26 12:56:49] AI Rewriter: DISABLED
+[2025-10-26 12:56:49] ================================================================================
+[2025-10-26 12:56:49] Starting step 1: Web Scraper to Database Processing
+[2025-10-26 12:56:53] Step 1 COMPLETED SUCCESSFULLY in 4.05 seconds
+[2025-10-26 12:56:53] Starting step 2: Article Grouping
+[2025-10-26 12:56:53] Step 2 COMPLETED SUCCESSFULLY in 0.03 seconds
+[2025-10-26 12:56:53] Starting step 3: AI Article Writing
+[2025-10-26 12:58:54] Step 3 COMPLETED SUCCESSFULLY in 120.09 seconds
+[2025-10-26 12:58:54] ================================================================================
+[2025-10-26 12:58:54] WORKFLOW EXECUTION COMPLETED
+[2025-10-26 12:58:54] Total duration: 124.17 seconds
+[2025-10-26 12:58:54] Successful steps: 3/3
+[2025-10-26 12:58:54] Failed steps: 0/3
+[2025-10-26 12:58:54] ================================================================================
+[2025-10-26 12:59:36] ================================================================================
+[2025-10-26 12:59:36] WORKFLOW EXECUTION STARTED
+[2025-10-26 12:59:36] RSS Source: DISABLED
+[2025-10-26 12:59:36] Scraper Source: ENABLED
+[2025-10-26 12:59:36] AI Editor: DISABLED
+[2025-10-26 12:59:36] AI Rewriter: DISABLED
+[2025-10-26 12:59:36] ================================================================================
+[2025-10-26 12:59:36] Starting step 1: Web Scraper to Database Processing
+[2025-10-26 12:59:39] Step 1 COMPLETED SUCCESSFULLY in 3.06 seconds
+[2025-10-26 12:59:39] Starting step 2: Article Grouping
+[2025-10-26 12:59:39] Step 2 COMPLETED SUCCESSFULLY in 0.01 seconds
+[2025-10-26 12:59:39] Starting step 3: AI Article Writing
+[2025-10-26 12:59:39] Step 3 COMPLETED SUCCESSFULLY in 0.00 seconds
+[2025-10-26 12:59:39] ================================================================================
+[2025-10-26 12:59:39] WORKFLOW EXECUTION COMPLETED
+[2025-10-26 12:59:39] Total duration: 3.08 seconds
+[2025-10-26 12:59:39] Successful steps: 3/3
+[2025-10-26 12:59:39] Failed steps: 0/3
+[2025-10-26 12:59:39] ================================================================================
