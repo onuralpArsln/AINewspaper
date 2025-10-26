@@ -10,6 +10,7 @@ import json
 import re
 import time
 import os
+import sys
 from datetime import datetime, timezone
 from typing import List, Dict, Optional, Any, Set, Tuple
 import logging
@@ -33,9 +34,14 @@ except Exception:
 # CONFIGURATION FLAGS
 # =============================================================================
 
+# Maximum number of articles to scrape per source
+# Change this value to control how many articles are scraped from each source
+MAX_ARTICLES_PER_SOURCE = 5  # Set to any positive integer (e.g., 10, 20, 50)
+
 # Minimum content length threshold (in characters) for articles to be added to database
 # Articles with content shorter than this will be skipped
 MIN_CONTENT_LENGTH_THRESHOLD = 200  # Set to 0 to disable filtering
+
 
 # =============================================================================
 
@@ -911,14 +917,14 @@ class ScraperToDatabase:
             logger.error(f"Error reading scraper list file {file_path}: {e}")
             return []
     
-    def process_sources_to_database(self, sources_list_file: str = 'scrapeList.txt') -> Dict[str, Any]:
+    def process_sources_to_database(self, sources_list_file: str = 'scrapeList.txt', max_articles_per_source: int = 5) -> Dict[str, Any]:
         """Process all scraper sources and store articles in database"""
         # Resolve sources_list_file path relative to script location
         if not os.path.isabs(sources_list_file):
             script_dir = os.path.dirname(os.path.abspath(__file__))
             sources_list_file = os.path.join(script_dir, sources_list_file)
         
-        logger.info("Starting web scraping to database processing...")
+        logger.info(f"Starting web scraping to database processing (max {max_articles_per_source} articles per source)...")
         
         start_time = datetime.now()
         self.scraper.scraping_results['processing_start_time'] = start_time
@@ -966,7 +972,7 @@ class ScraperToDatabase:
                         continue
                     
                     # Extract article URLs
-                    article_urls = self.listing_parser.extract_article_urls(soup, source_url, max_articles=5)
+                    article_urls = self.listing_parser.extract_article_urls(soup, source_url, max_articles=max_articles_per_source)
                     total_stats['total_articles_found'] += len(article_urls)
                     
                     logger.info(f"Found {len(article_urls)} article URLs")
@@ -1115,19 +1121,40 @@ class ScraperToDatabase:
                 print(f"   Added: {article['created_at']}")
                 print()
 
-def run(sources_list_file: str = 'scrapeList.txt', db_path: str = 'rss_articles.db') -> Dict[str, Any]:
+def run(sources_list_file: str = 'scrapeList.txt', db_path: str = 'rss_articles.db', max_articles_per_source: int = None) -> Dict[str, Any]:
     """Run web scraping to database processing with optional parameters"""
+    if max_articles_per_source is None:
+        max_articles_per_source = MAX_ARTICLES_PER_SOURCE
     scraper2db = ScraperToDatabase(db_path)
-    stats = scraper2db.process_sources_to_database(sources_list_file)
+    stats = scraper2db.process_sources_to_database(sources_list_file, max_articles_per_source=max_articles_per_source)
     scraper2db.print_processing_summary(stats)
     return stats
 
 def main():
     """Main function to run web scraping to database processing"""
+    import sys
+    
+    # Parse command line arguments (optional override)
+    max_articles = MAX_ARTICLES_PER_SOURCE  # Use configuration flag by default
+    if len(sys.argv) > 1:
+        try:
+            max_articles = int(sys.argv[1])
+            if max_articles < 1:
+                print(f"Warning: max_articles must be >= 1. Using configured value of {MAX_ARTICLES_PER_SOURCE}.")
+                max_articles = MAX_ARTICLES_PER_SOURCE
+            else:
+                print(f"Using command-line override: {max_articles} articles per source")
+        except ValueError:
+            print(f"Warning: '{sys.argv[1]}' is not a valid integer. Using configured value of {MAX_ARTICLES_PER_SOURCE}.")
+            max_articles = MAX_ARTICLES_PER_SOURCE
+    else:
+        print(f"Using configuration flag: {MAX_ARTICLES_PER_SOURCE} articles per source")
+        print("(Edit MAX_ARTICLES_PER_SOURCE at line 42 to change this)")
+    
     scraper2db = ScraperToDatabase()
     
     # Process sources and store in database
-    stats = scraper2db.process_sources_to_database()
+    stats = scraper2db.process_sources_to_database(max_articles_per_source=max_articles)
     
     # Print summary
     scraper2db.print_processing_summary(stats)
