@@ -137,6 +137,8 @@ class SiteProfileManager:
                     'a[href*="/haber/"]',
                     'a[href*="/gundem/"]',
                     'a[href*="/son-dakika/"]',
+                    'a[href*="/sondakika/"]',
+                    'a[href*="/guncel/"]',
                     '.news-item a',
                     '.article-item a',
                     '[class*="article"] a',
@@ -149,7 +151,14 @@ class SiteProfileManager:
                     '.content a',
                     '.main-content a',
                     '.news-list a',
-                    '.article-list a'
+                    '.article-list a',
+                    # Son-dakika specific selectors
+                    '.son-dakika a',
+                    '.breaking-news a',
+                    '.latest-news a',
+                    # Generic news link patterns
+                    'a[href*="haber-"]',
+                    'a[href*="news-"]'
                 ],
                 'url_validation': 'permissive',
                 'max_articles': 5,
@@ -464,6 +473,11 @@ class ArticleListingParser:
             'internethaber.com': [
                 r'/\d{4}/\d{2}/\d{2}/',  # Date-based URLs
                 r'/[a-z-]+-\d+',  # slug-number pattern
+                r'/haber/[a-z0-9-]+',  # /haber/slug pattern
+                r'/gundem/[a-z0-9-]+',  # /gundem/slug pattern
+                r'/son-dakika/[a-z0-9-]+',  # /son-dakika/slug pattern
+                r'/sondakika/[a-z0-9-]+',  # /sondakika/slug pattern
+                r'/guncel/[a-z0-9-]+',  # /guncel/slug pattern
             ],
             'haberturk.com': [
                 r'/haberler/\d+',  # /haberler/123456
@@ -540,12 +554,12 @@ class ArticleContentParser:
     def _extract_title(self, soup: BeautifulSoup) -> str:
         """Extract article title with multiple fallback strategies"""
         # Strategy 1: Open Graph title
-        og_title = soup.find('meta', property='og:title')
+        og_title = soup.find('meta', attrs={'property': 'og:title'})
         if og_title and og_title.get('content'):
             return self.scraper.clean_text(og_title['content'])
         
         # Strategy 2: Twitter Card title
-        twitter_title = soup.find('meta', name='twitter:title')
+        twitter_title = soup.find('meta', attrs={'name': 'twitter:title'})
         if twitter_title and twitter_title.get('content'):
             return self.scraper.clean_text(twitter_title['content'])
         
@@ -633,8 +647,9 @@ class ArticleContentParser:
             return ""
         
         # Remove script and style elements
-        for script in element(["script", "style", "nav", "footer", "header", "aside"]):
-            script.decompose()
+        for tag_name in ["script", "style", "nav", "footer", "header", "aside"]:
+            for tag in element.find_all(tag_name):
+                tag.decompose()
         
         # Get text and clean it
         text = element.get_text()
@@ -643,7 +658,7 @@ class ArticleContentParser:
     def _extract_image(self, soup: BeautifulSoup, article_url: str, title: str = "") -> str:
         """Extract article image while avoiding default/placeholder images and preferring title-related ones"""
         # Strategy 1: Open Graph image
-        og_image = soup.find('meta', property='og:image')
+        og_image = soup.find('meta', attrs={'property': 'og:image'})
         if og_image and og_image.get('content'):
             img_url = urljoin(article_url, og_image['content'])
             if self._is_valid_image_url(img_url) and not self._looks_like_default_image(img_url):
@@ -651,7 +666,7 @@ class ArticleContentParser:
                     return img_url
         
         # Strategy 2: Twitter Card image
-        twitter_image = soup.find('meta', name='twitter:image')
+        twitter_image = soup.find('meta', attrs={'name': 'twitter:image'})
         if twitter_image and twitter_image.get('content'):
             img_url = urljoin(article_url, twitter_image['content'])
             if self._is_valid_image_url(img_url) and not self._looks_like_default_image(img_url):
@@ -681,7 +696,7 @@ class ArticleContentParser:
                             return urljoin(article_url, src)
         
         # Strategy 4: Schema.org image
-        schema_image = soup.find('meta', property='image')
+        schema_image = soup.find('meta', attrs={'property': 'image'})
         if schema_image and schema_image.get('content'):
             img_url = urljoin(article_url, schema_image['content'])
             if self._is_valid_image_url(img_url) and not self._looks_like_default_image(img_url):
@@ -741,7 +756,7 @@ class ArticleContentParser:
     def _extract_published_date(self, soup: BeautifulSoup) -> Optional[datetime]:
         """Extract article publication date"""
         # Strategy 1: Open Graph published time
-        og_published = soup.find('meta', property='article:published_time')
+        og_published = soup.find('meta', attrs={'property': 'article:published_time'})
         if og_published and og_published.get('content'):
             try:
                 return datetime.fromisoformat(og_published['content'].replace('Z', '+00:00'))
@@ -749,7 +764,7 @@ class ArticleContentParser:
                 pass
         
         # Strategy 2: Schema.org datePublished
-        schema_date = soup.find('meta', property='datePublished')
+        schema_date = soup.find('meta', attrs={'property': 'datePublished'})
         if schema_date and schema_date.get('content'):
             try:
                 return datetime.fromisoformat(schema_date['content'].replace('Z', '+00:00'))
@@ -771,7 +786,7 @@ class ArticleContentParser:
     def _extract_author(self, soup: BeautifulSoup) -> str:
         """Extract article author"""
         # Strategy 1: Open Graph author
-        og_author = soup.find('meta', property='article:author')
+        og_author = soup.find('meta', attrs={'property': 'article:author'})
         if og_author and og_author.get('content'):
             return self.scraper.clean_text(og_author['content'])
         
@@ -795,7 +810,7 @@ class ArticleContentParser:
     def _extract_category(self, soup: BeautifulSoup) -> str:
         """Extract article category"""
         # Strategy 1: Open Graph section
-        og_section = soup.find('meta', property='article:section')
+        og_section = soup.find('meta', attrs={'property': 'article:section'})
         if og_section and og_section.get('content'):
             return self.scraper.clean_text(og_section['content'])
         

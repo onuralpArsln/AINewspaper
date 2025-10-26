@@ -24,7 +24,7 @@ import os
 import sqlite3
 import json
 import re
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import List, Dict, Any, Optional
 from dotenv import load_dotenv
 from google import genai
@@ -218,6 +218,9 @@ class AIEditor:
     def update_article_status(self, article_id: int, status: str, editors_note_json: str, total_score: int) -> bool:
         """Update article status and evaluation results in database"""
         try:
+            # Use Istanbul time for consistency
+            istanbul_time = (datetime.utcnow() + timedelta(hours=3)).strftime('%Y-%m-%d %H:%M:%S')
+            
             with self.get_connection(self.our_articles_db_path) as conn:
                 cursor = conn.cursor()
                 cursor.execute('''
@@ -225,9 +228,9 @@ class AIEditor:
                     SET article_state = ?, 
                         editors_note = ?, 
                         review_count = review_count + 1,
-                        updated_at = CURRENT_TIMESTAMP
+                        updated_at = ?
                     WHERE id = ?
-                ''', (status, editors_note_json, article_id))
+                ''', (status, editors_note_json, istanbul_time, article_id))
                 
                 conn.commit()
                 

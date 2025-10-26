@@ -733,8 +733,8 @@ Please rewrite the following articles:
             # Insert into our_articles
             cursor.execute('''
                 INSERT INTO our_articles 
-                (title, summary, body, category, tags, images, date, source_group_id, source_article_ids, article_state, review_count, editors_note, updated_at)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+                (title, summary, body, category, tags, images, date, source_group_id, source_article_ids, article_state, review_count, editors_note, created_at, updated_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             ''', (
                 title,
                 summary,
@@ -747,7 +747,9 @@ Please rewrite the following articles:
                 source_ids_str,
                 'not_reviewed',  # article_state
                 0,               # review_count
-                None             # editors_note
+                None,            # editors_note
+                pub_date,        # created_at - same as date (Istanbul time)
+                pub_date         # updated_at - same as date (Istanbul time)
             ))
             
             article_id = cursor.lastrowid
@@ -777,7 +779,7 @@ Please rewrite the following articles:
             
             logger.info(f"Marked {len(article_ids)} articles as read")
     
-    def process_articles(self, max_articles: int = None):
+    def process_articles(self, max_articles: int = None) -> Dict[str, Any]:
         """
         Main processing function that generates a target number of OUTPUT articles.
         For each output article:
@@ -789,6 +791,9 @@ Please rewrite the following articles:
         6. Continue until max_articles OUTPUT articles are generated
         
         Note: max_articles = number of OUTPUT articles to generate, not input articles to process
+        
+        Returns:
+            Dict with processing statistics including trials and articles written
         """
         # Use class-level article_count if max_articles not provided
         if max_articles is None:
@@ -800,6 +805,7 @@ Please rewrite the following articles:
         
         generated_count = 0  # Number of output articles generated
         skipped_count = 0
+        ai_trials = 0  # Number of AI generation attempts
         processed_groups = set()  # Track processed groups to avoid duplicates
         
         # Keep processing until we generate the target number of output articles
@@ -855,6 +861,7 @@ Please rewrite the following articles:
                     
                     # Generate article with AI
                     logger.info("Sending to Gemini AI for rewriting...")
+                    ai_trials += 1  # Count AI generation attempt
                     ai_article = self.generate_article_with_ai(articles_text)
                     
                     if ai_article:
@@ -892,8 +899,19 @@ Please rewrite the following articles:
         logger.info(f"AI writing process completed!")
         logger.info(f"  ✓ OUTPUT articles generated: {generated_count}/{max_articles}")
         logger.info(f"  ✗ Skipped/Failed: {skipped_count}")
+        logger.info(f"  🤖 AI trials made: {ai_trials}")
         logger.info(f"  📊 Processed groups: {len(processed_groups)}")
         logger.info(f"{'='*80}\n")
+        
+        # Return detailed statistics
+        return {
+            'articles_generated': generated_count,
+            'articles_target': max_articles,
+            'articles_skipped': skipped_count,
+            'ai_trials': ai_trials,
+            'processed_groups': len(processed_groups),
+            'success_rate': round((generated_count / ai_trials * 100), 2) if ai_trials > 0 else 0
+        }
     
     def get_writing_statistics(self) -> Dict[str, Any]:
         """Get statistics about the writing process"""
@@ -933,7 +951,7 @@ Please rewrite the following articles:
         print("=" * 80)
 
 def run(max_articles: int = None, rss_db: str = 'rss_articles.db', 
-        our_db: str = 'our_articles.db', stats_only: bool = False) -> int:
+        our_db: str = 'our_articles.db', stats_only: bool = False) -> Dict[str, Any]:
     """Run AI writer process with optional parameters"""
     if max_articles is None:
         max_articles = ARTICLE_COUNT
@@ -942,21 +960,22 @@ def run(max_articles: int = None, rss_db: str = 'rss_articles.db',
     
     if stats_only:
         writer.print_statistics()
-        return 0
+        return {'stats_only': True}
     
     print("\n" + "="*80)
     print("INITIAL DATABASE STATUS")
     print("="*80)
     writer.print_statistics()
     
-    writer.process_articles(max_articles)
+    # Process articles and get detailed statistics
+    processing_stats = writer.process_articles(max_articles)
     
     print("\n" + "="*80)
     print("FINAL DATABASE STATUS")
     print("="*80)
     writer.print_statistics()
     
-    return 0
+    return processing_stats
 
 def main():
     """Main function for command line usage"""

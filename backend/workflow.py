@@ -151,6 +151,15 @@ def run_workflow() -> Dict[str, Any]:
             # Log success
             log_to_file(f"Step {i} COMPLETED SUCCESSFULLY in {step_duration:.2f} seconds", log_file)
             
+            # Special handling for AI writer statistics
+            if step_name == 'ai_writer' and isinstance(result, dict) and 'ai_trials' in result:
+                log_to_file(f"AI Writer Statistics:", log_file)
+                log_to_file(f"  - Articles generated: {result['articles_generated']}/{result['articles_target']}", log_file)
+                log_to_file(f"  - AI trials made: {result['ai_trials']}", log_file)
+                log_to_file(f"  - Articles skipped: {result['articles_skipped']}", log_file)
+                log_to_file(f"  - Success rate: {result['success_rate']}%", log_file)
+                log_to_file(f"  - Processed groups: {result['processed_groups']}", log_file)
+            
             # Store results
             results['steps'][step_name] = {
                 'status': 'SUCCESS',
@@ -164,6 +173,13 @@ def run_workflow() -> Dict[str, Any]:
             results['success_count'] += 1
             
             print(f"+ {step_desc} completed successfully in {step_duration:.2f} seconds")
+            
+            # Print AI writer statistics to console as well
+            if step_name == 'ai_writer' and isinstance(result, dict) and 'ai_trials' in result:
+                print(f"  AI Writer Results:")
+                print(f"    Articles generated: {result['articles_generated']}/{result['articles_target']}")
+                print(f"    AI trials made: {result['ai_trials']}")
+                print(f"    Success rate: {result['success_rate']}%")
             
         except Exception as e:
             step_end_time = datetime.now()

@@ -24,7 +24,7 @@ import os
 import sqlite3
 import json
 import re
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import List, Dict, Any, Optional
 from dotenv import load_dotenv
 from google import genai
@@ -291,6 +291,9 @@ Please enhance the rejected article to address the editorial concerns while main
     def update_article(self, article_id: int, enhanced_data: Dict[str, str]) -> bool:
         """Update article with enhanced content and reset status to not_reviewed"""
         try:
+            # Use Istanbul time for consistency
+            istanbul_time = (datetime.utcnow() + timedelta(hours=3)).strftime('%Y-%m-%d %H:%M:%S')
+            
             with self.get_connection(self.our_articles_db_path) as conn:
                 cursor = conn.cursor()
                 
@@ -309,9 +312,9 @@ Please enhance the rejected article to address the editorial concerns while main
                         category = ?, 
                         tags = ?,
                         article_state = 'not_reviewed',
-                        updated_at = CURRENT_TIMESTAMP
+                        updated_at = ?
                     WHERE id = ?
-                ''', (title, summary, body, category, tags, article_id))
+                ''', (title, summary, body, category, tags, istanbul_time, article_id))
                 
                 conn.commit()
                 
