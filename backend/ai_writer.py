@@ -7,7 +7,6 @@ WORKFLOW:
 1. Generates a target number of OUTPUT articles (set by ARTICLE_COUNT or run(max_articles=...))
 2. For each OUTPUT article:
    - Gets next unread article from rss_articles.db (newest first)
-   - Checks if it has images (if ONLY_IMAGES flag is True)
    - If article is in a group, reads ALL articles in that group (e.g., 12 articles)
    - Merges all articles in the group and sends to Gemini AI
    - Follows rules from writer_prompt.txt
@@ -21,9 +20,9 @@ Example: If ARTICLE_COUNT=10, you get 10 articles in our_articles.db
          Even if a group contains 12 source articles, it generates 1 output article
 
 IMAGE HANDLING:
-- Checks all image sources: image_urls (consolidated), enclosures, media_content
-- Collects unique images from all sources
+- Collects all unique images from all image sources: image_urls, enclosures, media_content
 - Validates and filters image URLs
+- Note: Only articles with images are stored in the database (controlled by scraper2db.py)
 
 USAGE:
     Import and call run() or AIWriter.process_articles() from your application code.
@@ -48,7 +47,6 @@ logger = logging.getLogger(__name__)
 # ============================================================================
 # CONFIGURATION FLAGS - Modify these to control AI writer behavior
 # ============================================================================
-ONLY_IMAGES = True  # Set to True to only process articles with images
 ARTICLE_COUNT = 5   # Number of articles to produce per run
 # Validation mode: when False (default), allow semantic rephrasing and rely on prompt; keep minimal safeguards
 STRICT_FACT_VALIDATION = False
@@ -62,7 +60,6 @@ class AIWriter:
         script_dir = os.path.dirname(os.path.abspath(__file__))
         self.rss_db_path = rss_db_path if os.path.isabs(rss_db_path) else os.path.join(script_dir, rss_db_path)
         self.our_articles_db_path = our_articles_db_path if os.path.isabs(our_articles_db_path) else os.path.join(script_dir, our_articles_db_path)
-        self.only_images = ONLY_IMAGES
         self.article_count = ARTICLE_COUNT
         
         # Load environment variables
@@ -96,7 +93,7 @@ class AIWriter:
         """Ensure our_articles table exists (no schema alterations)."""
         # Ensure our articles database table exists
         with sqlite3.connect(self.our_articles_db_path) as conn:
-            cursor = conn.cursor()
+            cursor = conn.cursor()  # to execute sql queries
             cursor.execute('''
                 CREATE TABLE IF NOT EXISTS our_articles (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -125,49 +122,24 @@ class AIWriter:
         return conn
     
     def get_next_articles_to_process(self, limit: int = 10) -> List[Dict[str, Any]]:
-        """Get next unread articles to process starting from newest, considering only_images flag"""
+        """Get next unread articles to process starting from newest"""
         with self.get_connection(self.rss_db_path) as conn:
             cursor = conn.cursor()
-            
-            # Build query based on only_images flag
-            if self.only_images:
-                # Only get articles with images (check all possible image columns)
-                # Order by newest article in each group first, then by individual article publication date
-                cursor.execute('''
-                    SELECT a.* FROM articles a
-                    WHERE a.is_read = 0 
-                        AND (
-                            (a.image_urls IS NOT NULL AND a.image_urls != '[]' AND a.image_urls != 'null' AND a.image_urls != '')
-                            OR (a.media_content IS NOT NULL AND a.media_content != '[]' AND a.media_content != 'null' AND a.media_content != '')
-                            OR (a.enclosures IS NOT NULL AND a.enclosures != '[]' AND a.enclosures != 'null' AND a.enclosures != '')
-                        )
-                    ORDER BY 
-                        CASE 
-                            WHEN a.event_group_id IS NOT NULL AND a.event_group_id > 0 THEN 
-                                (SELECT MAX(published) FROM articles WHERE event_group_id = a.event_group_id)
-                            ELSE a.published 
-                        END DESC,
-                        a.published DESC
-                    LIMIT ?
-                ''', (limit,))
-            else:
-                # Get all unread articles regardless of images
-                # Order by newest article in each group first, then by individual article publication date
-                cursor.execute('''
-                    SELECT a.* FROM articles a
-                    WHERE a.is_read = 0
-                    ORDER BY 
-                        CASE 
-                            WHEN a.event_group_id IS NOT NULL AND a.event_group_id > 0 THEN 
-                                (SELECT MAX(published) FROM articles WHERE event_group_id = a.event_group_id)
-                            ELSE a.published 
-                        END DESC,
-                        a.published DESC
-                    LIMIT ?
-                ''', (limit,))
+            cursor.execute('''
+                SELECT a.* FROM articles a
+                WHERE a.is_read = 0
+                ORDER BY 
+                    CASE 
+                        WHEN a.event_group_id IS NOT NULL AND a.event_group_id > 0 THEN 
+                            (SELECT MAX(published) FROM articles WHERE event_group_id = a.event_group_id)
+                        ELSE a.published 
+                    END DESC,
+                    a.published DESC
+                LIMIT ?
+            ''', (limit,))
             
             articles = [dict(row) for row in cursor.fetchall()]
-            logger.info(f"Found {len(articles)} unread articles to process (only_images={self.only_images})")
+            logger.info(f"Found {len(articles)} unread articles to process")
             return articles
     
     def get_group_articles(self, group_id: int) -> List[Dict[str, Any]]:
@@ -182,23 +154,6 @@ class AIWriter:
             group_articles = [dict(row) for row in cursor.fetchall()]
             logger.info(f"Found {len(group_articles)} articles in group {group_id}")
             return group_articles
-    
-    def group_has_images(self, group_id: int) -> bool:
-        """Check if at least one article in the group has images (checks all image sources)"""
-        with self.get_connection(self.rss_db_path) as conn:
-            cursor = conn.cursor()
-            cursor.execute('''
-                SELECT COUNT(*) FROM articles 
-                WHERE event_group_id = ? 
-                    AND is_read = 0
-                    AND (
-                        (image_urls IS NOT NULL AND image_urls != '[]' AND image_urls != 'null' AND image_urls != '')
-                        OR (media_content IS NOT NULL AND media_content != '[]' AND media_content != 'null' AND media_content != '')
-                        OR (enclosures IS NOT NULL AND enclosures != '[]' AND enclosures != 'null' AND enclosures != '')
-                    )
-            ''', (group_id,))
-            count = cursor.fetchone()[0]
-            return count > 0
     
     def _collect_images_from_articles(self, articles: List[Dict[str, Any]]) -> List[str]:
         """Collect all unique images from source articles (from all image sources)"""
@@ -751,8 +706,7 @@ Please rewrite the following articles:
         if max_articles is None:
             max_articles = self.article_count
         
-        mode_str = "ONLY IMAGES mode" if self.only_images else "ALL ARTICLES mode"
-        logger.info(f"Starting AI article writing process ({mode_str})...")
+        logger.info(f"Starting AI article writing process...")
         logger.info(f"Target: Generate {max_articles} OUTPUT articles")
         
         generated_count = 0  # Number of output articles generated
@@ -930,70 +884,16 @@ def run(max_articles: int = None, rss_db: str = 'rss_articles.db',
     return processing_stats
 
 def main():
-    """Main function for command line usage"""
-    import argparse
-    
-    parser = argparse.ArgumentParser(
-        description="AI Writer for RSS Articles - Rewrites news using Gemini AI",
-        formatter_class=argparse.RawDescriptionHelpFormatter,
-        epilog=f"""
-Configuration Settings (edit in ai_writer.py):
-  ONLY_IMAGES   = {ONLY_IMAGES}   (Process only articles with images)
-  ARTICLE_COUNT = {ARTICLE_COUNT}   (Number of OUTPUT articles to GENERATE per run)
-
-IMPORTANT: ARTICLE_COUNT is the number of OUTPUT articles to generate.
-  - If a group has 12 source articles, it generates 1 OUTPUT article
-  - ARTICLE_COUNT=10 means you get 10 articles in our_articles.db
-
-Examples:
-  python ai_writer.py                    # Generate {ARTICLE_COUNT} output articles
-  python ai_writer.py --max-articles 20  # Generate 20 output articles
-  python ai_writer.py --stats            # Show statistics only
-        """
-    )
-    
-    parser.add_argument('--max-articles', type=int, 
-                       help=f'Number of OUTPUT articles to generate (default: {ARTICLE_COUNT})')
-    parser.add_argument('--stats', action='store_true',
-                       help='Show statistics only without processing')
-    parser.add_argument('--rss-db', default='rss_articles.db',
-                       help='RSS articles database path (default: rss_articles.db)')
-    parser.add_argument('--our-db', default='our_articles.db',
-                       help='Our articles database path (default: our_articles.db)')
-    
-    args = parser.parse_args()
-    
+    """Main entry point without CLI flags; runs with defaults."""
     try:
-        writer = AIWriter(args.rss_db, args.our_db)
-        
-        if args.stats:
-            # Show statistics only
-            writer.print_statistics()
-        else:
-            # Show initial statistics
-            print("\n" + "="*80)
-            print("INITIAL DATABASE STATUS")
-            print("="*80)
-            writer.print_statistics()
-            
-            # Process articles
-            print()
-            writer.process_articles(args.max_articles)
-            
-            # Show final statistics
-            print("\n" + "="*80)
-            print("FINAL DATABASE STATUS")
-            print("="*80)
-            writer.print_statistics()
-            
+        run()
+        return 0
     except KeyboardInterrupt:
         logger.info("\n\nProcess interrupted by user.")
         return 1
     except Exception as e:
         logger.error(f"Error: {e}", exc_info=True)
         return 1
-    
-    return 0
 
 if __name__ == "__main__":
     exit(main())
