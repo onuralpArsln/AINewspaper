@@ -180,23 +180,37 @@ class AIWriter:
             # Build query based on only_images flag
             if self.only_images:
                 # Only get articles with images (check all possible image columns)
+                # Order by newest article in each group first, then by individual article publication date
                 cursor.execute('''
-                    SELECT * FROM articles 
-                    WHERE is_read = 0 
+                    SELECT a.* FROM articles a
+                    WHERE a.is_read = 0 
                         AND (
-                            (image_urls IS NOT NULL AND image_urls != '[]' AND image_urls != 'null' AND image_urls != '')
-                            OR (media_content IS NOT NULL AND media_content != '[]' AND media_content != 'null' AND media_content != '')
-                            OR (enclosures IS NOT NULL AND enclosures != '[]' AND enclosures != 'null' AND enclosures != '')
+                            (a.image_urls IS NOT NULL AND a.image_urls != '[]' AND a.image_urls != 'null' AND a.image_urls != '')
+                            OR (a.media_content IS NOT NULL AND a.media_content != '[]' AND a.media_content != 'null' AND a.media_content != '')
+                            OR (a.enclosures IS NOT NULL AND a.enclosures != '[]' AND a.enclosures != 'null' AND a.enclosures != '')
                         )
-                    ORDER BY created_at DESC
+                    ORDER BY 
+                        CASE 
+                            WHEN a.event_group_id IS NOT NULL AND a.event_group_id > 0 THEN 
+                                (SELECT MAX(published) FROM articles WHERE event_group_id = a.event_group_id)
+                            ELSE a.published 
+                        END DESC,
+                        a.published DESC
                     LIMIT ?
                 ''', (limit,))
             else:
                 # Get all unread articles regardless of images
+                # Order by newest article in each group first, then by individual article publication date
                 cursor.execute('''
-                    SELECT * FROM articles 
-                    WHERE is_read = 0
-                    ORDER BY created_at DESC
+                    SELECT a.* FROM articles a
+                    WHERE a.is_read = 0
+                    ORDER BY 
+                        CASE 
+                            WHEN a.event_group_id IS NOT NULL AND a.event_group_id > 0 THEN 
+                                (SELECT MAX(published) FROM articles WHERE event_group_id = a.event_group_id)
+                            ELSE a.published 
+                        END DESC,
+                        a.published DESC
                     LIMIT ?
                 ''', (limit,))
             
@@ -211,7 +225,7 @@ class AIWriter:
             cursor.execute('''
                 SELECT * FROM articles 
                 WHERE event_group_id = ?
-                ORDER BY created_at DESC
+                ORDER BY published DESC
             ''', (group_id,))
             group_articles = [dict(row) for row in cursor.fetchall()]
             logger.info(f"Found {len(group_articles)} articles in group {group_id}")
