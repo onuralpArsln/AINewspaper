@@ -26,6 +26,15 @@ position:relative;
 --tv-gap:10px;
 --antenna:5px;
 --antenna-diag: calc(var(--antenna) * 0.7071);
+animation: canlitextglow 4s infinite alternate;
+}
+@keyframes canlitextglow {
+    0% {
+        text-shadow: 0 0 5px #ff005e, 0 0 10px #ff005e, 0 0 20px #ff005e, 0 0 40px #ff005e, 0 0 80px #ff005e;
+    }
+    100% {
+        text-shadow: 0 0 10px #00d4ff, 0 0 20px #00d4ff, 0 0 40px #00d4ff, 0 0 80px #00d4ff, 0 0 160px #00d4ff;
+    }
 }
 
 
@@ -68,9 +77,8 @@ height:var(--antenna);
 
 left:calc(100% - ((var(--tv-w) + (2 * var(--tv-b))) / 2));
 top:50%;
-transform:translateX(-50%) translateY(calc(-50% - ((var(--tv-h) + (2 * var(--tv-b))) / 2))) rotate(45deg);
-/* shift up so the diamond's bottom tip sits on the border */
-transform:translateX(-50%) translateY(calc(-50% - ((var(--tv-h) + (2 * var(--tv-b))) / 2) - var(--antenna-diag))) rotate(45deg);
+/* place its bottom tip exactly on the outer TV border */
+transform:translate(-50%, calc(-60% - ((var(--tv-h) + (2 * var(--tv-b))) / 2) + (var(--tv-b) / 2) - var(--antenna-diag))) rotate(45deg);
 border-radius:1px;
 pointer-events:none;
 border-width:0 var(--tv-b) var(--tv-b)  0;
