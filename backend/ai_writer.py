@@ -156,11 +156,11 @@ class AIWriter:
             return group_articles
     
     def _collect_images_from_articles(self, articles: List[Dict[str, Any]]) -> List[str]:
-        """Collect all unique images from source articles (from all image sources)"""
+        """Collect all unique images from source articles (from image_urls column)"""
         all_images = []
         
         for article in articles:
-            # 1. Get images from unified image_urls column (primary source - already consolidated)
+            # Get images from unified image_urls column (consolidated source)
             if article.get('image_urls'):
                 try:
                     image_urls = json.loads(article['image_urls'])
@@ -170,36 +170,6 @@ class AIWriter:
                                 all_images.append(img_url)
                 except (json.JSONDecodeError, TypeError):
                     logger.debug(f"Could not parse image_urls for article {article.get('id', 'unknown')}")
-            
-            # 2. Check enclosures (may contain image attachments)
-            if article.get('enclosures'):
-                try:
-                    enclosures = json.loads(article['enclosures'])
-                    if isinstance(enclosures, list):
-                        for enclosure in enclosures:
-                            if isinstance(enclosure, dict):
-                                enc_type = enclosure.get('type', '')
-                                if enc_type.startswith('image/'):
-                                    img_url = enclosure.get('url', enclosure.get('href', ''))
-                                    if img_url and img_url.strip() and img_url not in all_images:
-                                        all_images.append(img_url)
-                except (json.JSONDecodeError, TypeError):
-                    logger.debug(f"Could not parse enclosures for article {article.get('id', 'unknown')}")
-            
-            # 3. Check media_content (JSON array with media information)
-            if article.get('media_content'):
-                try:
-                    media_content = json.loads(article['media_content'])
-                    if isinstance(media_content, list):
-                        for media in media_content:
-                            if isinstance(media, dict):
-                                media_type = media.get('type', '')
-                                if media_type.startswith('image/') or 'image' in media_type.lower():
-                                    img_url = media.get('url', '')
-                                    if img_url and img_url.strip() and img_url not in all_images:
-                                        all_images.append(img_url)
-                except (json.JSONDecodeError, TypeError):
-                    logger.debug(f"Could not parse media_content for article {article.get('id', 'unknown')}")
         
         logger.info(f"Collected {len(all_images)} unique images from {len(articles)} articles")
         return all_images
@@ -679,7 +649,7 @@ Please rewrite the following articles:
             placeholders = ','.join(['?' for _ in article_ids])
             cursor.execute(f'''
                 UPDATE articles 
-                SET is_read = 1, updated_at = CURRENT_TIMESTAMP
+                SET is_read = 1
                 WHERE id IN ({placeholders})
             ''', article_ids)
             conn.commit()

@@ -36,18 +36,14 @@ class RSSArticle:
         # URLs and links
         self.link: str = ""
         self.guid: str = ""
-        self.comments: str = ""
         
         # Publication information
         self.published: Optional[datetime] = None
-        self.updated: Optional[datetime] = None
         self.author: str = ""
         self.category: str = ""
         self.tags: List[str] = []
         
         # Media information
-        self.enclosures: List[Dict[str, str]] = []
-        self.media_content: List[Dict[str, str]] = []
         self.image_url: str = ""  # Primary image (backward compatibility)
         self.image_urls: List[str] = []  # All images
         
@@ -55,11 +51,6 @@ class RSSArticle:
         self.source_name: str = ""
         self.source_url: str = ""
         self.feed_url: str = ""
-        
-        # Additional metadata
-        self.language: str = ""
-        self.rights: str = ""
-        self.raw_data: Dict[str, Any] = {}
 
     def to_dict(self) -> Dict[str, Any]:
         """Convert article to dictionary for JSON serialization"""
@@ -70,21 +61,15 @@ class RSSArticle:
             'summary': self.summary,
             'link': self.link,
             'guid': self.guid,
-            'comments': self.comments,
             'published': self.published.isoformat() if self.published else None,
-            'updated': self.updated.isoformat() if self.updated else None,
             'author': self.author,
             'category': self.category,
             'tags': self.tags,
-            'enclosures': self.enclosures,
-            'media_content': self.media_content,
             'image_url': self.image_url,
             'image_urls': self.image_urls,
             'source_name': self.source_name,
             'source_url': self.source_url,
-            'feed_url': self.feed_url,
-            'language': self.language,
-            'rights': self.rights
+            'feed_url': self.feed_url
         }
 
     def __str__(self):
@@ -283,7 +268,6 @@ class RSSFeedReader:
         article.summary = self.clean_text(entry.get('summary', ''))
         article.link = entry.get('link', '')
         article.guid = entry.get('id', entry.get('guid', ''))
-        article.comments = entry.get('comments', '')
         
         # Content (prefer content over description)
         content = entry.get('content', [])
@@ -294,9 +278,8 @@ class RSSFeedReader:
         else:
             article.content = article.description
         
-        # Publication dates
+        # Publication date
         article.published = self.parse_datetime(entry.get('published', ''))
-        article.updated = self.parse_datetime(entry.get('updated', ''))
         
         # Author information
         author = entry.get('author', '')
@@ -315,40 +298,10 @@ class RSSFeedReader:
         article.image_urls = self.extract_all_image_urls(entry)
         article.image_url = article.image_urls[0] if article.image_urls else ""  # Primary image for backward compatibility
         
-        # Enclosures
-        if 'enclosures' in entry:
-            article.enclosures = [
-                {
-                    'url': enc.get('href', ''),
-                    'type': enc.get('type', ''),
-                    'length': enc.get('length', '')
-                }
-                for enc in entry['enclosures']
-            ]
-        
-        # Media content
-        if 'media_content' in entry:
-            article.media_content = [
-                {
-                    'url': media.get('url', ''),
-                    'type': media.get('type', ''),
-                    'width': media.get('width', ''),
-                    'height': media.get('height', '')
-                }
-                for media in entry['media_content']
-            ]
-        
         # Source information
         article.source_name = feed_info.get('title', '')
         article.source_url = feed_info.get('link', '')
         article.feed_url = feed_info.get('href', '')
-        
-        # Additional metadata
-        article.language = feed_info.get('language', '')
-        article.rights = feed_info.get('rights', '')
-        
-        # Store raw data for debugging
-        article.raw_data = entry
         
         return article
 
@@ -645,23 +598,16 @@ class RSSDatabase:
                         summary TEXT,
                         link TEXT UNIQUE,
                         guid TEXT UNIQUE,
-                        comments TEXT,
                         published DATETIME,
-                        updated DATETIME,
                         author TEXT,
                         category TEXT,
                         tags TEXT,  -- JSON array
-                        enclosures TEXT,  -- JSON array
-                        media_content TEXT,  -- JSON array
                         image_urls TEXT,  -- JSON array of ALL image URLs (consolidated)
                         source_name TEXT,
                         source_url TEXT,
                         feed_url TEXT,
-                        language TEXT,
-                        rights TEXT,
                         content_hash TEXT UNIQUE,  -- For duplicate detection
                         created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-                        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
                         is_read BOOLEAN DEFAULT FALSE,
                         event_group_id INTEGER  -- For grouping related articles
                     )
@@ -772,27 +718,7 @@ class RSSDatabase:
         if article.image_urls:
             rss_images.update(article.image_urls)
         
-        # 2. Extract from enclosures (RSS explicit field)
-        if article.enclosures:
-            for enclosure in article.enclosures:
-                if isinstance(enclosure, dict):
-                    enc_type = enclosure.get('type', '')
-                    if enc_type.startswith('image/'):
-                        url = enclosure.get('url', enclosure.get('href', ''))
-                        if url:
-                            rss_images.add(url)
-        
-        # 3. Extract from media_content (RSS explicit field)
-        if article.media_content:
-            for media in article.media_content:
-                if isinstance(media, dict):
-                    media_type = media.get('type', '')
-                    if media_type.startswith('image/') or 'image' in media_type.lower():
-                        url = media.get('url', '')
-                        if url:
-                            rss_images.add(url)
-        
-        # 4. Add legacy image_url if it exists (RSS explicit field)
+        # 2. Add legacy image_url if it exists (RSS explicit field)
         if article.image_url:
             rss_images.add(article.image_url)
         
@@ -856,11 +782,11 @@ class RSSDatabase:
                 
                 cursor.execute('''
                     INSERT INTO articles (
-                        title, description, content, summary, link, guid, comments,
-                        published, updated, author, category, tags, enclosures,
-                        media_content, image_urls, source_name, source_url, feed_url,
-                        language, rights, content_hash
-                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                        title, description, content, summary, link, guid,
+                        published, author, category, tags,
+                        image_urls, source_name, source_url, feed_url,
+                        content_hash
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 ''', (
                     article.title,
                     article.description,
@@ -868,20 +794,14 @@ class RSSDatabase:
                     article.summary,
                     article.link,
                     article.guid,
-                    article.comments,
                     article.published.isoformat() if article.published else None,
-                    article.updated.isoformat() if article.updated else None,
                     article.author,
                     article.category,
                     json.dumps(article.tags) if article.tags else None,
-                    json.dumps(article.enclosures) if article.enclosures else None,
-                    json.dumps(article.media_content) if article.media_content else None,
                     json.dumps(consolidated_image_urls) if consolidated_image_urls else None,
                     article.source_name,
                     article.source_url,
                     article.feed_url,
-                    article.language,
-                    article.rights,
                     content_hash
                 ))
                 
@@ -1090,7 +1010,7 @@ class RSSDatabase:
                 cursor = conn.cursor()
                 cursor.execute('''
                     UPDATE articles 
-                    SET is_read = TRUE, updated_at = CURRENT_TIMESTAMP 
+                    SET is_read = TRUE 
                     WHERE id = ?
                 ''', (article_id,))
                 conn.commit()
@@ -1107,7 +1027,7 @@ class RSSDatabase:
                 cursor = conn.cursor()
                 cursor.execute('''
                     UPDATE articles 
-                    SET is_read = FALSE, updated_at = CURRENT_TIMESTAMP 
+                    SET is_read = FALSE 
                     WHERE id = ?
                 ''', (article_id,))
                 conn.commit()
@@ -1125,7 +1045,7 @@ class RSSDatabase:
                 placeholders = ','.join('?' * len(article_ids))
                 cursor.execute(f'''
                     UPDATE articles 
-                    SET is_read = TRUE, updated_at = CURRENT_TIMESTAMP 
+                    SET is_read = TRUE 
                     WHERE id IN ({placeholders})
                 ''', article_ids)
                 conn.commit()

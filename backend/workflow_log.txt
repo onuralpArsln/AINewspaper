@@ -136,3 +136,28 @@
 [2025-10-27 00:41:48] Successful steps: 3/3
 [2025-10-27 00:41:48] Failed steps: 0/3
 [2025-10-27 00:41:48] ================================================================================
+[2025-10-27 02:19:31] ================================================================================
+[2025-10-27 02:19:31] WORKFLOW EXECUTION STARTED
+[2025-10-27 02:19:31] RSS Source: DISABLED
+[2025-10-27 02:19:31] Scraper Source: ENABLED
+[2025-10-27 02:19:31] AI Editor: DISABLED
+[2025-10-27 02:19:31] AI Rewriter: DISABLED
+[2025-10-27 02:19:31] ================================================================================
+[2025-10-27 02:19:31] Starting step 1: Web Scraper to Database Processing
+[2025-10-27 02:19:39] Step 1 COMPLETED SUCCESSFULLY in 8.36 seconds
+[2025-10-27 02:19:39] Starting step 2: Article Grouping
+[2025-10-27 02:19:39] Step 2 COMPLETED SUCCESSFULLY in 0.02 seconds
+[2025-10-27 02:19:39] Starting step 3: AI Article Writing
+[2025-10-27 02:20:58] Step 3 COMPLETED SUCCESSFULLY in 79.27 seconds
+[2025-10-27 02:20:58] AI Writer Statistics:
+[2025-10-27 02:20:58]   - Articles generated: 5/5
+[2025-10-27 02:20:58]   - AI trials made: 5
+[2025-10-27 02:20:58]   - Articles skipped: 0
+[2025-10-27 02:20:58]   - Success rate: 100.0%
+[2025-10-27 02:20:58]   - Processed groups: 0
+[2025-10-27 02:20:58] ================================================================================
+[2025-10-27 02:20:58] WORKFLOW EXECUTION COMPLETED
+[2025-10-27 02:20:58] Total duration: 87.66 seconds
+[2025-10-27 02:20:58] Successful steps: 3/3
+[2025-10-27 02:20:58] Failed steps: 0/3
+[2025-10-27 02:20:58] ================================================================================
