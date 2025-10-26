@@ -4,7 +4,7 @@ AI Writer for RSS Articles
 Uses Gemini AI to rewrite and unify articles from rss_articles.db
 
 WORKFLOW:
-1. Generates a target number of OUTPUT articles (set by ARTICLE_COUNT or --max-articles)
+1. Generates a target number of OUTPUT articles (set by ARTICLE_COUNT or run(max_articles=...))
 2. For each OUTPUT article:
    - Gets next unread article from rss_articles.db (newest first)
    - Checks if it has images (if ONLY_IMAGES flag is True)
@@ -26,9 +26,7 @@ IMAGE HANDLING:
 - Validates and filters image URLs
 
 USAGE:
-    python ai_writer.py                    # Generate ARTICLE_COUNT output articles
-    python ai_writer.py --max-articles 20  # Generate 20 output articles
-    python ai_writer.py --stats            # Show statistics only
+    Import and call run() or AIWriter.process_articles() from your application code.
 """
 
 import os
@@ -95,43 +93,8 @@ class AIWriter:
             return "You are a seasoned journalist. Rewrite the given news articles in a professional tone."
     
     def _init_databases(self):
-        """Initialize both databases with required schemas"""
-        # Initialize RSS database with read status and event grouping
-        with sqlite3.connect(self.rss_db_path) as conn:
-            cursor = conn.cursor()
-            
-            # Check existing columns
-            cursor.execute("PRAGMA table_info(articles)")
-            existing_columns = [column[1] for column in cursor.fetchall()]
-            
-            # Add read status column if it doesn't exist
-            if 'is_read' not in existing_columns:
-                try:
-                    cursor.execute('ALTER TABLE articles ADD COLUMN is_read BOOLEAN DEFAULT 0')
-                    logger.info("Added is_read column to RSS articles table")
-                    conn.commit()
-                except sqlite3.OperationalError as e:
-                    logger.debug(f"is_read column might already exist: {e}")
-            
-            # Add event_group_id column if it doesn't exist
-            if 'event_group_id' not in existing_columns:
-                try:
-                    cursor.execute('ALTER TABLE articles ADD COLUMN event_group_id INTEGER')
-                    logger.info("Added event_group_id column to RSS articles table")
-                    conn.commit()
-                except sqlite3.OperationalError as e:
-                    logger.debug(f"event_group_id column might already exist: {e}")
-            
-            # Add indexes for performance
-            try:
-                cursor.execute('CREATE INDEX IF NOT EXISTS idx_articles_read ON articles(is_read, created_at)')
-                cursor.execute('CREATE INDEX IF NOT EXISTS idx_articles_group_read ON articles(event_group_id, is_read)')
-                cursor.execute('CREATE INDEX IF NOT EXISTS idx_articles_group_id ON articles(event_group_id)')
-                conn.commit()
-            except sqlite3.OperationalError as e:
-                logger.debug(f"Indexes might already exist: {e}")
-        
-        # Initialize our articles database
+        """Ensure our_articles table exists (no schema alterations)."""
+        # Ensure our articles database table exists
         with sqlite3.connect(self.our_articles_db_path) as conn:
             cursor = conn.cursor()
             cursor.execute('''
@@ -153,18 +116,7 @@ class AIWriter:
                     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
                 )
             ''')
-            
-            # Add category column if it doesn't exist (for existing databases)
-            try:
-                cursor.execute('ALTER TABLE our_articles ADD COLUMN category TEXT')
-                logger.info("Added category column to our_articles table")
-                conn.commit()
-            except sqlite3.OperationalError as e:
-                logger.debug(f"category column might already exist: {e}")
-            
-            # Add indexes
-            cursor.execute('CREATE INDEX IF NOT EXISTS idx_our_articles_date ON our_articles(date)')
-            cursor.execute('CREATE INDEX IF NOT EXISTS idx_our_articles_group ON our_articles(source_group_id)')
+            conn.commit()
     
     def get_connection(self, db_path: str):
         """Get database connection with row factory"""

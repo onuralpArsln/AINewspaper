@@ -17,7 +17,7 @@ import logging
 from pathlib import Path
 from urllib.parse import urlparse, urljoin
 import requests
-from bs4 import BeautifulSoup
+from bs4 import BeautifulSoup, FeatureNotFound
 import html
 
 # Import existing RSS classes
@@ -92,12 +92,16 @@ class WebScraper:
                 response = self.session.get(url, timeout=self.timeout)
                 response.raise_for_status()
                 
-                # Parse with BeautifulSoup
-                parser_to_use = 'lxml' if _HAS_LXML else 'html.parser'
-                if not _HAS_LXML:
+                # Parse with BeautifulSoup, robust fallback if lxml is unavailable
+                if _HAS_LXML:
+                    try:
+                        return BeautifulSoup(response.content, 'lxml')
+                    except (FeatureNotFound, Exception) as e:
+                        logger.warning(f"lxml parser not usable; falling back to html.parser: {e}")
+                        return BeautifulSoup(response.content, 'html.parser')
+                else:
                     logger.warning("lxml parser not available; falling back to html.parser")
-                soup = BeautifulSoup(response.content, parser_to_use)
-                return soup
+                    return BeautifulSoup(response.content, 'html.parser')
                 
             except requests.exceptions.RequestException as e:
                 error_msg = f"Network error fetching {url}: {e}"
