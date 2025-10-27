@@ -1,0 +1,89 @@
+<style>
+
+body{
+background-color: #6d6969;
+}
+
+.uhaCanliYayinButon{
+display:inline-flex;
+align-items:center;
+color:#fff;
+cursor:pointer;
+user-select:none;
+-webkit-tap-highlight-color:transparent;
+position:relative;
+/* theming variables */
+--tv-screen-base:#dfdfdf;
+--tv-screen-bright:#ffffff;
+--tv-border:#30c2b3;
+--tv-shadow-strong:rgba(0,0,0,0.88);
+--tv-shadow-soft:rgba(0,0,0,0.70);
+/* size variables */
+--tv-w:30px;
+--tv-h:20px;
+--tv-b:3px;
+--tv-gap:10px;
+--antenna:5px;
+--antenna-diag: calc(var(--antenna) * 0.7071);
+animation: canlitextglow 4s infinite alternate;
+}
+@keyframes canlitextglow {
+    0% {
+        text-shadow: 0 0 5px #ff005e, 0 0 10px #ff005e, 0 0 20px #ff005e, 0 0 40px #ff005e, 0 0 80px #ff005e;
+    }
+    100% {
+        text-shadow: 0 0 10px #00d4ff, 0 0 20px #00d4ff, 0 0 40px #00d4ff, 0 0 80px #00d4ff, 0 0 160px #00d4ff;
+    }
+}
+
+
+/* CSS-only TV icon on the right */
+.uhaCanliYayinButon::after{
+content:"";
+margin-left:var(--tv-gap);
+width:var(--tv-w);
+height:var(--tv-h);
+background:var(--tv-screen-base);
+border-radius:var(--tv-b);
+border : var(--tv-b) solid var(--tv-border);
+box-shadow: inset 0 0 6px 6px var(--tv-shadow-strong);
+animation:screenPulse 2s ease-in-out infinite;
+will-change: box-shadow, background-color;
+display:inline-block;
+}
+
+@keyframes screenPulse{
+0%{
+box-shadow: inset 0 0 2px calc(var(--tv-b) + 1px) var(--tv-shadow-strong);
+background:var(--tv-screen-base);
+}
+50%{
+box-shadow: inset 0 0 4px var(--tv-b) var(--tv-shadow-soft);
+background:var(--tv-screen-bright);
+}
+100%{
+box-shadow: inset 0 0 2px calc(var(--tv-b) + 1px) var(--tv-shadow-strong);
+background:var(--tv-screen-base);
+}
+}
+
+/* Small diamond centered on the top edge of the screen */
+.uhaCanliYayinButon::before{
+content:"";
+position:absolute;
+width:var(--antenna);
+height:var(--antenna);
+
+left:calc(100% - ((var(--tv-w) + (2 * var(--tv-b))) / 2));
+top:50%;
+/* place its bottom tip exactly on the outer TV border */
+transform:translate(-50%, calc(-60% - ((var(--tv-h) + (2 * var(--tv-b))) / 2) + (var(--tv-b) / 2) - var(--antenna-diag))) rotate(45deg);
+border-radius:1px;
+pointer-events:none;
+border-width:0 var(--tv-b) var(--tv-b)  0;
+border-color:var(--tv-border);
+border-style:solid;
+}
+</style>
+
+<div class="uhaCanliYayinButon">Canlı yayın</div>

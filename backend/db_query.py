@@ -268,7 +268,7 @@ class RSSDatabaseQuery:
             cursor = conn.cursor()
             cursor.execute('''
                 UPDATE articles 
-                SET is_read = 1, updated_at = CURRENT_TIMESTAMP 
+                SET is_read = 1 
                 WHERE id = ?
             ''', (article_id,))
             conn.commit()
@@ -280,7 +280,7 @@ class RSSDatabaseQuery:
             cursor = conn.cursor()
             cursor.execute('''
                 UPDATE articles 
-                SET is_read = 0, updated_at = CURRENT_TIMESTAMP 
+                SET is_read = 0 
                 WHERE id = ?
             ''', (article_id,))
             conn.commit()

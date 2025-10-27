@@ -17,7 +17,7 @@ import logging
 from pathlib import Path
 from urllib.parse import urlparse, urljoin
 import requests
-from bs4 import BeautifulSoup
+from bs4 import BeautifulSoup, FeatureNotFound
 import html
 
 # Import existing RSS classes
@@ -41,6 +41,9 @@ MAX_ARTICLES_PER_SOURCE = 5  # Set to any positive integer (e.g., 10, 20, 50)
 # Minimum content length threshold (in characters) for articles to be added to database
 # Articles with content shorter than this will be skipped
 MIN_CONTENT_LENGTH_THRESHOLD = 200  # Set to 0 to disable filtering
+
+# Filter articles: only add to database if they have images
+REQUIRE_IMAGES = True  # Set to False to add all articles regardless of images
 
 
 # =============================================================================
@@ -92,12 +95,16 @@ class WebScraper:
                 response = self.session.get(url, timeout=self.timeout)
                 response.raise_for_status()
                 
-                # Parse with BeautifulSoup
-                parser_to_use = 'lxml' if _HAS_LXML else 'html.parser'
-                if not _HAS_LXML:
+                # Parse with BeautifulSoup, robust fallback if lxml is unavailable
+                if _HAS_LXML:
+                    try:
+                        return BeautifulSoup(response.content, 'lxml')
+                    except (FeatureNotFound, Exception) as e:
+                        logger.warning(f"lxml parser not usable; falling back to html.parser: {e}")
+                        return BeautifulSoup(response.content, 'html.parser')
+                else:
                     logger.warning("lxml parser not available; falling back to html.parser")
-                soup = BeautifulSoup(response.content, parser_to_use)
-                return soup
+                    return BeautifulSoup(response.content, 'html.parser')
                 
             except requests.exceptions.RequestException as e:
                 error_msg = f"Network error fetching {url}: {e}"
@@ -399,7 +406,25 @@ class ArticleListingParser:
             '.png',
             '.gif',
             '.css',
-            '.js'
+            '.js',
+            # Additional category/listing patterns
+            '/haberler',  # Category listing pages
+            '/kategori/',  # Turkish for category
+            '/arsiv/',  # Archive pages
+            '/liste/',  # List pages
+            # Specific category pages to skip
+            '/son-dakika',  # Category pages
+            '/son-dakika-',  # Category pages with suffixes
+            '/sondakika-haberleri',  # Category pages
+            '/guncel-haberler',  # Category pages
+            '/guncel-haberler-',  # Category pages with suffixes
+            '/spor',  # Sports category
+            '/ekonomi',  # Economy category
+            '/saglik',  # Health category
+            '/teknoloji',  # Technology category
+            '/kultur-sanat',  # Culture category
+            '/dunya',  # World news category
+            '/politika'  # Politics category
         ]
         
         href_lower = href.lower()
@@ -471,6 +496,7 @@ class ArticleListingParser:
         # Domain-specific patterns
         domain_patterns = {
             'internethaber.com': [
+                r'/[a-z0-9-]+-\d+h\.htm',  # Most common pattern: article-name-1234567h.htm
                 r'/\d{4}/\d{2}/\d{2}/',  # Date-based URLs
                 r'/[a-z-]+-\d+',  # slug-number pattern
                 r'/haber/[a-z0-9-]+',  # /haber/slug pattern
@@ -1020,6 +1046,12 @@ class ScraperToDatabase:
                                 logger.warning(f"Skipping article due to short content ({content_length} chars < {MIN_CONTENT_LENGTH_THRESHOLD} threshold): {article_data['title'][:50]}...")
                                 short_content_skipped += 1
                                 continue
+                            
+                            # Check if article has images (if required)
+                            if REQUIRE_IMAGES:
+                                if not article_data.get('image_url'):
+                                    logger.warning(f"Skipping article (no images): {article_data['title'][:50]}...")
+                                    continue
                             
                             # Create RSSArticle object
                             article = RSSArticle()

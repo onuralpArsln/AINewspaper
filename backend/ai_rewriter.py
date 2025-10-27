@@ -311,10 +311,9 @@ Please enhance the rejected article to address the editorial concerns while main
                         body = ?, 
                         category = ?, 
                         tags = ?,
-                        article_state = 'not_reviewed',
-                        updated_at = ?
+                        article_state = 'not_reviewed'
                     WHERE id = ?
-                ''', (title, summary, body, category, tags, istanbul_time, article_id))
+                ''', (title, summary, body, category, tags, article_id))
                 
                 conn.commit()
                 
