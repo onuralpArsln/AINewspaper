@@ -314,8 +314,9 @@ def create_tebilisim_rss_feed(
     for a in articles:
         item = ET.SubElement(channel, "item")
 
-        # Core fields
-        ET.SubElement(item, "title").text = a.get('title', 'Untitled')
+        # Core fields with CDATA sections
+        title_el = ET.SubElement(item, "title")
+        title_el.text = f"<![CDATA[{a.get('title', 'Untitled')}]]>"
 
         # Compute short and long summaries
         body_text = (a.get('body', '') or '').strip()
@@ -334,12 +335,23 @@ def create_tebilisim_rss_feed(
         long_summary = _excerpt(body_text, 520) if body_text else given_summary
 
         ET.SubElement(item, "spot").text = short_summary or ''
-        ET.SubElement(item, "description").text = long_summary or ''
+        
+        # Description with CDATA
+        desc_el = ET.SubElement(item, "description")
+        desc_el.text = f"<![CDATA[{long_summary or ''}]]>"
 
+        # Content encoded with CDATA
         content_el = ET.SubElement(item, "content:encoded")
-        content_el.text = a.get('body', '') or ''
+        content_el.text = f"<![CDATA[{a.get('body', '') or ''}]]>"
 
         ET.SubElement(item, "link").text = f"{feed_url}/articles/{a['id']}"
+        
+        # Add atom:link for each item
+        item_atom_link = ET.SubElement(item, "atom:link")
+        item_atom_link.set("rel", "self")
+        item_atom_link.set("href", f"{feed_url}/articles/{a['id']}")
+        item_atom_link.set("type", "application/rss+xml")
+        
         ET.SubElement(item, "guid").text = f"{feed_url}/articles/{a['id']}"
         ET.SubElement(item, "pubDate").text = format_date_for_rss(a.get('date'))
 
@@ -367,6 +379,13 @@ def create_tebilisim_rss_feed(
         if images:
             # custom image element (first image)
             ET.SubElement(item, "image").text = images[0]
+            
+            # Add enclosure element for primary image
+            enclosure = ET.SubElement(item, "enclosure")
+            enclosure.set("url", images[0])
+            enclosure.set("type", "image/jpeg")
+            enclosure.set("length", "0")  # Placeholder length
+            
             # also include media:content for compatibility
             for image_url in images[:3]:
                 if image_url:
