@@ -50,6 +50,20 @@ logger = logging.getLogger(__name__)
 ARTICLE_COUNT = 5   # Number of articles to produce per run
 # Validation mode: when False (default), allow semantic rephrasing and rely on prompt; keep minimal safeguards
 STRICT_FACT_VALIDATION = False
+
+# Hallucination indicators - forbidden if not in source material
+HALLUCINATION_INDICATORS = [
+ "henüz doğrulanmayan",
+    "resmi olmayan", "güvenilir kaynaklar", "kulislere göre","haber metninde"
+]
+
+# Harsh journalism terms - always forbidden regardless of source
+HARSH_TERMS = [
+    "ceset", "cesetler", "ölü", "ölüler", "leş", "leşler","boğazlamak", "boğazlandı","tecavüz"
+]
+
+# Combined list for backwards compatibility
+FORBIDDEN_PHRASES = HALLUCINATION_INDICATORS + HARSH_TERMS
 # ============================================================================
 
 class AIWriter:
@@ -139,7 +153,15 @@ class AIWriter:
             ''', (limit,))
             
             articles = [dict(row) for row in cursor.fetchall()]
-            logger.info(f"Found {len(articles)} unread articles to process")
+            
+            # Additional diagnostic: check total unread count
+            if len(articles) == 0:
+                cursor.execute('SELECT COUNT(*) FROM articles WHERE is_read = 0')
+                total_unread = cursor.fetchone()[0]
+                logger.warning(f"No unread articles found (total unread in DB: {total_unread})")
+            else:
+                logger.info(f"Found {len(articles)} unread articles to process")
+            
             return articles
     
     def get_group_articles(self, group_id: int) -> List[Dict[str, Any]]:
@@ -266,8 +288,6 @@ Source: {article.get('source_name', 'N/A')}
 Published: {article.get('published', 'N/A')}
 Content: {article.get('description', article.get('content', 'N/A'))}
 Link: {article.get('link', 'N/A')}
-
-IMPORTANT: Use ONLY the information provided above. Do not add any facts, details, or information not explicitly stated in this source article.
 """
         else:
             # Multiple articles (group)
@@ -280,31 +300,14 @@ IMPORTANT: Use ONLY the information provided above. Do not add any facts, detail
                 text += f"Content: {article.get('description', article.get('content', 'N/A'))}\n"
                 text += f"Link: {article.get('link', 'N/A')}\n\n"
             
-            text += "IMPORTANT: Use ONLY the information provided in the source articles above. Do not add any facts, details, or information not explicitly stated in these source articles. If sources conflict, present both versions clearly."
             return text
     
     def generate_article_with_ai(self, articles_text: str) -> Optional[Dict[str, str]]:
-        """Generate article using Gemini AI with enhanced prompt for category and tags"""
+        """Generate article using Gemini AI with writer prompt"""
         try:
-            # Enhanced prompt to specifically request category selection and tags
+            # Combine prompt with source articles
+            # All instructions are now in writer_prompt.txt (single source of truth)
             enhanced_prompt = f"""{self.writer_prompt}
-
-CRITICAL ANTI-HALLUCINATION INSTRUCTIONS:
-- You MUST only use information explicitly provided in the source articles above
-- Do NOT add any facts, numbers, dates, names, or details not present in the source material
-- Do NOT speculate, infer, or make assumptions beyond what is directly stated
-- If information is missing, write "bilgi mevcut değil" (information not available)
-- Preserve all specific details exactly as provided in the source articles
-- If sources conflict, present both versions clearly
-
-IMPORTANT CATEGORY AND TAGS FORMAT:
-- Select ONE main category from: gündem, ekonomi, spor, siyaset, magazin, yaşam, eğitim, sağlık, astroloji
-- Generate additional tags as a JSON array (not comma-separated)
-- Include geographic location (city or country mentioned in the article)
-- Include other relevant keywords
-- Example output:
-  Category: spor
-  Tags: ["futbol", "İstanbul", "şampiyonluk", "galatasaray", "derbi"]
 
 Please rewrite the following articles:
 
@@ -326,13 +329,9 @@ Please rewrite the following articles:
         """Minimal-safe validation: allow semantic rephrasing; block only explicit hallucination patterns.
 
         In non-strict mode (STRICT_FACT_VALIDATION=False):
-        - Do not compare large sets of words/entities/numbers.
         - Fail only if forbidden phrases appear that are not in sources.
-        - Warn (do not fail) if title anchor entities seem missing.
         """
         try:
-            import re
-
             if not STRICT_FACT_VALIDATION:
                 # Merge source text for phrase checks
                 source_text = " ".join([
@@ -341,38 +340,34 @@ Please rewrite the following articles:
 
                 generated_content = f"{article_data.get('title','')} {article_data.get('summary','')} {article_data.get('body','')}".lower()
 
-                # Forbidden hallucination cues that must not appear unless present in sources
-                forbidden_phrases = [
-                    "kaynaklara göre", "uzmanlara göre", "iddialara göre", "henüz doğrulanmayan",
-                    "resmi olmayan", "güvenilir kaynaklar", "kulislere göre"
-                ]
-
-                for phrase in forbidden_phrases:
-                    if phrase in generated_content and phrase not in source_text:
-                        logger.warning(f"Generated article contains forbidden phrase not in sources: '{phrase}'")
+                # Check for harsh terms (always forbidden)
+                for phrase in HARSH_TERMS:
+                    if phrase in generated_content:
+                        logger.warning(f"Generated article contains harsh unacceptable term: '{phrase}'")
                         return False
 
-                # Warn-only: ensure title anchor tokens present
-                titles = " ".join([a.get('title','') for a in source_articles])
-                # Extract simple anchor tokens from titles (capitalized words, >=3 chars)
-                title_tokens = set(re.findall(r"\b[A-ZÇĞIİÖŞÜ][a-zçğıiöşü]{2,}\b", titles))
-                missing = []
-                for tok in title_tokens:
-                    if tok.lower() not in generated_content:
-                        missing.append(tok)
-                if len(missing) > 0:
-                    logger.info(f"Title anchor tokens possibly missing (warn-only): {missing[:5]}")
+                # Check for hallucination indicators (forbidden if not in sources)
+                for phrase in HALLUCINATION_INDICATORS:
+                    if phrase in generated_content and phrase not in source_text:
+                        logger.warning(f"Generated article contains hallucination indicator not in sources: '{phrase}'")
+                        return False
 
                 return True
 
-            # STRICT mode (debug): basic check only; still avoid broad count diffs
+            # STRICT mode (debug): basic check only
             source_text = " ".join([
                 f"{a.get('title','')} {a.get('description','')} {a.get('content','')}" for a in source_articles
             ]).lower()
             generated_content = f"{article_data.get('title','')} {article_data.get('summary','')} {article_data.get('body','')}".lower()
-            forbidden_phrases = []
             
-            for phrase in forbidden_phrases:
+            # Check for harsh terms (always forbidden in strict mode too)
+            for phrase in HARSH_TERMS:
+                if phrase in generated_content:
+                    logger.warning(f"[STRICT] Generated article contains harsh unacceptable term: '{phrase}'")
+                    return False
+            
+            # Check for hallucination indicators (forbidden if not in sources)
+            for phrase in HALLUCINATION_INDICATORS:
                 if phrase in generated_content and phrase not in source_text:
                     logger.warning(f"[STRICT] Forbidden phrase not in sources: '{phrase}'")
                     return False
@@ -393,117 +388,21 @@ Please rewrite the following articles:
             current_section = None
             current_content = []
             
-            # Helper function to check if line matches field patterns
-            def matches_field(line, field_name, turkish_name=None):
-                # Remove markdown artifacts and normalize
-                clean_line = re.sub(r'^\*+\s*|\s*\*+$|^`+\s*|\s*`+$', '', line.strip())
-                # Check for various patterns: "Title:", "Title -", "**Title:**", "Başlık:", etc.
-                patterns = [
-                    rf'^\*?\*?\s*{field_name}\s*[:\\-]\s*',
-                    rf'^\*?\*?\s*{field_name}\s*[:\\-]\s*',
-                ]
-                if turkish_name:
-                    patterns.extend([
-                        rf'^\*?\*?\s*{turkish_name}\s*[:\\-]\s*',
-                        rf'^\*?\*?\s*{turkish_name}\s*[:\\-]\s*',
-                    ])
+            # Field mapping: (field_key, english_name, turkish_name)
+            field_mappings = [
+                ('title', 'Title', 'Başlık'),
+                ('summary', 'Summary', 'Özet'),
+                ('body', 'Body', 'İçerik'),
+                ('category', 'Category', 'Kategori'),
+                ('tags', 'Tags', 'Etiketler'),
+            ]
+            
+            # Helper function to save previous section
+            def save_current_section():
+                nonlocal facts_used
+                if not current_section or not current_content:
+                    return
                 
-                for pattern in patterns:
-                    if re.match(pattern, clean_line, re.IGNORECASE):
-                        return True, clean_line
-                return False, clean_line
-            
-            for line in lines:
-                line = line.strip()
-                # Capture optional self-audit facts section
-                if line.startswith('Facts Used'):
-                    # Accumulate the JSON block on the same or following lines
-                    current_section = 'facts'
-                    current_content = [line.split(':',1)[1].strip()] if ':' in line else []
-                elif current_section == 'facts' and (line.startswith('[') or line.startswith('{') or line.endswith(']') or line.endswith('}')):
-                    current_content.append(line)
-                elif current_section == 'facts' and line and not any(matches_field(line, field)[0] for field in ['Title', 'Summary', 'Body', 'Category', 'Tags']):
-                    current_content.append(line)
-                elif matches_field(line, 'Title', 'Başlık')[0]:
-                    if current_section and current_content:
-                        if current_section == 'facts':
-                            try:
-                                facts_text = '\n'.join(current_content).strip()
-                                facts_used = json.loads(facts_text)
-                            except Exception:
-                                facts_used = []
-                        else:
-                            article_data[current_section] = '\n'.join(current_content).strip()
-                    current_section = 'title'
-                    # Extract content after the field marker
-                    _, clean_line = matches_field(line, 'Title', 'Başlık')
-                    content = re.sub(r'^(title|başlık)\s*[:\\-]\s*', '', clean_line, flags=re.IGNORECASE).strip()
-                    current_content = [content] if content else []
-                elif matches_field(line, 'Summary', 'Özet')[0]:
-                    if current_section and current_content:
-                        if current_section == 'facts':
-                            try:
-                                facts_text = '\n'.join(current_content).strip()
-                                facts_used = json.loads(facts_text)
-                            except Exception:
-                                facts_used = []
-                        else:
-                            article_data[current_section] = '\n'.join(current_content).strip()
-                    current_section = 'summary'
-                    # Extract content after the field marker
-                    _, clean_line = matches_field(line, 'Summary', 'Özet')
-                    content = re.sub(r'^(summary|özet)\s*[:\\-]\s*', '', clean_line, flags=re.IGNORECASE).strip()
-                    current_content = [content] if content else []
-                elif matches_field(line, 'Body', 'İçerik')[0]:
-                    if current_section and current_content:
-                        if current_section == 'facts':
-                            try:
-                                facts_text = '\n'.join(current_content).strip()
-                                facts_used = json.loads(facts_text)
-                            except Exception:
-                                facts_used = []
-                        else:
-                            article_data[current_section] = '\n'.join(current_content).strip()
-                    current_section = 'body'
-                    # Extract content after the field marker
-                    _, clean_line = matches_field(line, 'Body', 'İçerik')
-                    content = re.sub(r'^(body|içerik)\s*[:\\-]\s*', '', clean_line, flags=re.IGNORECASE).strip()
-                    current_content = [content] if content else []
-                elif matches_field(line, 'Category', 'Kategori')[0]:
-                    if current_section and current_content:
-                        if current_section == 'facts':
-                            try:
-                                facts_text = '\n'.join(current_content).strip()
-                                facts_used = json.loads(facts_text)
-                            except Exception:
-                                facts_used = []
-                        else:
-                            article_data[current_section] = '\n'.join(current_content).strip()
-                    current_section = 'category'
-                    # Extract content after the field marker
-                    _, clean_line = matches_field(line, 'Category', 'Kategori')
-                    content = re.sub(r'^(category|kategori)\s*[:\\-]\s*', '', clean_line, flags=re.IGNORECASE).strip()
-                    current_content = [content] if content else []
-                elif matches_field(line, 'Tags', 'Etiketler')[0]:
-                    if current_section and current_content:
-                        if current_section == 'facts':
-                            try:
-                                facts_text = '\n'.join(current_content).strip()
-                                facts_used = json.loads(facts_text)
-                            except Exception:
-                                facts_used = []
-                        else:
-                            article_data[current_section] = '\n'.join(current_content).strip()
-                    current_section = 'tags'
-                    # Extract content after the field marker
-                    _, clean_line = matches_field(line, 'Tags', 'Etiketler')
-                    content = re.sub(r'^(tags|etiketler)\s*[:\\-]\s*', '', clean_line, flags=re.IGNORECASE).strip()
-                    current_content = [content] if content else []
-                elif line and current_section:
-                    current_content.append(line)
-            
-            # Add the last section
-            if current_section and current_content:
                 if current_section == 'facts':
                     try:
                         facts_text = '\n'.join(current_content).strip()
@@ -512,6 +411,68 @@ Please rewrite the following articles:
                         facts_used = []
                 else:
                     article_data[current_section] = '\n'.join(current_content).strip()
+            
+            # Helper function to check if line matches field and extract content
+            def extract_field_content(line, field_key, english_name, turkish_name):
+                # Remove markdown artifacts
+                clean_line = re.sub(r'^\*+\s*|\s*\*+$|^`+\s*|\s*`+$', '', line.strip())
+                
+                # Build patterns for field detection
+                patterns = [
+                    rf'^\*?\*?\s*{re.escape(english_name)}\s*[:\\-]\s*',
+                    rf'^\*?\*?\s*{re.escape(turkish_name)}\s*[:\\-]\s*',
+                ]
+                
+                for pattern in patterns:
+                    if re.match(pattern, clean_line, re.IGNORECASE):
+                        # Extract content after the field marker
+                        content = re.sub(
+                            rf'^({re.escape(english_name)}|{re.escape(turkish_name)})\s*[:\\-]\s*',
+                            '',
+                            clean_line,
+                            flags=re.IGNORECASE
+                        ).strip()
+                        return True, content
+                return False, None
+            
+            # Process each line
+            for line in lines:
+                line = line.strip()
+                if not line:
+                    continue
+                
+                # Handle facts section
+                if line.startswith('Facts Used'):
+                    save_current_section()
+                    current_section = 'facts'
+                    current_content = [line.split(':', 1)[1].strip()] if ':' in line else []
+                    continue
+                
+                if current_section == 'facts':
+                    # Continue accumulating facts until we hit a field marker
+                    if (line.startswith('[') or line.startswith('{') or 
+                        line.endswith(']') or line.endswith('}') or
+                        not any(extract_field_content(line, *field)[0] for field in field_mappings)):
+                        current_content.append(line)
+                        continue
+                
+                # Check for field markers
+                field_matched = False
+                for field_key, english_name, turkish_name in field_mappings:
+                    matches, content = extract_field_content(line, field_key, english_name, turkish_name)
+                    if matches:
+                        save_current_section()
+                        current_section = field_key
+                        current_content = [content] if content else []
+                        field_matched = True
+                        break
+                
+                # If no field matched, append to current section
+                if not field_matched and current_section:
+                    current_content.append(line)
+            
+            # Save the last section
+            save_current_section()
             
             # Process tags - convert to JSON array if needed
             if 'tags' in article_data:
@@ -679,10 +640,23 @@ Please rewrite the following articles:
         logger.info(f"Starting AI article writing process...")
         logger.info(f"Target: Generate {max_articles} OUTPUT articles")
         
+        # Log database state before processing
+        stats = self.get_writing_statistics()
+        logger.info(f"Database state before processing:")
+        logger.info(f"  - Total RSS articles: {stats['total_rss_articles']}")
+        logger.info(f"  - Unread articles: {stats['unread_rss_articles']}")
+        logger.info(f"  - Read articles: {stats['read_rss_articles']}")
+        logger.info(f"  - Our articles (generated): {stats['our_articles_count']}")
+        
+        if stats['unread_rss_articles'] == 0:
+            logger.warning("⚠️  WARNING: No unread articles available in database!")
+            logger.warning("   All articles may have already been processed.")
+        
         generated_count = 0  # Number of output articles generated
         skipped_count = 0
         ai_trials = 0  # Number of AI generation attempts
         processed_groups = set()  # Track processed groups to avoid duplicates
+        skip_reasons = {}  # Track reasons for skipping articles
         
         # Keep processing until we generate the target number of output articles
         while generated_count < max_articles:
@@ -691,7 +665,12 @@ Please rewrite the following articles:
             articles_to_check = self.get_next_articles_to_process(batch_size)
             
             if not articles_to_check:
-                logger.info(f"✓ No more unread articles found (generated {generated_count} articles)")
+                logger.warning(f"⚠️  No more unread articles found after processing {generated_count}/{max_articles} articles")
+                logger.warning(f"   This may indicate all available articles have been processed.")
+                # Double-check database state
+                remaining_stats = self.get_writing_statistics()
+                remaining_unread = remaining_stats['unread_rss_articles']
+                logger.warning(f"   Database confirms: {remaining_unread} unread articles remaining")
                 break
             
             # Process articles until we reach our target
@@ -708,11 +687,15 @@ Please rewrite the following articles:
                     
                     # Skip if this group was already processed
                     if group_id and group_id > 0 and group_id in processed_groups:
+                        reason = "group_already_processed"
+                        skip_reasons[reason] = skip_reasons.get(reason, 0) + 1
                         logger.debug(f"Skipping article {article_id} - group {group_id} already processed")
                         continue
                     
                     # Skip if article is already read (might happen with groups)
                     if article.get('is_read'):
+                        reason = "already_read"
+                        skip_reasons[reason] = skip_reasons.get(reason, 0) + 1
                         logger.debug(f"Skipping article {article_id} - already marked as read")
                         continue
                     
@@ -755,13 +738,19 @@ Please rewrite the following articles:
                             logger.info(f"✓ Successfully generated output article {generated_count}/{max_articles} (ID: {saved_id})")
                             logger.info(f"  - Used {len(source_articles)} source article(s)")
                         else:
+                            reason = "failed_validation"
+                            skip_reasons[reason] = skip_reasons.get(reason, 0) + 1
                             logger.warning("✗ Article failed factual accuracy validation - skipping")
                             skipped_count += 1
                     else:
+                        reason = "ai_generation_failed"
+                        skip_reasons[reason] = skip_reasons.get(reason, 0) + 1
                         logger.error("✗ Failed to generate article with AI")
                         skipped_count += 1
                         
                 except Exception as e:
+                    reason = "processing_error"
+                    skip_reasons[reason] = skip_reasons.get(reason, 0) + 1
                     logger.error(f"✗ Error processing article {article.get('id', 'unknown')}: {e}")
                     skipped_count += 1
                     continue
@@ -777,6 +766,23 @@ Please rewrite the following articles:
         logger.info(f"  ✗ Skipped/Failed: {skipped_count}")
         logger.info(f"  🤖 AI trials made: {ai_trials}")
         logger.info(f"  📊 Processed groups: {len(processed_groups)}")
+        
+        # Log skip reasons breakdown
+        if skip_reasons:
+            logger.info(f"  📋 Skip reasons breakdown:")
+            for reason, count in skip_reasons.items():
+                logger.info(f"     - {reason}: {count}")
+        
+        # Log final database state
+        final_stats = self.get_writing_statistics()
+        logger.info(f"  📊 Final database state:")
+        logger.info(f"     - Unread articles remaining: {final_stats['unread_rss_articles']}")
+        logger.info(f"     - Total our articles: {final_stats['our_articles_count']}")
+        
+        if generated_count == 0 and final_stats['unread_rss_articles'] > 0:
+            logger.warning(f"  ⚠️  WARNING: Generated 0 articles but {final_stats['unread_rss_articles']} unread articles remain!")
+            logger.warning(f"     This suggests articles are being skipped but not processed.")
+        
         logger.info(f"{'='*80}\n")
         
         # Return detailed statistics

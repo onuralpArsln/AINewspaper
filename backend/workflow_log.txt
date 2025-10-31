@@ -236,3 +236,395 @@
 [2025-10-27 16:27:03] Successful steps: 3/3
 [2025-10-27 16:27:03] Failed steps: 0/3
 [2025-10-27 16:27:03] ================================================================================
+[2025-11-01 00:33:17] ================================================================================
+[2025-11-01 00:33:17] WORKFLOW EXECUTION STARTED
+[2025-11-01 00:33:17] RSS Source: DISABLED
+[2025-11-01 00:33:17] Scraper Source: ENABLED
+[2025-11-01 00:33:17] AI Editor: DISABLED
+[2025-11-01 00:33:17] AI Rewriter: DISABLED
+[2025-11-01 00:33:17] ================================================================================
+[2025-11-01 00:33:17] Starting step 1: Web Scraper to Database Processing
+[2025-11-01 00:33:27] Step 1 COMPLETED SUCCESSFULLY in 9.43 seconds
+[2025-11-01 00:33:27] Starting step 2: Article Grouping
+[2025-11-01 00:33:27] Step 2 COMPLETED SUCCESSFULLY in 0.01 seconds
+[2025-11-01 00:33:27] Starting step 3: AI Article Writing
+[2025-11-01 00:33:27] Step 3 COMPLETED SUCCESSFULLY in 0.15 seconds
+[2025-11-01 00:33:27] AI Writer Statistics:
+[2025-11-01 00:33:27]   - Articles generated: 0/5
+[2025-11-01 00:33:27]   - AI trials made: 10
+[2025-11-01 00:33:27]   - Articles skipped: 10
+[2025-11-01 00:33:27]   - Success rate: 0.0%
+[2025-11-01 00:33:27]   - Processed groups: 0
+[2025-11-01 00:33:27] ================================================================================
+[2025-11-01 00:33:27] WORKFLOW EXECUTION COMPLETED
+[2025-11-01 00:33:27] Total duration: 9.60 seconds
+[2025-11-01 00:33:27] Successful steps: 3/3
+[2025-11-01 00:33:27] Failed steps: 0/3
+[2025-11-01 00:33:27] ================================================================================
+[2025-11-01 01:34:36] ================================================================================
+[2025-11-01 01:34:36] WORKFLOW EXECUTION STARTED
+[2025-11-01 01:34:36] RSS Source: DISABLED
+[2025-11-01 01:34:36] Scraper Source: ENABLED
+[2025-11-01 01:34:36] AI Editor: DISABLED
+[2025-11-01 01:34:36] AI Rewriter: DISABLED
+[2025-11-01 01:34:36] ================================================================================
+[2025-11-01 01:34:36] Starting step 1: Web Scraper to Database Processing
+[2025-11-01 01:34:43] Step 1 COMPLETED SUCCESSFULLY in 7.65 seconds
+[2025-11-01 01:34:43] Starting step 2: Article Grouping
+[2025-11-01 01:34:43] Step 2 COMPLETED SUCCESSFULLY in 0.01 seconds
+[2025-11-01 01:34:43] Starting step 3: AI Article Writing
+[2025-11-01 01:34:44] Database state before AI Writer:
+[2025-11-01 01:34:44]   - Total RSS articles: 10
+[2025-11-01 01:34:44]   - Unread articles: 10
+[2025-11-01 01:34:44]   - Read articles: 0
+[2025-11-01 01:34:44]   - Our articles (existing): 0
+[2025-11-01 01:36:10] Step 3 COMPLETED SUCCESSFULLY in 86.62 seconds
+[2025-11-01 01:36:10] AI Writer Statistics:
+[2025-11-01 01:36:10]   - Articles generated: 5/5
+[2025-11-01 01:36:10]   - AI trials made: 5
+[2025-11-01 01:36:10]   - Articles skipped: 0
+[2025-11-01 01:36:10]   - Success rate: 100.0%
+[2025-11-01 01:36:10]   - Processed groups: 0
+[2025-11-01 01:36:10] ================================================================================
+[2025-11-01 01:36:10] WORKFLOW EXECUTION COMPLETED
+[2025-11-01 01:36:10] Total duration: 94.29 seconds
+[2025-11-01 01:36:10] Successful steps: 3/3
+[2025-11-01 01:36:10] Failed steps: 0/3
+[2025-11-01 01:36:10] ================================================================================
+[2025-11-01 02:00:24] ================================================================================
+[2025-11-01 02:00:24] WORKFLOW EXECUTION STARTED
+[2025-11-01 02:00:24] RSS Source: DISABLED
+[2025-11-01 02:00:24] Scraper Source: ENABLED
+[2025-11-01 02:00:24] AI Editor: DISABLED
+[2025-11-01 02:00:24] AI Rewriter: DISABLED
+[2025-11-01 02:00:24] ================================================================================
+[2025-11-01 02:00:24] Starting step 1: Web Scraper to Database Processing
+[2025-11-01 02:00:32] Step 1 COMPLETED SUCCESSFULLY in 8.41 seconds
+[2025-11-01 02:00:32] Starting step 2: Article Grouping
+[2025-11-01 02:00:32] Step 2 COMPLETED SUCCESSFULLY in 0.02 seconds
+[2025-11-01 02:00:32] Starting step 3: AI Article Writing
+[2025-11-01 02:00:33] Database state before AI Writer:
+[2025-11-01 02:00:33]   - Total RSS articles: 11
+[2025-11-01 02:00:33]   - Unread articles: 11
+[2025-11-01 02:00:33]   - Read articles: 0
+[2025-11-01 02:00:33]   - Our articles (existing): 0
+[2025-11-01 02:01:46] Step 3 COMPLETED SUCCESSFULLY in 73.45 seconds
+[2025-11-01 02:01:46] AI Writer Statistics:
+[2025-11-01 02:01:46]   - Articles generated: 5/5
+[2025-11-01 02:01:46]   - AI trials made: 5
+[2025-11-01 02:01:46]   - Articles skipped: 0
+[2025-11-01 02:01:46]   - Success rate: 100.0%
+[2025-11-01 02:01:46]   - Processed groups: 0
+[2025-11-01 02:01:46] ================================================================================
+[2025-11-01 02:01:46] WORKFLOW EXECUTION COMPLETED
+[2025-11-01 02:01:46] Total duration: 81.89 seconds
+[2025-11-01 02:01:46] Successful steps: 3/3
+[2025-11-01 02:01:46] Failed steps: 0/3
+[2025-11-01 02:01:46] ================================================================================
+[2025-11-01 02:02:49] ================================================================================
+[2025-11-01 02:02:49] WORKFLOW EXECUTION STARTED
+[2025-11-01 02:02:49] RSS Source: DISABLED
+[2025-11-01 02:02:49] Scraper Source: ENABLED
+[2025-11-01 02:02:49] AI Editor: DISABLED
+[2025-11-01 02:02:49] AI Rewriter: DISABLED
+[2025-11-01 02:02:49] ================================================================================
+[2025-11-01 02:02:49] Starting step 1: Web Scraper to Database Processing
+[2025-11-01 02:02:55] Step 1 COMPLETED SUCCESSFULLY in 5.25 seconds
+[2025-11-01 02:02:55] Starting step 2: Article Grouping
+[2025-11-01 02:02:55] Step 2 COMPLETED SUCCESSFULLY in 0.01 seconds
+[2025-11-01 02:02:55] Starting step 3: AI Article Writing
+[2025-11-01 02:02:55] Database state before AI Writer:
+[2025-11-01 02:02:55]   - Total RSS articles: 11
+[2025-11-01 02:02:55]   - Unread articles: 6
+[2025-11-01 02:02:55]   - Read articles: 5
+[2025-11-01 02:02:55]   - Our articles (existing): 5
+[2025-11-01 02:04:12] Step 3 COMPLETED SUCCESSFULLY in 77.41 seconds
+[2025-11-01 02:04:12] AI Writer Statistics:
+[2025-11-01 02:04:12]   - Articles generated: 5/5
+[2025-11-01 02:04:12]   - AI trials made: 5
+[2025-11-01 02:04:12]   - Articles skipped: 0
+[2025-11-01 02:04:12]   - Success rate: 100.0%
+[2025-11-01 02:04:12]   - Processed groups: 0
+[2025-11-01 02:04:12] ================================================================================
+[2025-11-01 02:04:12] WORKFLOW EXECUTION COMPLETED
+[2025-11-01 02:04:12] Total duration: 82.68 seconds
+[2025-11-01 02:04:12] Successful steps: 3/3
+[2025-11-01 02:04:12] Failed steps: 0/3
+[2025-11-01 02:04:12] ================================================================================
+[2025-11-01 02:06:50] ================================================================================
+[2025-11-01 02:06:50] WORKFLOW EXECUTION STARTED
+[2025-11-01 02:06:50] RSS Source: DISABLED
+[2025-11-01 02:06:50] Scraper Source: ENABLED
+[2025-11-01 02:06:50] AI Editor: DISABLED
+[2025-11-01 02:06:50] AI Rewriter: DISABLED
+[2025-11-01 02:06:50] ================================================================================
+[2025-11-01 02:06:50] Starting step 1: Web Scraper to Database Processing
+[2025-11-01 02:06:56] Step 1 COMPLETED SUCCESSFULLY in 6.34 seconds
+[2025-11-01 02:06:56] Starting step 2: Article Grouping
+[2025-11-01 02:06:56] Step 2 COMPLETED SUCCESSFULLY in 0.02 seconds
+[2025-11-01 02:06:56] Starting step 3: AI Article Writing
+[2025-11-01 02:06:56] Database state before AI Writer:
+[2025-11-01 02:06:56]   - Total RSS articles: 11
+[2025-11-01 02:06:56]   - Unread articles: 1
+[2025-11-01 02:06:56]   - Read articles: 10
+[2025-11-01 02:06:56]   - Our articles (existing): 10
+[2025-11-01 02:06:56] Info: Only 1 unread articles available (target is usually 5).
+[2025-11-01 02:07:16] Step 3 COMPLETED SUCCESSFULLY in 19.83 seconds
+[2025-11-01 02:07:16] AI Writer Statistics:
+[2025-11-01 02:07:16]   - Articles generated: 1/5
+[2025-11-01 02:07:16]   - AI trials made: 1
+[2025-11-01 02:07:16]   - Articles skipped: 0
+[2025-11-01 02:07:16]   - Success rate: 100.0%
+[2025-11-01 02:07:16]   - Processed groups: 0
+[2025-11-01 02:07:16] ================================================================================
+[2025-11-01 02:07:16] WORKFLOW EXECUTION COMPLETED
+[2025-11-01 02:07:16] Total duration: 26.19 seconds
+[2025-11-01 02:07:16] Successful steps: 3/3
+[2025-11-01 02:07:16] Failed steps: 0/3
+[2025-11-01 02:07:16] ================================================================================
+[2025-11-01 02:07:19] ================================================================================
+[2025-11-01 02:07:19] WORKFLOW EXECUTION STARTED
+[2025-11-01 02:07:19] RSS Source: DISABLED
+[2025-11-01 02:07:19] Scraper Source: ENABLED
+[2025-11-01 02:07:19] AI Editor: DISABLED
+[2025-11-01 02:07:19] AI Rewriter: DISABLED
+[2025-11-01 02:07:19] ================================================================================
+[2025-11-01 02:07:19] Starting step 1: Web Scraper to Database Processing
+[2025-11-01 02:07:26] Step 1 COMPLETED SUCCESSFULLY in 6.36 seconds
+[2025-11-01 02:07:26] Starting step 2: Article Grouping
+[2025-11-01 02:07:26] Step 2 COMPLETED SUCCESSFULLY in 0.03 seconds
+[2025-11-01 02:07:26] Starting step 3: AI Article Writing
+[2025-11-01 02:07:26] Database state before AI Writer:
+[2025-11-01 02:07:26]   - Total RSS articles: 11
+[2025-11-01 02:07:26]   - Unread articles: 0
+[2025-11-01 02:07:26]   - Read articles: 11
+[2025-11-01 02:07:26]   - Our articles (existing): 11
+[2025-11-01 02:07:26] WARNING: No unread articles available! AI Writer may generate 0 articles.
+[2025-11-01 02:07:26] Step 3 COMPLETED SUCCESSFULLY in 0.34 seconds
+[2025-11-01 02:07:26] AI Writer Statistics:
+[2025-11-01 02:07:26]   - Articles generated: 0/5
+[2025-11-01 02:07:26]   - AI trials made: 0
+[2025-11-01 02:07:26]   - Articles skipped: 0
+[2025-11-01 02:07:26]   - Success rate: 0%
+[2025-11-01 02:07:26]   - Processed groups: 0
+[2025-11-01 02:07:26] ⚠️  WARNING: AI Writer generated ZERO articles!
+[2025-11-01 02:07:26]   This may indicate:
+[2025-11-01 02:07:26]     - No unread articles were available
+[2025-11-01 02:07:26]     - All articles failed validation or AI generation
+[2025-11-01 02:07:26]     - Articles were skipped due to processing errors
+[2025-11-01 02:07:26] ================================================================================
+[2025-11-01 02:07:26] WORKFLOW EXECUTION COMPLETED
+[2025-11-01 02:07:26] Total duration: 6.74 seconds
+[2025-11-01 02:07:26] Successful steps: 3/3
+[2025-11-01 02:07:26] Failed steps: 0/3
+[2025-11-01 02:07:26] ================================================================================
+[2025-11-01 02:07:45] ================================================================================
+[2025-11-01 02:07:45] WORKFLOW EXECUTION STARTED
+[2025-11-01 02:07:45] RSS Source: DISABLED
+[2025-11-01 02:07:45] Scraper Source: ENABLED
+[2025-11-01 02:07:45] AI Editor: DISABLED
+[2025-11-01 02:07:45] AI Rewriter: DISABLED
+[2025-11-01 02:07:45] ================================================================================
+[2025-11-01 02:07:45] Starting step 1: Web Scraper to Database Processing
+[2025-11-01 02:07:51] Step 1 COMPLETED SUCCESSFULLY in 5.47 seconds
+[2025-11-01 02:07:51] Starting step 2: Article Grouping
+[2025-11-01 02:07:51] Step 2 COMPLETED SUCCESSFULLY in 0.02 seconds
+[2025-11-01 02:07:51] Starting step 3: AI Article Writing
+[2025-11-01 02:07:51] Database state before AI Writer:
+[2025-11-01 02:07:51]   - Total RSS articles: 11
+[2025-11-01 02:07:51]   - Unread articles: 0
+[2025-11-01 02:07:51]   - Read articles: 11
+[2025-11-01 02:07:51]   - Our articles (existing): 11
+[2025-11-01 02:07:51] WARNING: No unread articles available! AI Writer may generate 0 articles.
+[2025-11-01 02:07:51] Step 3 COMPLETED SUCCESSFULLY in 0.24 seconds
+[2025-11-01 02:07:51] AI Writer Statistics:
+[2025-11-01 02:07:51]   - Articles generated: 0/5
+[2025-11-01 02:07:51]   - AI trials made: 0
+[2025-11-01 02:07:51]   - Articles skipped: 0
+[2025-11-01 02:07:51]   - Success rate: 0%
+[2025-11-01 02:07:51]   - Processed groups: 0
+[2025-11-01 02:07:51] ⚠️  WARNING: AI Writer generated ZERO articles!
+[2025-11-01 02:07:51]   This may indicate:
+[2025-11-01 02:07:51]     - No unread articles were available
+[2025-11-01 02:07:51]     - All articles failed validation or AI generation
+[2025-11-01 02:07:51]     - Articles were skipped due to processing errors
+[2025-11-01 02:07:51] ================================================================================
+[2025-11-01 02:07:51] WORKFLOW EXECUTION COMPLETED
+[2025-11-01 02:07:51] Total duration: 5.73 seconds
+[2025-11-01 02:07:51] Successful steps: 3/3
+[2025-11-01 02:07:51] Failed steps: 0/3
+[2025-11-01 02:07:51] ================================================================================
+[2025-11-01 02:08:09] ================================================================================
+[2025-11-01 02:08:09] WORKFLOW EXECUTION STARTED
+[2025-11-01 02:08:09] RSS Source: DISABLED
+[2025-11-01 02:08:09] Scraper Source: ENABLED
+[2025-11-01 02:08:09] AI Editor: DISABLED
+[2025-11-01 02:08:09] AI Rewriter: DISABLED
+[2025-11-01 02:08:09] ================================================================================
+[2025-11-01 02:08:09] Starting step 1: Web Scraper to Database Processing
+[2025-11-01 02:08:14] Step 1 COMPLETED SUCCESSFULLY in 5.21 seconds
+[2025-11-01 02:08:14] Starting step 2: Article Grouping
+[2025-11-01 02:08:14] Step 2 COMPLETED SUCCESSFULLY in 0.02 seconds
+[2025-11-01 02:08:14] Starting step 3: AI Article Writing
+[2025-11-01 02:08:14] Database state before AI Writer:
+[2025-11-01 02:08:14]   - Total RSS articles: 11
+[2025-11-01 02:08:14]   - Unread articles: 0
+[2025-11-01 02:08:14]   - Read articles: 11
+[2025-11-01 02:08:14]   - Our articles (existing): 11
+[2025-11-01 02:08:14] WARNING: No unread articles available! AI Writer may generate 0 articles.
+[2025-11-01 02:08:14] Step 3 COMPLETED SUCCESSFULLY in 0.27 seconds
+[2025-11-01 02:08:14] AI Writer Statistics:
+[2025-11-01 02:08:14]   - Articles generated: 0/5
+[2025-11-01 02:08:14]   - AI trials made: 0
+[2025-11-01 02:08:14]   - Articles skipped: 0
+[2025-11-01 02:08:14]   - Success rate: 0%
+[2025-11-01 02:08:14]   - Processed groups: 0
+[2025-11-01 02:08:14] ⚠️  WARNING: AI Writer generated ZERO articles!
+[2025-11-01 02:08:14]   This may indicate:
+[2025-11-01 02:08:14]     - No unread articles were available
+[2025-11-01 02:08:14]     - All articles failed validation or AI generation
+[2025-11-01 02:08:14]     - Articles were skipped due to processing errors
+[2025-11-01 02:08:14] ================================================================================
+[2025-11-01 02:08:14] WORKFLOW EXECUTION COMPLETED
+[2025-11-01 02:08:14] Total duration: 5.49 seconds
+[2025-11-01 02:08:14] Successful steps: 3/3
+[2025-11-01 02:08:14] Failed steps: 0/3
+[2025-11-01 02:08:14] ================================================================================
+[2025-11-01 02:08:28] ================================================================================
+[2025-11-01 02:08:28] WORKFLOW EXECUTION STARTED
+[2025-11-01 02:08:28] RSS Source: DISABLED
+[2025-11-01 02:08:28] Scraper Source: ENABLED
+[2025-11-01 02:08:28] AI Editor: DISABLED
+[2025-11-01 02:08:28] AI Rewriter: DISABLED
+[2025-11-01 02:08:28] ================================================================================
+[2025-11-01 02:08:28] Starting step 1: Web Scraper to Database Processing
+[2025-11-01 02:08:35] Step 1 COMPLETED SUCCESSFULLY in 6.21 seconds
+[2025-11-01 02:08:35] Starting step 2: Article Grouping
+[2025-11-01 02:08:35] Step 2 COMPLETED SUCCESSFULLY in 0.02 seconds
+[2025-11-01 02:08:35] Starting step 3: AI Article Writing
+[2025-11-01 02:08:35] Database state before AI Writer:
+[2025-11-01 02:08:35]   - Total RSS articles: 11
+[2025-11-01 02:08:35]   - Unread articles: 0
+[2025-11-01 02:08:35]   - Read articles: 11
+[2025-11-01 02:08:35]   - Our articles (existing): 11
+[2025-11-01 02:08:35] WARNING: No unread articles available! AI Writer may generate 0 articles.
+[2025-11-01 02:08:35] Step 3 COMPLETED SUCCESSFULLY in 0.28 seconds
+[2025-11-01 02:08:35] AI Writer Statistics:
+[2025-11-01 02:08:35]   - Articles generated: 0/5
+[2025-11-01 02:08:35]   - AI trials made: 0
+[2025-11-01 02:08:35]   - Articles skipped: 0
+[2025-11-01 02:08:35]   - Success rate: 0%
+[2025-11-01 02:08:35]   - Processed groups: 0
+[2025-11-01 02:08:35] ⚠️  WARNING: AI Writer generated ZERO articles!
+[2025-11-01 02:08:35]   This may indicate:
+[2025-11-01 02:08:35]     - No unread articles were available
+[2025-11-01 02:08:35]     - All articles failed validation or AI generation
+[2025-11-01 02:08:35]     - Articles were skipped due to processing errors
+[2025-11-01 02:08:35] ================================================================================
+[2025-11-01 02:08:35] WORKFLOW EXECUTION COMPLETED
+[2025-11-01 02:08:35] Total duration: 6.51 seconds
+[2025-11-01 02:08:35] Successful steps: 3/3
+[2025-11-01 02:08:35] Failed steps: 0/3
+[2025-11-01 02:08:35] ================================================================================
+[2025-11-01 02:08:43] ================================================================================
+[2025-11-01 02:08:43] WORKFLOW EXECUTION STARTED
+[2025-11-01 02:08:43] RSS Source: DISABLED
+[2025-11-01 02:08:43] Scraper Source: ENABLED
+[2025-11-01 02:08:43] AI Editor: DISABLED
+[2025-11-01 02:08:43] AI Rewriter: DISABLED
+[2025-11-01 02:08:43] ================================================================================
+[2025-11-01 02:08:43] Starting step 1: Web Scraper to Database Processing
+[2025-11-01 02:08:48] Step 1 COMPLETED SUCCESSFULLY in 4.88 seconds
+[2025-11-01 02:08:48] Starting step 2: Article Grouping
+[2025-11-01 02:08:48] Step 2 COMPLETED SUCCESSFULLY in 0.02 seconds
+[2025-11-01 02:08:48] Starting step 3: AI Article Writing
+[2025-11-01 02:08:48] Database state before AI Writer:
+[2025-11-01 02:08:48]   - Total RSS articles: 11
+[2025-11-01 02:08:48]   - Unread articles: 0
+[2025-11-01 02:08:48]   - Read articles: 11
+[2025-11-01 02:08:48]   - Our articles (existing): 11
+[2025-11-01 02:08:48] WARNING: No unread articles available! AI Writer may generate 0 articles.
+[2025-11-01 02:08:48] Step 3 COMPLETED SUCCESSFULLY in 0.21 seconds
+[2025-11-01 02:08:48] AI Writer Statistics:
+[2025-11-01 02:08:48]   - Articles generated: 0/5
+[2025-11-01 02:08:48]   - AI trials made: 0
+[2025-11-01 02:08:48]   - Articles skipped: 0
+[2025-11-01 02:08:48]   - Success rate: 0%
+[2025-11-01 02:08:48]   - Processed groups: 0
+[2025-11-01 02:08:48] ⚠️  WARNING: AI Writer generated ZERO articles!
+[2025-11-01 02:08:48]   This may indicate:
+[2025-11-01 02:08:48]     - No unread articles were available
+[2025-11-01 02:08:48]     - All articles failed validation or AI generation
+[2025-11-01 02:08:48]     - Articles were skipped due to processing errors
+[2025-11-01 02:08:48] ================================================================================
+[2025-11-01 02:08:48] WORKFLOW EXECUTION COMPLETED
+[2025-11-01 02:08:48] Total duration: 5.11 seconds
+[2025-11-01 02:08:48] Successful steps: 3/3
+[2025-11-01 02:08:48] Failed steps: 0/3
+[2025-11-01 02:08:48] ================================================================================
+[2025-11-01 02:09:02] ================================================================================
+[2025-11-01 02:09:02] WORKFLOW EXECUTION STARTED
+[2025-11-01 02:09:02] RSS Source: DISABLED
+[2025-11-01 02:09:02] Scraper Source: ENABLED
+[2025-11-01 02:09:02] AI Editor: DISABLED
+[2025-11-01 02:09:02] AI Rewriter: DISABLED
+[2025-11-01 02:09:02] ================================================================================
+[2025-11-01 02:09:02] Starting step 1: Web Scraper to Database Processing
+[2025-11-01 02:09:08] Step 1 COMPLETED SUCCESSFULLY in 5.35 seconds
+[2025-11-01 02:09:08] Starting step 2: Article Grouping
+[2025-11-01 02:09:08] Step 2 COMPLETED SUCCESSFULLY in 0.03 seconds
+[2025-11-01 02:09:08] Starting step 3: AI Article Writing
+[2025-11-01 02:09:08] Database state before AI Writer:
+[2025-11-01 02:09:08]   - Total RSS articles: 11
+[2025-11-01 02:09:08]   - Unread articles: 0
+[2025-11-01 02:09:08]   - Read articles: 11
+[2025-11-01 02:09:08]   - Our articles (existing): 11
+[2025-11-01 02:09:08] WARNING: No unread articles available! AI Writer may generate 0 articles.
+[2025-11-01 02:09:08] Step 3 COMPLETED SUCCESSFULLY in 0.19 seconds
+[2025-11-01 02:09:08] AI Writer Statistics:
+[2025-11-01 02:09:08]   - Articles generated: 0/5
+[2025-11-01 02:09:08]   - AI trials made: 0
+[2025-11-01 02:09:08]   - Articles skipped: 0
+[2025-11-01 02:09:08]   - Success rate: 0%
+[2025-11-01 02:09:08]   - Processed groups: 0
+[2025-11-01 02:09:08] ⚠️  WARNING: AI Writer generated ZERO articles!
+[2025-11-01 02:09:08]   This may indicate:
+[2025-11-01 02:09:08]     - No unread articles were available
+[2025-11-01 02:09:08]     - All articles failed validation or AI generation
+[2025-11-01 02:09:08]     - Articles were skipped due to processing errors
+[2025-11-01 02:09:08] ================================================================================
+[2025-11-01 02:09:08] WORKFLOW EXECUTION COMPLETED
+[2025-11-01 02:09:08] Total duration: 5.57 seconds
+[2025-11-01 02:09:08] Successful steps: 3/3
+[2025-11-01 02:09:08] Failed steps: 0/3
+[2025-11-01 02:09:08] ================================================================================
+[2025-11-01 02:16:19] ================================================================================
+[2025-11-01 02:16:19] WORKFLOW EXECUTION STARTED
+[2025-11-01 02:16:19] RSS Source: DISABLED
+[2025-11-01 02:16:19] Scraper Source: ENABLED
+[2025-11-01 02:16:19] AI Editor: DISABLED
+[2025-11-01 02:16:19] AI Rewriter: DISABLED
+[2025-11-01 02:16:19] ================================================================================
+[2025-11-01 02:16:19] Starting step 1: Web Scraper to Database Processing
+[2025-11-01 02:16:27] Step 1 COMPLETED SUCCESSFULLY in 8.53 seconds
+[2025-11-01 02:16:27] Starting step 2: Article Grouping
+[2025-11-01 02:16:27] Step 2 COMPLETED SUCCESSFULLY in 0.01 seconds
+[2025-11-01 02:16:27] Starting step 3: AI Article Writing
+[2025-11-01 02:16:27] Database state before AI Writer:
+[2025-11-01 02:16:27]   - Total RSS articles: 11
+[2025-11-01 02:16:27]   - Unread articles: 11
+[2025-11-01 02:16:27]   - Read articles: 0
+[2025-11-01 02:16:27]   - Our articles (existing): 0
+[2025-11-01 02:18:32] Step 3 COMPLETED SUCCESSFULLY in 124.91 seconds
+[2025-11-01 02:18:32] AI Writer Statistics:
+[2025-11-01 02:18:32]   - Articles generated: 5/5
+[2025-11-01 02:18:32]   - AI trials made: 5
+[2025-11-01 02:18:32]   - Articles skipped: 0
+[2025-11-01 02:18:32]   - Success rate: 100.0%
+[2025-11-01 02:18:32]   - Processed groups: 0
+[2025-11-01 02:18:32] ================================================================================
+[2025-11-01 02:18:32] WORKFLOW EXECUTION COMPLETED
+[2025-11-01 02:18:32] Total duration: 133.45 seconds
+[2025-11-01 02:18:32] Successful steps: 3/3
+[2025-11-01 02:18:32] Failed steps: 0/3
+[2025-11-01 02:18:32] ================================================================================

@@ -6,7 +6,7 @@ import os
 import sqlite3
 import xml.etree.ElementTree as ET
 import asyncio
-from datetime import datetime
+from datetime import datetime, timezone, timedelta
 from typing import Dict, Any, Optional, List
 from db_query import OurArticlesDatabaseQuery
 import workflow
@@ -51,6 +51,7 @@ import workflow
 # - Search: http://localhost:8000/search?q=teknoloji&limit=10
 # - RSS: http://localhost:8000/rss
 # - Category RSS: http://localhost:8000/rss/category/gündem
+# - TE Bilişim RSS: http://localhost:8000/rss/uha.xml
 # ============================================================================
 
 # Editor mode configuration - dynamically determined by workflow settings
@@ -178,9 +179,11 @@ def parse_article_data(article: Dict[str, Any]) -> Dict[str, Any]:
     return article
 
 def format_date_for_rss(date_str: str) -> str:
-    """Format date string for RSS (RFC 2822 format)"""
+    """Format date string for RSS (RFC 2822 format with +0300 timezone)"""
     if not date_str:
-        return datetime.utcnow().strftime("%a, %d %b %Y %H:%M:%S GMT")
+        # Use UTC+3 for Turkish timezone
+        tz = timezone(timedelta(hours=3))
+        return datetime.now(tz).strftime("%a, %d %b %Y %H:%M:%S +0300")
     
     try:
         # Try to parse the date string
@@ -189,14 +192,19 @@ def format_date_for_rss(date_str: str) -> str:
             for fmt in ["%Y-%m-%d %H:%M:%S", "%Y-%m-%d", "%Y-%m-%dT%H:%M:%S"]:
                 try:
                     dt = datetime.strptime(date_str, fmt)
-                    return dt.strftime("%a, %d %b %Y %H:%M:%S GMT")
+                    # Assume UTC+3 timezone (Turkey)
+                    tz = timezone(timedelta(hours=3))
+                    dt = dt.replace(tzinfo=tz)
+                    return dt.strftime("%a, %d %b %Y %H:%M:%S +0300")
                 except ValueError:
                     continue
         
-        # If all parsing fails, return current time
-        return datetime.utcnow().strftime("%a, %d %b %Y %H:%M:%S GMT")
+        # If all parsing fails, return current time with +0300
+        tz = timezone(timedelta(hours=3))
+        return datetime.now(tz).strftime("%a, %d %b %Y %H:%M:%S +0300")
     except Exception:
-        return datetime.utcnow().strftime("%a, %d %b %Y %H:%M:%S GMT")
+        tz = timezone(timedelta(hours=3))
+        return datetime.now(tz).strftime("%a, %d %b %Y %H:%M:%S +0300")
 
 def create_rss_feed(articles: List[Dict[str, Any]], feed_title: str = "AI Newspaper", 
                    feed_description: str = "AI-generated news articles", 
@@ -272,138 +280,182 @@ def create_tebilisim_rss_feed(
     feed_url: str = "http://localhost:8000",
     default_category: str = "Gündem"
 ) -> str:
-    """Create TE Bilişim compatible RSS XML feed from articles.
-
-    Item field mapping:
-      - spot: summary
-      - description: summary
-      - content:encoded: body (full content)
-      - image: first image url
-      - video: optional video url if present
-    """
-    # Create RSS root element with required namespaces
+    """Create TE Bilişim compatible RSS XML feed from articles matching UHA format."""
+    # Create RSS root element with all required namespaces
     rss = ET.Element("rss")
     rss.set("version", "2.0")
-    rss.set("xmlns:atom", "http://www.w3.org/2005/Atom")
-    rss.set("xmlns:media", "http://search.yahoo.com/mrss/")
     rss.set("xmlns:content", "http://purl.org/rss/1.0/modules/content/")
+    rss.set("xmlns:atom", "http://www.w3.org/2005/Atom")
+    rss.set("xmlns:dc", "http://purl.org/dc/elements/1.1/")
+    rss.set("xmlns:slash", "http://purl.org/rss/1.0/modules/slash/")
+    rss.set("xmlns:sy", "http://purl.org/rss/1.0/modules/syndication/")
 
-    # Channel
+    # Channel element
     channel = ET.SubElement(rss, "channel")
 
+    # Channel elements in order matching desired format
     ET.SubElement(channel, "title").text = feed_title
-    ET.SubElement(channel, "description").text = feed_description
     ET.SubElement(channel, "link").text = feed_url
+    ET.SubElement(channel, "description").text = feed_description
+    
+    # First atom:link (without rel="self", just href and type)
+    atom_link1 = ET.SubElement(channel, "atom:link")
+    atom_link1.set("xmlns:atom", "http://www.w3.org/2005/Atom")
+    atom_link1.set("href", f"{feed_url}/rss")
+    atom_link1.set("type", "application/rss+xml")
+    
     ET.SubElement(channel, "language").text = "tr-TR"
-    ET.SubElement(channel, "lastBuildDate").text = datetime.utcnow().strftime("%a, %d %b %Y %H:%M:%S GMT")
-    ET.SubElement(channel, "generator").text = "AI Newspaper Backend Server"
-
-    # Legal disclaimer
-    ET.SubElement(channel, "copyright").text = (
-        "Girilen bu kaynaklardan alınan içeriklerden TE Bilişim sorumluluk kabul etmez. "
-        "Hukukî bir sorun olduğu takdirde TE Bilişim müşteri gizliliğini ihlâl etme hakkına sahiptir."
-    )
-
-    # Self reference
-    atom_link = ET.SubElement(channel, "atom:link")
-    atom_link.set("href", f"{feed_url}/rss/uha.xml")
-    atom_link.set("rel", "self")
-    atom_link.set("type", "application/rss+xml")
+    
+    # Copyright
+    ET.SubElement(channel, "copyright").text = "Copyright © 2024. Her hakkı saklıdır."
+    
+    # Category (channel-level)
+    ET.SubElement(channel, "category").text = "News"
+    
+    # Last build date with +0300 timezone
+    tz = timezone(timedelta(hours=3))
+    last_build = datetime.now(tz).strftime("%a, %d %b %Y %H:%M:%S +0300")
+    ET.SubElement(channel, "lastBuildDate").text = last_build
+    
+    # TTL
+    ET.SubElement(channel, "ttl").text = "1"
+    
+    # Second atom:link (self)
+    atom_link2 = ET.SubElement(channel, "atom:link")
+    atom_link2.set("rel", "self")
+    atom_link2.set("href", f"{feed_url}/rss")
+    
+    # Third atom:link (hub)
+    atom_link3 = ET.SubElement(channel, "atom:link")
+    atom_link3.set("rel", "hub")
+    atom_link3.set("href", "https://pubsubhubbub.appspot.com/")
 
     # Items
     for a in articles:
         item = ET.SubElement(channel, "item")
 
-        # Core fields with CDATA sections
+        # Title with CDATA (will be handled in post-processing)
+        title_text = a.get('title', 'Untitled').strip()
         title_el = ET.SubElement(item, "title")
-        title_el.text = f"<![CDATA[{a.get('title', 'Untitled')}]]>"
+        title_el.text = title_text
 
-        # Compute short and long summaries
-        body_text = (a.get('body', '') or '').strip()
-        given_summary = (a.get('summary', '') or '').strip()
-
-        def _excerpt(text: str, max_chars: int) -> str:
-            if not text:
-                return ""
-            if len(text) <= max_chars:
-                return text
-            cut = text.rfind(' ', 0, max_chars)
-            cut = cut if cut != -1 else max_chars
-            return text[:cut].rstrip() + "..."
-
-        short_summary = given_summary if given_summary else _excerpt(body_text, 180)
-        long_summary = _excerpt(body_text, 520) if body_text else given_summary
-
-        ET.SubElement(item, "spot").text = short_summary or ''
-        
-        # Description with CDATA
-        desc_el = ET.SubElement(item, "description")
-        desc_el.text = f"<![CDATA[{long_summary or ''}]]>"
-
-        # Content encoded with CDATA
-        content_el = ET.SubElement(item, "content:encoded")
-        content_el.text = f"<![CDATA[{a.get('body', '') or ''}]]>"
-
+        # Link
         ET.SubElement(item, "link").text = f"{feed_url}/articles/{a['id']}"
         
-        # Add atom:link for each item
+        # Atom link for item (self)
         item_atom_link = ET.SubElement(item, "atom:link")
         item_atom_link.set("rel", "self")
         item_atom_link.set("href", f"{feed_url}/articles/{a['id']}")
         item_atom_link.set("type", "application/rss+xml")
         
-        ET.SubElement(item, "guid").text = f"{feed_url}/articles/{a['id']}"
-        ET.SubElement(item, "pubDate").text = format_date_for_rss(a.get('date'))
+        # Description with CDATA
+        body_text = (a.get('body', '') or '').strip()
+        given_summary = (a.get('summary', '') or '').strip()
+        
+        # Use summary if available, otherwise excerpt from body
+        description_text = given_summary if given_summary else (body_text[:200] + "..." if len(body_text) > 200 else body_text)
+        desc_el = ET.SubElement(item, "description")
+        desc_el.text = description_text
 
-        # Category with fallback
+        # Content encoded with CDATA
+        content_text = body_text if body_text else ''
+        content_el = ET.SubElement(item, "content:encoded")
+        content_el.text = content_text
+
+        # Category - combine main category with tags as comma-separated (matching UHA format)
         category_value = a.get('category') or default_category
-        ET.SubElement(item, "category").text = category_value
-
-        # Additional categories from tags if available
-        tags = a.get('tags')
+        tags = a.get('tags') or []
+        
+        # Collect all categories
+        all_categories = [category_value]
+        
+        # Add tags as additional categories
         if isinstance(tags, list):
             for tag in tags:
                 if isinstance(tag, str) and tag.strip():
-                    ET.SubElement(item, "category").text = tag.strip()
-
-        # Explicit tags element (comma-separated)
-        if isinstance(tags, list) and len(tags) > 0:
-            tags_text = ", ".join([t.strip() for t in tags if isinstance(t, str) and t.strip()])
-            if tags_text:
-                ET.SubElement(item, "tags").text = tags_text
+                    all_categories.append(tag.strip())
         elif isinstance(tags, str) and tags.strip():
-            ET.SubElement(item, "tags").text = tags.strip()
+            # Handle comma-separated tags string
+            tag_list = [t.strip() for t in tags.split(',') if t.strip()]
+            all_categories.extend(tag_list)
+        
+        # Create category element with comma-separated values (matching UHA format)
+        cat_el = ET.SubElement(item, "category")
+        cat_el.text = ", ".join(all_categories)
 
-        # Image fields
+        # GUID
+        ET.SubElement(item, "guid").text = f"{feed_url}/articles/{a['id']}"
+        
+        # Publication date
+        ET.SubElement(item, "pubDate").text = format_date_for_rss(a.get('date'))
+
+        # Enclosure for images
         images = a.get('images') or []
-        if images:
-            # custom image element (first image)
-            ET.SubElement(item, "image").text = images[0]
-            
-            # Add enclosure element for primary image
+        if images and images[0]:
             enclosure = ET.SubElement(item, "enclosure")
             enclosure.set("url", images[0])
             enclosure.set("type", "image/jpeg")
-            enclosure.set("length", "0")  # Placeholder length
-            
-            # also include media:content for compatibility
-            for image_url in images[:3]:
-                if image_url:
-                    media_content = ET.SubElement(item, "media:content")
-                    media_content.set("url", image_url)
-                    media_content.set("type", "image/jpeg")
-                    media_content.set("medium", "image")
+            # Try to get image size if available, otherwise use placeholder
+            # In real implementation, you might fetch the image size
+            enclosure.set("length", "50000")  # Placeholder length
 
-        # Optional video element if present on article
-        video_url = a.get('video')
-        if video_url:
-            ET.SubElement(item, "video").text = video_url
-
-    # Convert to string and pretty print
+    # Convert to string first
     rough_string = ET.tostring(rss, encoding='unicode')
+    
+    # Post-process to add CDATA sections for item elements
+    # ElementTree escapes content, so we need to replace it with CDATA
+    import re
+    from html import unescape
+    
+    # Function to unescape XML entities and wrap in CDATA
+    def add_cdata_to_element(pattern, tag_name, xml_string):
+        """Find elements matching pattern and wrap content in CDATA"""
+        def replace_with_cdata(match):
+            full_match = match.group(0)
+            # Extract the content between tags
+            content = match.group(1) if match.lastindex >= 1 else ''
+            # Unescape XML entities that ElementTree added
+            content = unescape(content)
+            # Escape any existing CDATA end markers
+            content = content.replace(']]>', ']]]]><![CDATA[>')
+            # Return with CDATA wrapper
+            return f'<{tag_name}>\n<![CDATA[{content}]]>\n</{tag_name}>'
+        
+        return re.sub(pattern, replace_with_cdata, xml_string, flags=re.DOTALL)
+    
+    # Replace item titles (only those inside <item> tags, not channel title)
+    rough_string = re.sub(
+        r'(<item>.*?<title>)(.*?)(</title>)',
+        lambda m: f'{m.group(1)}\n<![CDATA[{unescape(m.group(2))}]]>\n{m.group(3)}',
+        rough_string,
+        flags=re.DOTALL
+    )
+    
+    # Replace item descriptions (only those inside <item> tags)
+    rough_string = re.sub(
+        r'(<item>.*?<description>)(.*?)(</description>)',
+        lambda m: f'{m.group(1)}\n<![CDATA[{unescape(m.group(2))}]]>\n{m.group(3)}',
+        rough_string,
+        flags=re.DOTALL
+    )
+    
+    # Replace content:encoded
+    rough_string = re.sub(
+        r'(<content:encoded>)(.*?)(</content:encoded>)',
+        lambda m: f'{m.group(1)}\n<![CDATA[{unescape(m.group(2))}]]>\n{m.group(3)}',
+        rough_string,
+        flags=re.DOTALL
+    )
+    
+    # Parse and pretty print
     import xml.dom.minidom
-    dom = xml.dom.minidom.parseString(rough_string)
-    return dom.toprettyxml(indent="  ")
+    try:
+        dom = xml.dom.minidom.parseString(rough_string)
+        pretty_xml = dom.toprettyxml(indent="  ")
+        return pretty_xml
+    except Exception as e:
+        # If parsing fails, return the rough string
+        return rough_string
 
 def get_source_article_link(source_article_ids: str) -> Optional[str]:
     """

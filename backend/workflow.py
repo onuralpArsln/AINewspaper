@@ -141,6 +141,35 @@ def run_workflow() -> Dict[str, Any]:
         step_start_time = datetime.now()
         log_to_file(f"Starting step {i}: {step_desc}", log_file)
         
+        # Check database state before ai_writer step
+        if step_name == 'ai_writer':
+            try:
+                writer = ai_writer.AIWriter()
+                stats = writer.get_writing_statistics()
+                log_to_file(f"Database state before AI Writer:", log_file)
+                log_to_file(f"  - Total RSS articles: {stats['total_rss_articles']}", log_file)
+                log_to_file(f"  - Unread articles: {stats['unread_rss_articles']}", log_file)
+                log_to_file(f"  - Read articles: {stats['read_rss_articles']}", log_file)
+                log_to_file(f"  - Our articles (existing): {stats['our_articles_count']}", log_file)
+                
+                print(f"Database state before AI Writer:")
+                print(f"  - Total RSS articles: {stats['total_rss_articles']}")
+                print(f"  - Unread articles: {stats['unread_rss_articles']}")
+                print(f"  - Read articles: {stats['read_rss_articles']}")
+                
+                if stats['unread_rss_articles'] == 0:
+                    warning_msg = "WARNING: No unread articles available! AI Writer may generate 0 articles."
+                    log_to_file(warning_msg, log_file)
+                    print(f"  ⚠️  {warning_msg}")
+                elif stats['unread_rss_articles'] < 5:
+                    info_msg = f"Info: Only {stats['unread_rss_articles']} unread articles available (target is usually 5)."
+                    log_to_file(info_msg, log_file)
+                    print(f"  ℹ️  {info_msg}")
+                print()
+            except Exception as e:
+                log_to_file(f"Error checking database state before ai_writer: {e}", log_file)
+                print(f"  ⚠️  Could not check database state: {e}")
+        
         try:
             # Execute the step
             result = step_func(**step_args)
@@ -159,6 +188,15 @@ def run_workflow() -> Dict[str, Any]:
                 log_to_file(f"  - Articles skipped: {result['articles_skipped']}", log_file)
                 log_to_file(f"  - Success rate: {result['success_rate']}%", log_file)
                 log_to_file(f"  - Processed groups: {result['processed_groups']}", log_file)
+                
+                # Highlight if zero articles generated
+                if result['articles_generated'] == 0:
+                    warning_msg = "⚠️  WARNING: AI Writer generated ZERO articles!"
+                    log_to_file(warning_msg, log_file)
+                    log_to_file(f"  This may indicate:", log_file)
+                    log_to_file(f"    - No unread articles were available", log_file)
+                    log_to_file(f"    - All articles failed validation or AI generation", log_file)
+                    log_to_file(f"    - Articles were skipped due to processing errors", log_file)
             
             # Store results
             results['steps'][step_name] = {
@@ -179,7 +217,18 @@ def run_workflow() -> Dict[str, Any]:
                 print(f"  AI Writer Results:")
                 print(f"    Articles generated: {result['articles_generated']}/{result['articles_target']}")
                 print(f"    AI trials made: {result['ai_trials']}")
+                print(f"    Articles skipped: {result['articles_skipped']}")
                 print(f"    Success rate: {result['success_rate']}%")
+                print(f"    Processed groups: {result['processed_groups']}")
+                
+                # Highlight if zero articles generated
+                if result['articles_generated'] == 0:
+                    print(f"    ⚠️  WARNING: Zero articles generated!")
+                    if result['ai_trials'] > 0:
+                        print(f"    ⚠️  {result['ai_trials']} AI trials were made but all failed or were skipped")
+                    if result['articles_skipped'] > 0:
+                        print(f"    ⚠️  {result['articles_skipped']} articles were skipped during processing")
+                    print(f"    💡 Check the logs above for detailed skip reasons")
             
         except Exception as e:
             step_end_time = datetime.now()
