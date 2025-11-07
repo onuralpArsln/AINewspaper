@@ -1,0 +1,150 @@
+<style>
+/************************* Sondakika container *************************/
+.sondakika-container {
+  background: linear-gradient(-45deg, #7e0c06, #16345c, #0e1d33, #1e90ff);
+  background-size: 400% 400%;
+  animation: animatedBG 20s ease infinite;
+  border-radius: 16px;
+  padding: 5px;
+  margin-bottom: 25px;
+}
+@keyframes animatedBG{0%{background-position:0 50%}50%{background-position:100% 50%}100%{background-position:0 50%}}
+
+/************************* ŞERİT *************************/
+.sondakika-seridi{background:rgba(30,30,40,.9);border-radius:12px;height:60px;display:flex;overflow:hidden;box-shadow:inset 0 0 15px rgba(0,0,0,.5);border:1px solid rgba(255,255,255,.1)}
+.sondakika-title-inline{display:flex;align-items:center;padding:0 18px;color:#ff4d4f;font-size:1.25rem;font-weight:700;text-transform:uppercase;border-right:1px solid rgba(255,255,255,.1);white-space:nowrap}
+
+.sondakika-haberler{flex:1;display:flex;align-items:center;overflow:hidden;position:relative}
+.sondakika-haberler-icerik{display:flex;align-items:center;position:relative;}
+
+/* Animasyon sınıfı - sadece yüklendikten sonra eklenir */
+.sondakika-haber-item{display:flex;align-items:center;padding:0 28px;height:60px;white-space:nowrap;border-right:1px solid rgba(255,255,255,.05);cursor:pointer;transition:background .3s ease}
+.sondakika-haber-item:hover{background:rgba(255,255,255,.05)}
+.sondakika-haber-baslik{font-size:1.05rem;font-weight:500;margin-right:15px;color:#fff;max-width:550px;overflow:hidden;text-overflow:ellipsis}
+.sondakika-haber-tarih{font-size:.85rem;color:#4dabf7;background:rgba(77,171,247,.1);padding:4px 10px;border-radius:20px;font-weight:500;display:flex;align-items:center;gap:5px;flex-shrink:0}
+
+.sondakika-tum-haberler{width:110px;display:flex;justify-content:center;align-items:center;padding:0 14px;background:rgba(33,150,243,.2);border-left:1px solid rgba(255,255,255,.1);transition:background .3s ease}
+.sondakika-tum-haberler:hover{background:rgba(33,150,243,.3)}
+.sondakika-tum-haberler-btn{background:none;color:#fff;border:none;padding:6px 14px;border-radius:6px;font-size:.95rem;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:7px;transition:all .3s ease}
+.sondakika-tum-haberler-btn:hover{background:rgba(255,255,255,.1)}
+
+/************************* KATEGORİLER *************************/
+/* ---- RESPONSIVE ---- */
+@media(max-width:992px){
+  .sondakika-seridi{height:30px}
+  .sondakika-title-inline{display:none}
+  .sondakika-haber-item{height:30px}
+  .sondakika-haber-baslik{font-size:.85rem}
+  .sondakika-tum-haberler{width:50px}
+  .sondakika-tum-haberler-btn{font-size:.7rem;padding:6px}
+}
+
+@media (prefers-reduced-motion: reduce){
+  .sondakika-container{animation:none}
+  .sondakika-haberler-icerik{animation:none !important}
+}
+</style>
+
+<div class="sondakika-container">
+  <div class="sondakika-seridi">
+    <div class="sondakika-title-inline">Son&nbsp;Dakika</div>
+    <div class="sondakika-haberler">
+      <div class="sondakika-haberler-icerik" id="uha-sondakikaHaberler-v2"></div>
+    </div>
+    <div class="sondakika-tum-haberler">
+      <button class="sondakika-tum-haberler-btn" onclick="window.open('https://www.uygurhaberajansi.com/gundem','_blank','noopener,noreferrer')">
+        Tüm Haberler  <i class="fas fa-arrow-right"></i>
+      </button>
+    </div>
+  </div>
+
+</div>
+
+<script>
+(function() {
+  'use strict';
+  
+const sondakikaHaberler = document.getElementById('uha-sondakikaHaberler-v2');
+if(!sondakikaHaberler) {
+  console.error('Banner widget element not found');
+  return;
+}
+
+let animationFrame;
+let position = 0;
+
+const RSS_URL = 'https://www.uygurhaberajansi.com/rss';
+const REFRESH_INTERVAL = 300000; // 5 minutes
+
+async function getRss(url){
+  const res = await fetch(url, { cache: 'no-store' });
+  const text = await res.text();
+  const xml = new DOMParser().parseFromString(text, 'text/xml');
+  const items = Array.from(xml.querySelectorAll('item'));
+  
+  const parsed = items.map(item => {
+    const pubDate = new Date(item.querySelector('pubDate')?.textContent || 0);
+    return {
+      baslik: item.querySelector('title')?.textContent || '',
+      tarih: pubDate.toLocaleTimeString('tr-TR', {hour:'2-digit', minute:'2-digit'}),
+      link: item.querySelector('link')?.textContent || '#',
+      date: pubDate
+    };
+  });
+  
+  return parsed.sort((a, b) => b.date - a.date).slice(0, 10);
+}
+
+function fill(list){
+  if(animationFrame) cancelAnimationFrame(animationFrame);
+  
+  let html = '';
+  list.forEach(h => {
+    html += `<div class="sondakika-haber-item" onclick="window.open('${h.link}','_blank')">
+               <span class="sondakika-haber-baslik">${h.baslik}</span>
+               <span class="sondakika-haber-tarih"><i class="far fa-clock"></i> ${h.tarih}</span>
+             </div>`;
+  });
+  
+  sondakikaHaberler.innerHTML = html + html;
+  
+  position = 0;
+  animate();
+}
+
+function animate(){
+  const halfWidth = sondakikaHaberler.scrollWidth / 2;
+  position -= 0.5;
+  
+  if(position <= -halfWidth) position = 0;
+  
+  sondakikaHaberler.style.transform = `translateX(${position}px)`;
+  animationFrame = requestAnimationFrame(animate);
+}
+
+async function load(url){
+  try{
+    fill([{baslik:'Yükleniyor…',tarih:'',link:'#'}]);
+    const data = await getRss(url);
+    fill(data.length ? data : [{baslik:'Yeni Haber Yok',tarih:'',link:'#'}]);
+  }catch(e){
+    console.error('RSS yükleme hatası:', e);
+    fill([{baslik:'Haber yüklenemedi.',tarih:'',link:'#'}]);
+  }
+}
+
+sondakikaHaberler.addEventListener('mouseenter', () => {
+  if(animationFrame) cancelAnimationFrame(animationFrame);
+});
+sondakikaHaberler.addEventListener('mouseleave', () => {
+  animate();
+});
+
+document.addEventListener('DOMContentLoaded', () => {
+  load(RSS_URL);
+  setInterval(() => load(RSS_URL), REFRESH_INTERVAL);
+});
+
+})(); // End IIFE - isolates scope from CMS
+</script>
+
