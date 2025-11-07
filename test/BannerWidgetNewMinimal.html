@@ -26,6 +26,12 @@
 .sondakika-tum-haberler{width:110px;display:flex;justify-content:center;align-items:center;padding:0 14px;background:rgba(33,150,243,.2);border-left:1px solid rgba(255,255,255,.1);transition:background .3s ease}
 .sondakika-tum-haberler:hover{background:rgba(33,150,243,.3)}
 .sondakika-tum-haberler-btn{background:none;color:#fff;border:none;padding:6px 14px;border-radius:6px;font-size:.95rem;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:7px;transition:all .3s ease}
+.sondakika-tum-haberler-text{display:inline-block;animation:haberlerPulse 2s ease-in-out infinite}
+@keyframes haberlerPulse{
+  0%{color:#ff6666;transform:scale(1)}
+  50%{color:#ff1919;transform:scale(1.05)}
+  100%{color:#ff6666;transform:scale(1)}
+}
 .sondakika-tum-haberler-btn:hover{background:rgba(255,255,255,.1)}
 
 /************************* KATEGORİLER *************************/
@@ -53,7 +59,7 @@
     </div>
     <div class="sondakika-tum-haberler">
       <button class="sondakika-tum-haberler-btn" onclick="window.open('https://www.uygurhaberajansi.com/gundem','_blank','noopener,noreferrer')">
-        Tüm Haberler  <i class="fas fa-arrow-right"></i>
+        <span class="sondakika-tum-haberler-text">Tüm Haberler</span> <i class="fas fa-arrow-right"></i>
       </button>
     </div>
   </div>
