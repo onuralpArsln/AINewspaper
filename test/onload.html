@@ -1,0 +1,74 @@
+<!-- 10 kasım overlay  -->
+<style>
+  .ataturk-loader-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    display: grid;
+    place-items: center;
+    background: rgba(0, 0, 0, 0.75);
+    transition: opacity 400ms ease, visibility 400ms ease;
+  }
+
+  .ataturk-loader-overlay.hide {
+    opacity: 0;
+    visibility: hidden;
+  }
+
+  .ataturk-loader-overlay img {
+    width: min(60vw, 22rem);
+    max-width: min(90vw, 28rem);
+    aspect-ratio: 9 / 16;
+    object-fit: contain;
+    border-radius: clamp(0.5rem, 2vw, 1rem);
+    box-shadow: 0 1.5rem 3rem rgba(0, 0, 0, 0.35);
+  }
+
+  @media (max-width: 600px) {
+    .ataturk-loader-overlay img {
+      width: min(80vw, 18rem);
+    }
+  }
+</style>
+
+<script>
+  (() => {
+    const overlayId = "ataturk-loader-overlay";
+    const gifUrl =
+      "https://uygurhaberajansicom.teimg.com/uygurhaberajansi-com/uploads/2025/11/websitesigorseller/bej-siyah-tipografik-animasyonlu-10-kasim-ataturku-anma-gunu-instagram-hikayesi.gif";
+
+    if (document.getElementById(overlayId)) return;
+
+    const overlay = document.createElement("div");
+    overlay.id = overlayId;
+    overlay.className = "ataturk-loader-overlay";
+    overlay.setAttribute("role", "status");
+    overlay.setAttribute("aria-live", "polite");
+    overlay.innerHTML = `<img src="${gifUrl}" alt="Loading animation" />`;
+
+    const injectOverlay = () => {
+      document.body.appendChild(overlay);
+
+      window.addEventListener("load", () => {
+        const hideOverlay = () => {
+          overlay.classList.add("hide");
+          overlay.addEventListener(
+            "transitionend",
+            () => overlay.remove(),
+            { once: true }
+          );
+        };
+
+        setTimeout(hideOverlay, 4000);
+      });
+    };
+
+    if (document.body) {
+      injectOverlay();
+    } else {
+      document.addEventListener("DOMContentLoaded", injectOverlay, {
+        once: true,
+      });
+    }
+  })();
+</script>
