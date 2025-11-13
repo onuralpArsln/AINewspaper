@@ -1,0 +1,599 @@
+<!-- UHA Maintenance Widget v1.0 -->
+<style data-uha-maintenance="styles">
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&display=swap');
+
+[data-uha-maintenance-root],
+[data-uha-maintenance-root] * {
+  box-sizing: border-box;
+}
+
+[data-uha-maintenance-root] {
+  --uha-maint-bg-top: #0c1523;
+  --uha-maint-bg-bottom: #1c2d46;
+  --uha-maint-card-bg: rgba(18, 28, 46, 0.75);
+  --uha-maint-card-border: rgba(255, 255, 255, 0.08);
+  --uha-maint-text-main: #f6f8fc;
+  --uha-maint-text-subtle: rgba(229, 235, 245, 0.72);
+  --uha-maint-accent-red: #d7263d;
+  --uha-maint-accent-light: rgba(255, 255, 255, 0.25);
+  --uha-maint-spotlight-opacity: 0;
+  --uha-maint-spotlight-x: 50%;
+  --uha-maint-spotlight-y: 50%;
+  position: fixed;
+  inset: 0;
+  z-index: 2147483600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: clamp(1rem, 4vw, 2rem);
+  background: linear-gradient(180deg, var(--uha-maint-bg-top), var(--uha-maint-bg-bottom));
+  color: var(--uha-maint-text-main);
+  font-family: 'Montserrat', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  line-height: 1.5;
+  overflow: auto;
+  pointer-events: auto;
+  isolation: isolate;
+  -webkit-font-smoothing: antialiased;
+}
+
+[data-uha-maintenance-root][hidden] {
+  display: none !important;
+}
+
+[data-uha-maintenance-root]::before {
+  content: '';
+  position: fixed;
+  inset: -25%;
+  background: radial-gradient(
+    circle at var(--uha-maint-spotlight-x) var(--uha-maint-spotlight-y),
+    rgba(255, 255, 255, 0.24),
+    rgba(255, 255, 255, 0.05) 22%,
+    rgba(12, 21, 35, 0) 38%
+  );
+  opacity: var(--uha-maint-spotlight-opacity);
+  transition: opacity 0.4s ease;
+  pointer-events: none;
+  mix-blend-mode: screen;
+  filter: blur(4px);
+}
+
+[data-uha-maintenance-root]::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background: radial-gradient(
+    circle at 50% 10%,
+    rgba(255, 255, 255, 0.04),
+    rgba(255, 255, 255, 0) 55%
+  );
+  pointer-events: none;
+}
+
+.uha-maintenance-floating-highlight {
+  position: absolute;
+  width: min(70%, 620px);
+  aspect-ratio: 2.5 / 1;
+  left: 50%;
+  top: 48%;
+  transform: translate(-50%, -50%);
+  background: radial-gradient(
+    ellipse at center,
+    rgba(255, 255, 255, 0.2),
+    rgba(255, 255, 255, 0)
+  );
+  filter: blur(70px);
+  opacity: 0.35;
+  animation: uha-maint-float-glare 16s ease-in-out infinite alternate;
+  pointer-events: none;
+  mix-blend-mode: screen;
+}
+
+.uha-maintenance-card {
+  position: relative;
+  width: min(90vw, 640px);
+  padding: clamp(1.8rem, 4vw, 2.6rem) clamp(1.5rem, 3vw, 2.3rem);
+  text-align: center;
+  background: var(--uha-maint-card-bg);
+  border-radius: 28px;
+  border: 1px solid var(--uha-maint-card-border);
+  box-shadow:
+    0 35px 80px rgba(0, 0, 0, 0.45),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(18px) saturate(140%);
+  z-index: 1;
+  overflow: hidden;
+  color: var(--uha-maint-text-main);
+  outline: none;
+}
+
+.uha-maintenance-card::before {
+  content: '';
+  position: absolute;
+  top: -60%;
+  left: -40%;
+  width: 60%;
+  height: 220%;
+  background: linear-gradient(
+    120deg,
+    rgba(255, 255, 255, 0) 0%,
+    rgba(255, 255, 255, 0.07) 50%,
+    rgba(255, 255, 255, 0) 100%
+  );
+  transform: rotate(12deg);
+  animation: uha-maint-sheen 12s ease-in-out infinite;
+  pointer-events: none;
+}
+
+.uha-maintenance-card::after {
+  content: '';
+  position: absolute;
+  inset: 1px;
+  border-radius: 27px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  pointer-events: none;
+}
+
+.uha-maintenance-card:focus-visible {
+  outline: 2px solid rgba(255, 255, 255, 0.45);
+  outline-offset: 4px;
+}
+
+.uha-maintenance-logo {
+  width: clamp(120px, 28vw, 160px);
+  margin-bottom: clamp(1.4rem, 3vw, 1.8rem);
+  opacity: 0.85;
+  filter: brightness(0) invert(1) saturate(0) contrast(110%);
+  mix-blend-mode: screen;
+  user-select: none;
+}
+
+.uha-maintenance-divider {
+  width: 96px;
+  height: 1px;
+  margin: 0 auto clamp(1.25rem, 2.6vw, 1.7rem);
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0),
+    rgba(194, 201, 214, 0.55),
+    rgba(255, 255, 255, 0)
+  );
+  border: none;
+}
+
+.uha-maintenance-title {
+  margin: 0;
+  letter-spacing: clamp(0.18rem, 0.8vw, 0.32rem);
+  font-size: clamp(2.2rem, 5vw, 3.2rem);
+  line-height: 1.08;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: #ffffff;
+  text-shadow:
+    0 0 24px rgba(255, 255, 255, 0.25),
+    0 8px 18px rgba(0, 0, 0, 0.45);
+}
+
+.uha-maintenance-heartbeat-dot {
+  width: 18px;
+  height: 18px;
+  margin: clamp(1.25rem, 3vw, 1.75rem) auto 1.75rem;
+  border-radius: 50%;
+  background: var(--uha-maint-accent-red);
+  box-shadow:
+    0 0 0 rgba(215, 38, 61, 0.35),
+    0 0 16px rgba(215, 38, 61, 0.45);
+  animation: uha-maint-heartbeat 1.8s ease-in-out infinite;
+}
+
+.uha-maintenance-description {
+  margin: 0;
+  font-size: clamp(0.95rem, 1.9vw, 1.05rem);
+  line-height: 1.6;
+  color: var(--uha-maint-text-subtle);
+}
+
+.uha-maintenance-progress-track {
+  position: relative;
+  width: 100%;
+  height: 4px;
+  border-radius: 999px;
+  overflow: hidden;
+  background: rgba(215, 38, 61, 0.12);
+  margin: clamp(2rem, 4vw, 2.6rem) auto clamp(1.6rem, 3vw, 2.1rem);
+}
+
+.uha-maintenance-progress-bar {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    90deg,
+    rgba(215, 38, 61, 0) 0%,
+    rgba(215, 38, 61, 0.4) 20%,
+    rgba(215, 38, 61, 0.85) 55%,
+    rgba(215, 38, 61, 0.4) 80%,
+    rgba(215, 38, 61, 0) 100%
+  );
+  transform: translateX(-100%);
+  animation: uha-maint-progress-glide 5s linear infinite;
+}
+
+.uha-maintenance-footer {
+  margin: 0;
+  font-size: 0.85rem;
+  color: rgba(213, 222, 235, 0.55);
+  letter-spacing: 0.04em;
+}
+
+@keyframes uha-maint-heartbeat {
+  0%,
+  100% {
+    transform: scale(0.9);
+    box-shadow:
+      0 0 0 rgba(215, 38, 61, 0.22),
+      0 0 16px rgba(215, 38, 61, 0.45);
+  }
+  20% {
+    transform: scale(1.1);
+    box-shadow:
+      0 0 0 6px rgba(215, 38, 61, 0.15),
+      0 0 24px rgba(215, 38, 61, 0.6);
+  }
+  45% {
+    transform: scale(0.95);
+    box-shadow:
+      0 0 0 2px rgba(215, 38, 61, 0.1),
+      0 0 18px rgba(215, 38, 61, 0.5);
+  }
+}
+
+@keyframes uha-maint-progress-glide {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+@keyframes uha-maint-sheen {
+  0% {
+    transform: translateX(-30%) rotate(12deg);
+    opacity: 0;
+  }
+  45% {
+    opacity: 0.5;
+  }
+  100% {
+    transform: translateX(220%) rotate(12deg);
+    opacity: 0;
+  }
+}
+
+@keyframes uha-maint-float-glare {
+  0% {
+    transform: translate(-52%, -58%) scale(1);
+  }
+  50% {
+    transform: translate(-48%, -42%) scale(1.08);
+  }
+  100% {
+    transform: translate(-50%, -50%) scale(0.95);
+  }
+}
+
+@media (max-width: 480px) {
+  .uha-maintenance-title {
+    letter-spacing: 0.16rem;
+    font-size: 2.1rem;
+    line-height: 1.06;
+  }
+
+  .uha-maintenance-card {
+    padding: 1.7rem 1.4rem;
+  }
+
+  .uha-maintenance-description {
+    font-size: 0.92rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-uha-maintenance-root],
+  [data-uha-maintenance-root] * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+
+  .uha-maintenance-progress-bar {
+    transform: none !important;
+    background: rgba(215, 38, 61, 0.65);
+  }
+}
+</style>
+<script data-uha-maintenance="script">
+(function () {
+  'use strict';
+
+  const LOGO_URL = 'https://uygurhaberajansicom.teimg.com/uygurhaberajansi-com/uploads/2025/10/websitesigorseller/haber-manset-logo-small.png';
+  const OVERLAY_ID = 'uha-maintenance-overlay';
+  const MAX_PERCENT = 100;
+
+  if (window.UHAMAintenanceWidget && typeof window.UHAMAintenanceWidget.show === 'function') {
+    window.UHAMAintenanceWidget.show();
+    return;
+  }
+
+  let overlay = null;
+  let card = null;
+  let rafId = null;
+  let targetX = 50;
+  let targetY = 50;
+  let previousHtmlOverflow = '';
+  let previousBodyOverflow = '';
+  let scrollLocked = false;
+  let listenersAttached = false;
+
+  function clamp(value, min, max) {
+    return Math.min(Math.max(value, min), max);
+  }
+
+  function ensureOverlay() {
+    if (overlay) {
+      return overlay;
+    }
+
+    if (!document.body) {
+      return null;
+    }
+
+    overlay = document.getElementById(OVERLAY_ID);
+    if (overlay) {
+      card = overlay.querySelector('.uha-maintenance-card');
+      return overlay;
+    }
+
+    overlay = document.createElement('div');
+    overlay.id = OVERLAY_ID;
+    overlay.className = 'uha-maintenance-overlay';
+    overlay.setAttribute('role', 'dialog');
+    overlay.setAttribute('aria-modal', 'true');
+    overlay.setAttribute('aria-hidden', 'true');
+    overlay.setAttribute('aria-labelledby', 'uha-maintenance-title');
+    overlay.setAttribute('aria-describedby', 'uha-maintenance-description');
+    overlay.setAttribute('data-uha-maintenance-root', '');
+    overlay.setAttribute('hidden', '');
+
+    overlay.innerHTML = `
+      <div class="uha-maintenance-floating-highlight" aria-hidden="true"></div>
+      <div class="uha-maintenance-card" role="document" tabindex="-1">
+        <img src="${LOGO_URL}" alt="Uygur Haber Ajansı logosu" class="uha-maintenance-logo" draggable="false" />
+        <div class="uha-maintenance-divider" role="presentation"></div>
+        <h1 class="uha-maintenance-title" id="uha-maintenance-title">BAKIMDAYIZ</h1>
+        <div class="uha-maintenance-heartbeat-dot" aria-hidden="true"></div>
+        <p class="uha-maintenance-description" id="uha-maintenance-description">
+          Sistemimiz şu anda güncelleniyor.<br />
+          En güncel haberlerle kısa süre içinde tekrar yayındayız.
+        </p>
+        <div class="uha-maintenance-progress-track" aria-hidden="true">
+          <div class="uha-maintenance-progress-bar"></div>
+        </div>
+        <p class="uha-maintenance-footer">© 2025 Uygur Haber Ajansı</p>
+      </div>
+    `;
+
+    overlay.style.setProperty('--uha-maint-spotlight-x', '50%');
+    overlay.style.setProperty('--uha-maint-spotlight-y', '50%');
+    overlay.style.setProperty('--uha-maint-spotlight-opacity', '0');
+
+    document.body.appendChild(overlay);
+    card = overlay.querySelector('.uha-maintenance-card');
+    return overlay;
+  }
+
+  function handlePointerMove(event) {
+    if (!overlay) {
+      return;
+    }
+
+    const rect = overlay.getBoundingClientRect();
+    const relativeX = ((event.clientX - rect.left) / rect.width) * MAX_PERCENT;
+    const relativeY = ((event.clientY - rect.top) / rect.height) * MAX_PERCENT;
+
+    targetX = clamp(relativeX, 0, MAX_PERCENT);
+    targetY = clamp(relativeY, 0, MAX_PERCENT);
+
+    if (rafId === null) {
+      rafId = window.requestAnimationFrame(applySpotlight);
+    }
+  }
+
+  function applySpotlight() {
+    if (!overlay) {
+      return;
+    }
+
+    overlay.style.setProperty('--uha-maint-spotlight-x', targetX + '%');
+    overlay.style.setProperty('--uha-maint-spotlight-y', targetY + '%');
+    overlay.style.setProperty('--uha-maint-spotlight-opacity', '1');
+    rafId = null;
+  }
+
+  function fadeSpotlight() {
+    if (!overlay) {
+      return;
+    }
+
+    if (rafId !== null) {
+      window.cancelAnimationFrame(rafId);
+      rafId = null;
+    }
+
+    overlay.style.setProperty('--uha-maint-spotlight-opacity', '0');
+  }
+
+  function handleKeydown(event) {
+    if (event.key === 'Tab') {
+      event.preventDefault();
+      focusCard();
+    } else if (event.key === 'Escape') {
+      event.preventDefault();
+    }
+  }
+
+  function focusCard() {
+    if (!card) {
+      return;
+    }
+
+    try {
+      card.focus({ preventScroll: true });
+    } catch (error) {
+      card.focus();
+    }
+  }
+
+  function disableScroll() {
+    if (scrollLocked) {
+      return;
+    }
+
+    previousHtmlOverflow = document.documentElement.style.overflow;
+    previousBodyOverflow = document.body.style.overflow;
+
+    document.documentElement.style.overflow = 'hidden';
+    document.body.style.overflow = 'hidden';
+    scrollLocked = true;
+  }
+
+  function restoreScroll() {
+    if (!scrollLocked) {
+      return;
+    }
+
+    document.documentElement.style.overflow = previousHtmlOverflow;
+    document.body.style.overflow = previousBodyOverflow;
+    scrollLocked = false;
+  }
+
+  function ensureEventListeners() {
+    if (!overlay || listenersAttached) {
+      return;
+    }
+
+    overlay.addEventListener('pointermove', handlePointerMove);
+    overlay.addEventListener('pointerleave', fadeSpotlight);
+    overlay.addEventListener('pointercancel', fadeSpotlight);
+    overlay.addEventListener('pointerup', fadeSpotlight);
+    overlay.addEventListener('keydown', handleKeydown);
+    listenersAttached = true;
+  }
+
+  function removeEventListeners() {
+    if (!overlay || !listenersAttached) {
+      return;
+    }
+
+    overlay.removeEventListener('pointermove', handlePointerMove);
+    overlay.removeEventListener('pointerleave', fadeSpotlight);
+    overlay.removeEventListener('pointercancel', fadeSpotlight);
+    overlay.removeEventListener('pointerup', fadeSpotlight);
+    overlay.removeEventListener('keydown', handleKeydown);
+    listenersAttached = false;
+  }
+
+  function showOverlay() {
+    if (!ensureOverlay()) {
+      return;
+    }
+
+    disableScroll();
+    ensureEventListeners();
+
+    if (overlay.hasAttribute('hidden')) {
+      overlay.removeAttribute('hidden');
+    }
+
+    overlay.setAttribute('aria-hidden', 'false');
+    overlay.setAttribute('data-uha-maintenance-active', 'true');
+
+    targetX = 50;
+    targetY = 50;
+
+    window.requestAnimationFrame(function () {
+      applySpotlight();
+      focusCard();
+    });
+  }
+
+  function hideOverlay() {
+    if (!overlay || overlay.hasAttribute('hidden')) {
+      return;
+    }
+
+    overlay.setAttribute('aria-hidden', 'true');
+    overlay.setAttribute('hidden', '');
+    overlay.removeAttribute('data-uha-maintenance-active');
+    fadeSpotlight();
+    restoreScroll();
+  }
+
+  function isVisible() {
+    return Boolean(overlay && !overlay.hasAttribute('hidden'));
+  }
+
+  function ensureReady(fn) {
+    if (document.readyState === 'loading') {
+      var handler = function () {
+        document.removeEventListener('DOMContentLoaded', handler);
+        fn();
+      };
+      document.addEventListener('DOMContentLoaded', handler);
+    } else {
+      fn();
+    }
+  }
+
+  function show() {
+    ensureReady(showOverlay);
+  }
+
+  function hide() {
+    ensureReady(hideOverlay);
+  }
+
+  function toggle(force) {
+    var shouldShow = typeof force === 'boolean' ? force : !isVisible();
+
+    if (shouldShow) {
+      show();
+    } else {
+      hide();
+    }
+  }
+
+  function destroy() {
+    ensureReady(function () {
+      hideOverlay();
+      removeEventListeners();
+
+      if (overlay) {
+        overlay.remove();
+        overlay = null;
+        card = null;
+      }
+    });
+  }
+
+  window.UHAMAintenanceWidget = Object.freeze({
+    show: show,
+    hide: hide,
+    toggle: toggle,
+    destroy: destroy,
+    isVisible: isVisible
+  });
+
+  ensureReady(showOverlay);
+})();
+</script>
+
