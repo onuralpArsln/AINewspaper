@@ -1,0 +1,150 @@
+<!-- WhatsApp Channel Widget Start -->
+<style>
+    .channel-widget {
+        position: fixed;
+        right: 16px;
+        bottom: 88px;
+        /* Positioned higher to sit above chat widget */
+        z-index: 2147483647;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    }
+
+    .channel-float {
+        width: 56px;
+        height: 56px;
+        border-radius: 50%;
+        background-color: #25D366;
+        color: #fff;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2), 0 2px 6px rgba(0, 0, 0, 0.15);
+        cursor: pointer;
+        text-decoration: none;
+        transition: transform 120ms ease, box-shadow 120ms ease, opacity 120ms ease;
+    }
+
+    .channel-label {
+        background-color: rgba(0, 0, 0, 0.8);
+        color: #fff;
+        padding: 8px 12px;
+        border-radius: 20px;
+        font-size: 14px;
+        font-weight: 500;
+        white-space: nowrap;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        opacity: 1;
+        transform: translateX(0);
+        transition: opacity 200ms ease, transform 200ms ease;
+        pointer-events: none;
+        animation: label-glow 2s ease-in-out infinite alternate;
+    }
+
+    .channel-label.hidden {
+        opacity: 0;
+        transform: translateX(10px);
+        animation: none;
+    }
+
+    @keyframes label-glow {
+        0% {
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3), 0 0 10px rgba(37, 211, 102, 0.3);
+        }
+
+        100% {
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3), 0 0 20px rgba(37, 211, 102, 0.6);
+        }
+    }
+
+    .channel-widget:hover .channel-label {
+        opacity: 1;
+        transform: translateX(0);
+        animation: none;
+    }
+
+    .channel-float:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 28px rgba(0, 0, 0, 0.24), 0 3px 8px rgba(0, 0, 0, 0.18);
+    }
+
+    .channel-float:active {
+        transform: translateY(0);
+    }
+
+    .channel-float:focus-visible {
+        outline: 3px solid rgba(37, 211, 102, 0.5);
+        outline-offset: 2px;
+    }
+
+    .channel-float svg {
+        width: 28px;
+        height: 28px;
+        pointer-events: none;
+    }
+
+    @media (max-width: 480px) {
+        .channel-widget {
+            right: 12px;
+            bottom: 84px;
+            /* Mobile position */
+            gap: 8px;
+        }
+
+        .channel-float {
+            width: 52px;
+            height: 52px;
+        }
+
+        .channel-float svg {
+            width: 26px;
+            height: 26px;
+        }
+
+        .channel-label {
+            font-size: 12px;
+            padding: 6px 10px;
+        }
+    }
+</style>
+
+<div class="channel-widget">
+    <span class="channel-label">Kanalımıza Katılın</span>
+    <a id="channel-float-button" class="channel-float" href="https://whatsapp.com/channel/0029Vb7JlNp3LdQZgWfW5f2Q"
+        target="_blank" rel="noopener" aria-label="WhatsApp Kanalına Katıl">
+        <!-- Newsletter/Megaphone icon -->
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="white">
+            <path
+                d="M20 2H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h14l4 4V4c0-1.1-.9-2-2-2zm-2 12H6v-2h12v2zm0-3H6V9h12v2zm0-3H6V6h12v2z" />
+            <path d="M12 15c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z" opacity="0.3" />
+            <path d="M21 6l-3.5 3.5L21 13V6z" />
+        </svg>
+    </a>
+</div>
+
+<script>
+    (function () {
+        // Auto-hide label after 10 seconds
+        var label = document.querySelector('.channel-label');
+        var widget = document.querySelector('.channel-widget');
+        var isHidden = false;
+
+        if (label && widget) {
+            setTimeout(function () {
+                label.classList.add('hidden');
+                isHidden = true;
+            }, 10000);
+
+            widget.addEventListener('mouseenter', function () {
+                if (isHidden) label.classList.remove('hidden');
+            });
+
+            widget.addEventListener('mouseleave', function () {
+                if (isHidden) label.classList.add('hidden');
+            });
+        }
+    })();
+</script>
+<!-- WhatsApp Channel Widget End -->
