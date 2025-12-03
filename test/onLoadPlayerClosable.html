@@ -1,0 +1,118 @@
+<!-- Closable overlay with image -->
+<style>
+    .closable-loader-overlay {
+        position: fixed;
+        inset: 0;
+        z-index: 9999;
+        display: grid;
+        place-items: center;
+        background: rgba(0, 0, 0, 0.3);
+        transition: opacity 400ms ease, visibility 400ms ease;
+        cursor: pointer;
+    }
+
+    .closable-loader-overlay.hide {
+        opacity: 0;
+        visibility: hidden;
+    }
+
+    .image-container {
+        position: relative;
+        display: inline-block;
+    }
+
+    .closable-loader-overlay img {
+        width: min(60vw, 22rem);
+        max-width: min(90vw, 28rem);
+        max-height: 90vh;
+        object-fit: contain;
+        border-radius: clamp(0.5rem, 2vw, 1rem);
+        box-shadow: 0 1.5rem 3rem rgba(0, 0, 0, 0.35);
+        display: block;
+    }
+
+    @media (max-width: 600px) {
+        .closable-loader-overlay img {
+            width: min(80vw, 18rem);
+        }
+    }
+
+    .image-container .close-button {
+        position: absolute;
+        top: 0.5rem;
+        right: 0.5rem;
+    }
+
+    .close-button {
+        width: 2.5rem;
+        height: 2.5rem;
+        background: rgba(255, 255, 255, 0.9);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+        font-weight: bold;
+        color: #333;
+        cursor: pointer;
+        box-shadow: 0 0.25rem 0.5rem rgba(0, 0, 0, 0.2);
+        transition: transform 0.2s ease, background 0.2s ease;
+        z-index: 10000;
+    }
+
+    .close-button:hover {
+        transform: scale(1.1);
+        background: rgba(255, 255, 255, 1);
+    }
+</style>
+
+<script>
+    (() => {
+        const overlayId = "closable-loader-overlay";
+        const imageUrl =
+            "https://uygurhaberajansicom.teimg.com/uygurhaberajansi-com/uploads/2025/11/websitesigorseller/duyuru.png";
+
+        if (document.getElementById(overlayId)) return;
+
+        const overlay = document.createElement("div");
+        overlay.id = overlayId;
+        overlay.className = "closable-loader-overlay";
+        overlay.setAttribute("role", "status");
+        overlay.setAttribute("aria-live", "polite");
+        overlay.innerHTML = `
+            <div class="image-container">
+                <div class="close-button">×</div>
+                <img src="${imageUrl}" alt="Announcement" />
+            </div>
+        `;
+
+        const hideOverlay = () => {
+            overlay.classList.add("hide");
+            overlay.addEventListener(
+                "transitionend",
+                () => overlay.remove(),
+                { once: true }
+            );
+        };
+
+        const injectOverlay = () => {
+            document.body.appendChild(overlay);
+
+            // Click to close functionality
+            overlay.addEventListener("click", hideOverlay);
+
+            window.addEventListener("load", () => {
+                // Auto-close after 5 seconds
+                setTimeout(hideOverlay, 5000);
+            });
+        };
+
+        if (document.body) {
+            injectOverlay();
+        } else {
+            document.addEventListener("DOMContentLoaded", injectOverlay, {
+                once: true,
+            });
+        }
+    })();
+</script>
