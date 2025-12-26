@@ -1,0 +1,962 @@
+<!-- ✅ Yeni Yıl UHA Alan Adı Bildirimi (HTML+CSS+JS | Tam Scoped: yeni-yil-uha-*) -->
+<div id="yeni-yil-uha-root" aria-live="polite">
+  <section id="yeni-yil-uha-banner" class="yeni-yil-uha-hidden" role="dialog" aria-label="Alan adı değişikliği bildirimi">
+    <button id="yeni-yil-uha-close" type="button" aria-label="Bildirimi kapat">
+      <span aria-hidden="true">×</span>
+    </button>
+
+    <div class="yeni-yil-uha-shell">
+      <div class="yeni-yil-uha-top">
+        <div class="yeni-yil-uha-badge" aria-hidden="true">
+          <span class="yeni-yil-uha-dot"></span>
+          <span class="yeni-yil-uha-badge-text">2026</span>
+        </div>
+
+        <div class="yeni-yil-uha-mark" aria-hidden="true">
+          <span class="yeni-yil-uha-mark-glow"></span>
+          <span class="yeni-yil-uha-mark-letter">UHA</span>
+        </div>
+      </div>
+
+      <div class="yeni-yil-uha-content">
+        <div class="yeni-yil-uha-h1">
+          Yeni yılda yeni adresimiz:
+          <span class="yeni-yil-uha-domain">uygurhaberajansi.com.tr</span>
+        </div>
+
+        <div class="yeni-yil-uha-h2">
+          <strong>2026</strong> yılında <strong>.com.tr</strong> uzantısıyla <strong>yayına başlayacaktır</strong>.
+        </div>
+
+        <div class="yeni-yil-uha-row">
+          <div class="yeni-yil-uha-chip yeni-yil-uha-chip-countdown" title="2026 Geri Sayım (Türkiye saati)">
+            <span class="yeni-yil-uha-ico" aria-hidden="true">⏳</span>
+            <span id="yeni-yil-uha-countdown">Hazırlanıyor…</span>
+          </div>
+
+          <div class="yeni-yil-uha-chip" title="Yeni sekmede aç">
+            <span class="yeni-yil-uha-ico" aria-hidden="true">↗</span>
+            <span>Yeni sekmede aç</span>
+          </div>
+        </div>
+
+        <div class="yeni-yil-uha-actions">
+          <a id="yeni-yil-uha-cta" class="yeni-yil-uha-btn yeni-yil-uha-btn-primary"
+            href="https://www.uygurhaberajansi.com.tr" target="_blank" rel="noopener noreferrer">
+            <span class="yeni-yil-uha-btn-shine" aria-hidden="true"></span>
+            <span class="yeni-yil-uha-btn-text">Yeni Siteye Git</span>
+            <span class="yeni-yil-uha-btn-ico" aria-hidden="true">↗</span>
+          </a>
+
+          <button id="yeni-yil-uha-more" class="yeni-yil-uha-btn yeni-yil-uha-btn-ghost" type="button">Detay</button>
+        </div>
+
+        <div id="yeni-yil-uha-expand" class="yeni-yil-uha-expand" aria-hidden="true">
+          <div class="yeni-yil-uha-expand-inner">
+            <div class="yeni-yil-uha-expand-title">Hızlı Not</div>
+            <ul class="yeni-yil-uha-list">
+              <li>Favorilerinizi güncelleyin: <code>https://www.uygurhaberajansi.com.tr</code></li>
+              <li>Butona tıklayınca yeni sekmede açılır.</li>
+              <li>Bu bildirim yalnızca ana sayfada görünür (yenileyince tekrar çıkar).</li>
+            </ul>
+
+            <div class="yeni-yil-uha-mini-actions">
+              <button id="yeni-yil-uha-copy" type="button" class="yeni-yil-uha-mini-btn">Adresi Kopyala</button>
+              <a class="yeni-yil-uha-mini-btn" href="https://www.uygurhaberajansi.com.tr" target="_blank"
+                rel="noopener noreferrer">Yeni Sekmede Aç</a>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ✅ 10 sn sonra mini hale gelir (sol alt kısayol) -->
+      <div id="yeni-yil-uha-mini" class="yeni-yil-uha-mini" aria-label="Yeni adres kısayolu" role="group">
+        <button id="yeni-yil-uha-mini-expand" type="button" class="yeni-yil-uha-mini-ctrl" aria-label="Bildirimi büyüt">
+          <span class="yeni-yil-uha-mini-ctrl-ico" aria-hidden="true">▣</span>
+        </button>
+
+        <div class="yeni-yil-uha-mini-pill" role="button" tabindex="0" aria-label="Yeni adres bildirimi">
+          <span class="yeni-yil-uha-mini-ico" aria-hidden="true">🔔</span>
+          <span class="yeni-yil-uha-mini-text">Yeni Adres</span>
+        </div>
+
+        <a id="yeni-yil-uha-mini-link" class="yeni-yil-uha-mini-ctrl" href="https://www.uygurhaberajansi.com.tr"
+          target="_blank" rel="noopener noreferrer" aria-label="Yeni adresi yeni sekmede aç">
+          <span class="yeni-yil-uha-mini-ctrl-ico" aria-hidden="true">↗</span>
+        </a>
+      </div>
+
+      <!-- Efekt katmanları (sayfayı kaplamaz) -->
+      <canvas id="yeni-yil-uha-confetti" aria-hidden="true"></canvas>
+      <canvas id="yeni-yil-uha-snow" aria-hidden="true"></canvas>
+    </div>
+  </section>
+</div>
+
+<style>
+  /* ================================
+     Yeni Yıl UHA Notice (Scoped)
+     Prefix: yeni-yil-uha-
+     ================================ */
+
+  #yeni-yil-uha-root {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 999999;
+    font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+  }
+
+  /* Design tokens (scoped to root; no :root pollution) */
+  #yeni-yil-uha-root {
+    --yeni-yil-uha-red: #d10000;
+    --yeni-yil-uha-navy: #0b1b3a;
+    --yeni-yil-uha-white: #ffffff;
+    --yeni-yil-uha-black: #000000;
+
+    --yeni-yil-uha-text: rgba(255, 255, 255, 0.94);
+    --yeni-yil-uha-muted: rgba(255, 255, 255, 0.75);
+    --yeni-yil-uha-stroke: rgba(255, 255, 255, 0.14);
+    --yeni-yil-uha-shadow: 0 24px 70px rgba(0, 0, 0, .55);
+
+    --yeni-yil-uha-card1: rgba(8, 14, 26, 0.94);
+    --yeni-yil-uha-card2: rgba(0, 0, 0, 0.86);
+  }
+
+  #yeni-yil-uha-banner {
+    position: absolute;
+    left: 60px;
+    bottom: 60px;
+    width: min(720px, calc(100vw - 24px));
+    pointer-events: auto;
+    color: var(--yeni-yil-uha-text);
+    border-radius: 22px;
+    overflow: hidden;
+    opacity: 0;
+    transform: translate3d(0, 18px, 0) scale(.985);
+    transition: transform .55s cubic-bezier(.2, .8, .2, 1), opacity .55s cubic-bezier(.2, .8, .2, 1);
+  }
+
+  #yeni-yil-uha-banner.yeni-yil-uha-show {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+
+  .yeni-yil-uha-hidden {
+    display: none;
+  }
+
+  .yeni-yil-uha-shell {
+    position: relative;
+    border-radius: 22px;
+    border: 1px solid var(--yeni-yil-uha-stroke);
+    box-shadow: var(--yeni-yil-uha-shadow);
+    background:
+      radial-gradient(900px 360px at 15% 20%, rgba(209, 0, 0, 0.14), transparent 60%),
+      radial-gradient(900px 420px at 95% 90%, rgba(11, 27, 58, 0.30), transparent 60%),
+      linear-gradient(180deg, var(--yeni-yil-uha-card1), var(--yeni-yil-uha-card2));
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    overflow: hidden;
+  }
+
+  /* Animated border glow (contained) */
+  .yeni-yil-uha-shell::before {
+    content: "";
+    position: absolute;
+    inset: -2px;
+    background: conic-gradient(from 180deg,
+        rgba(255, 255, 255, 0) 0deg,
+        rgba(209, 0, 0, 0.45) 70deg,
+        rgba(11, 27, 58, 0.55) 130deg,
+        rgba(255, 255, 255, 0) 220deg,
+        rgba(209, 0, 0, 0.30) 300deg,
+        rgba(255, 255, 255, 0) 360deg);
+    filter: blur(10px);
+    opacity: .55;
+    animation: yeni-yil-uha-spin 6.5s linear infinite;
+    pointer-events: none;
+  }
+
+  .yeni-yil-uha-shell::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.06), transparent);
+    transform: translateX(-60%);
+    animation: yeni-yil-uha-sweep 3.8s ease-in-out infinite;
+    pointer-events: none;
+  }
+
+  @keyframes yeni-yil-uha-spin {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+
+  @keyframes yeni-yil-uha-sweep {
+
+    0%,
+    35% {
+      transform: translateX(-70%);
+      opacity: 0;
+    }
+
+    55% {
+      opacity: .65;
+    }
+
+    85%,
+    100% {
+      transform: translateX(70%);
+      opacity: 0;
+    }
+  }
+
+  #yeni-yil-uha-close {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    width: 40px;
+    height: 40px;
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    background: rgba(0, 0, 0, 0.24);
+    color: rgba(255, 255, 255, 0.92);
+    cursor: pointer;
+    display: grid;
+    place-items: center;
+    transition: transform .2s ease, background .2s ease;
+    z-index: 20;
+  }
+
+  #yeni-yil-uha-close:hover {
+    transform: scale(1.05);
+    background: rgba(0, 0, 0, 0.34);
+  }
+
+  #yeni-yil-uha-close:active {
+    transform: scale(0.98);
+  }
+
+  .yeni-yil-uha-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 14px 16px 0 16px;
+    position: relative;
+    z-index: 10;
+  }
+
+  .yeni-yil-uha-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 10px;
+    border-radius: 999px;
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    background: rgba(255, 255, 255, 0.06);
+  }
+
+  .yeni-yil-uha-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 999px;
+    background: var(--yeni-yil-uha-red);
+    box-shadow: 0 0 0 0 rgba(209, 0, 0, 0.55);
+    animation: yeni-yil-uha-pulse 1.6s infinite;
+  }
+
+  @keyframes yeni-yil-uha-pulse {
+    0% {
+      box-shadow: 0 0 0 0 rgba(209, 0, 0, 0.55);
+    }
+
+    70% {
+      box-shadow: 0 0 0 14px rgba(209, 0, 0, 0);
+    }
+
+    100% {
+      box-shadow: 0 0 0 0 rgba(209, 0, 0, 0);
+    }
+  }
+
+  .yeni-yil-uha-badge-text {
+    font-weight: 900;
+    letter-spacing: .14em;
+    font-size: 12px;
+  }
+
+  .yeni-yil-uha-mark {
+    width: 58px;
+    height: 58px;
+    border-radius: 18px;
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    background:
+      radial-gradient(18px 18px at 30% 30%, rgba(209, 0, 0, 0.28), transparent 60%),
+      linear-gradient(135deg, rgba(255, 255, 255, 0.10), rgba(255, 255, 255, 0.02));
+    display: grid;
+    place-items: center;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .yeni-yil-uha-mark-letter {
+    font-weight: 900;
+    letter-spacing: .06em;
+    color: white;
+    text-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+  }
+
+  .yeni-yil-uha-mark-glow {
+    position: absolute;
+    inset: -40%;
+    background: conic-gradient(from 90deg,
+        rgba(209, 0, 0, 0.0),
+        rgba(209, 0, 0, 0.30),
+        rgba(11, 27, 58, 0.42),
+        rgba(209, 0, 0, 0.0));
+    animation: yeni-yil-uha-spin 7s linear infinite;
+    filter: blur(12px);
+    opacity: .9;
+  }
+
+  .yeni-yil-uha-content {
+    padding: 12px 16px 16px 16px;
+    position: relative;
+    z-index: 10;
+  }
+
+  .yeni-yil-uha-h1 {
+    font-size: clamp(15px, 2.2vw, 20px);
+    font-weight: 900;
+    line-height: 1.2;
+  }
+
+  .yeni-yil-uha-domain {
+    display: inline-block;
+    margin-left: 8px;
+    padding: 4px 10px;
+    border-radius: 999px;
+    background: rgba(209, 0, 0, 0.10);
+    border: 1px solid rgba(209, 0, 0, 0.38);
+    color: rgba(255, 255, 255, 0.96);
+  }
+
+  .yeni-yil-uha-h2 {
+    margin-top: 8px;
+    color: var(--yeni-yil-uha-muted);
+    font-size: 14px;
+    line-height: 1.45;
+  }
+
+  .yeni-yil-uha-row {
+    margin-top: 12px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
+  .yeni-yil-uha-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    border-radius: 14px;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    background: rgba(0, 0, 0, 0.16);
+    font-size: 13px;
+    color: rgba(255, 255, 255, 0.88);
+  }
+
+  /* ⏳ Büyük sayaç */
+  .yeni-yil-uha-chip-countdown {
+    font-size: 16px;
+    font-weight: 900;
+    padding: 12px 14px;
+    background: linear-gradient(135deg, rgba(209, 0, 0, 0.22), rgba(11, 27, 58, 0.35));
+    border: 1px solid rgba(255, 255, 255, 0.28);
+  }
+
+  #yeni-yil-uha-countdown {
+    font-size: clamp(18px, 3.2vw, 23px);
+    font-weight: 900;
+    letter-spacing: .04em;
+  }
+
+  .yeni-yil-uha-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 14px;
+    align-items: center;
+  }
+
+  .yeni-yil-uha-btn {
+    position: relative;
+    border-radius: 14px;
+    padding: 12px 14px;
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    cursor: pointer;
+    text-decoration: none;
+    color: white;
+    font-weight: 900;
+    letter-spacing: .02em;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    user-select: none;
+    transition: transform .18s ease, box-shadow .18s ease, background .18s ease;
+    will-change: transform;
+  }
+
+  .yeni-yil-uha-btn-primary {
+    background: linear-gradient(135deg, var(--yeni-yil-uha-navy), var(--yeni-yil-uha-red));
+    box-shadow: 0 16px 34px rgba(0, 0, 0, 0.28);
+    flex: 1 1 260px;
+    min-width: 220px;
+  }
+
+  .yeni-yil-uha-btn-primary:hover {
+    transform: translateY(-1px) scale(1.01);
+  }
+
+  .yeni-yil-uha-btn-primary:active {
+    transform: translateY(0) scale(0.99);
+  }
+
+  .yeni-yil-uha-btn-ghost {
+    background: rgba(255, 255, 255, 0.06);
+    color: rgba(255, 255, 255, 0.92);
+    flex: 0 1 auto;
+  }
+
+  .yeni-yil-uha-btn-ghost:hover {
+    transform: translateY(-1px);
+    background: rgba(255, 255, 255, 0.10);
+  }
+
+  .yeni-yil-uha-btn-ico {
+    display: inline-grid;
+    place-items: center;
+    width: 26px;
+    height: 26px;
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.12);
+    border: 1px solid rgba(255, 255, 255, 0.14);
+  }
+
+  .yeni-yil-uha-btn-shine {
+    position: absolute;
+    inset: 0;
+    border-radius: 14px;
+    background: linear-gradient(120deg, transparent, rgba(255, 255, 255, 0.18), transparent);
+    transform: translateX(-70%);
+    opacity: 0;
+    transition: opacity .2s ease;
+    pointer-events: none;
+  }
+
+  .yeni-yil-uha-btn-primary:hover .yeni-yil-uha-btn-shine {
+    opacity: 1;
+    animation: yeni-yil-uha-btnshine .9s ease forwards;
+  }
+
+  @keyframes yeni-yil-uha-btnshine {
+    to {
+      transform: translateX(70%);
+    }
+  }
+
+  .yeni-yil-uha-expand {
+    max-height: 0;
+    overflow: hidden;
+    margin-top: 10px;
+    border-top: 1px solid rgba(255, 255, 255, 0.10);
+    background: rgba(0, 0, 0, 0.16);
+    transition: max-height .35s ease;
+    border-radius: 16px;
+  }
+
+  .yeni-yil-uha-expand.yeni-yil-uha-open {
+    max-height: 280px;
+  }
+
+  .yeni-yil-uha-expand-inner {
+    padding: 12px 12px 14px 12px;
+    color: rgba(255, 255, 255, 0.84);
+  }
+
+  .yeni-yil-uha-expand-title {
+    font-weight: 900;
+    margin-bottom: 8px;
+  }
+
+  .yeni-yil-uha-list {
+    margin: 0;
+    padding-left: 18px;
+    font-size: 13.5px;
+    line-height: 1.55;
+  }
+
+  .yeni-yil-uha-list code {
+    color: rgba(255, 255, 255, 0.95);
+    background: rgba(255, 255, 255, 0.08);
+    padding: 2px 6px;
+    border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.10);
+  }
+
+  .yeni-yil-uha-mini-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 12px;
+    flex-wrap: wrap;
+  }
+
+  .yeni-yil-uha-mini-btn {
+    appearance: none;
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    background: rgba(255, 255, 255, 0.06);
+    color: rgba(255, 255, 255, 0.92);
+    padding: 10px 12px;
+    border-radius: 12px;
+    font-weight: 900;
+    cursor: pointer;
+    text-decoration: none;
+    transition: transform .18s ease, background .18s ease;
+  }
+
+  .yeni-yil-uha-mini-btn:hover {
+    transform: translateY(-1px);
+    background: rgba(255, 255, 255, 0.10);
+  }
+
+  /* Canvas layers (inside card only) */
+  #yeni-yil-uha-snow,
+  #yeni-yil-uha-confetti {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+  }
+
+  #yeni-yil-uha-snow {
+    z-index: 6;
+  }
+
+  #yeni-yil-uha-confetti {
+    z-index: 7;
+  }
+
+  /* =====================
+     MINI MODE (after 10s)
+     ===================== */
+  .yeni-yil-uha-mini {
+    display: none;
+  }
+
+  #yeni-yil-uha-banner.yeni-yil-uha-is-mini {
+    width: auto;
+    max-width: calc(100vw - 24px);
+  }
+
+  #yeni-yil-uha-banner.yeni-yil-uha-is-mini #yeni-yil-uha-close,
+  #yeni-yil-uha-banner.yeni-yil-uha-is-mini .yeni-yil-uha-top,
+  #yeni-yil-uha-banner.yeni-yil-uha-is-mini .yeni-yil-uha-content,
+  #yeni-yil-uha-banner.yeni-yil-uha-is-mini #yeni-yil-uha-snow,
+  #yeni-yil-uha-banner.yeni-yil-uha-is-mini #yeni-yil-uha-confetti {
+    display: none !important;
+  }
+
+  #yeni-yil-uha-banner.yeni-yil-uha-is-mini .yeni-yil-uha-mini {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px;
+    position: relative;
+    z-index: 12;
+  }
+
+  .yeni-yil-uha-mini-pill {
+    pointer-events: auto;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    border-radius: 999px;
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    background: rgba(0, 0, 0, 0.22);
+    cursor: pointer;
+    user-select: none;
+  }
+
+  .yeni-yil-uha-mini-ico {
+    width: 26px;
+    height: 26px;
+    border-radius: 10px;
+    display: grid;
+    place-items: center;
+    background: linear-gradient(135deg, rgba(11, 27, 58, 0.55), rgba(209, 0, 0, 0.40));
+    border: 1px solid rgba(255, 255, 255, 0.14);
+  }
+
+  .yeni-yil-uha-mini-text {
+    font-weight: 900;
+    letter-spacing: .02em;
+  }
+
+  .yeni-yil-uha-mini-ctrl {
+    pointer-events: auto;
+    width: 42px;
+    height: 42px;
+    border-radius: 14px;
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    background: rgba(255, 255, 255, 0.06);
+    color: rgba(255, 255, 255, 0.95);
+    display: grid;
+    place-items: center;
+    cursor: pointer;
+    text-decoration: none;
+  }
+
+  .yeni-yil-uha-mini-ctrl:hover {
+    transform: translateY(-1px);
+  }
+
+  .yeni-yil-uha-mini-ctrl-ico {
+    font-weight: 900;
+  }
+
+  /* Mobile / small devices */
+  @media (max-width: 640px) {
+    #yeni-yil-uha-banner {
+      left: 12px;
+      right: 12px;
+      bottom: 60px;
+      width: auto;
+    }
+
+    .yeni-yil-uha-mark {
+      width: 52px;
+      height: 52px;
+      border-radius: 16px;
+    }
+
+    .yeni-yil-uha-h2 {
+      font-size: 13px;
+    }
+  }
+
+  /* Ultra small screens */
+  @media (max-width: 360px) {
+    .yeni-yil-uha-chip {
+      width: 100%;
+      justify-content: space-between;
+    }
+
+    .yeni-yil-uha-btn-primary {
+      min-width: 0;
+      flex: 1 1 100%;
+    }
+
+    /* mini: yazı kısalsın, ikonlar kalsın */
+    #yeni-yil-uha-banner.yeni-yil-uha-is-mini .yeni-yil-uha-mini-text {
+      display: none;
+    }
+  }
+
+  /* Reduced motion */
+  @media (prefers-reduced-motion: reduce) {
+
+    .yeni-yil-uha-shell::before,
+    .yeni-yil-uha-shell::after,
+    .yeni-yil-uha-dot,
+    .yeni-yil-uha-mark-glow {
+      animation: none !important;
+    }
+
+    #yeni-yil-uha-banner {
+      transition: none !important;
+    }
+  }
+</style>
+
+<script>
+  (function () {
+    "use strict";
+
+    const NEW_URL = "https://www.uygurhaberajansi.com.tr";
+    const TARGET_DATE = "2026-01-01T00:00:00+03:00";
+    const AUTO_MINIMIZE_MS = 10000; // ✅ 10 sn
+
+    // ✅ Yeni domainde gösterme
+    if (location.hostname.endsWith("uygurhaberajansi.com.tr")) return;
+
+    // ✅ Ana sayfa tespiti (farklı CMS yollarını da kapsar)
+    const p = (location.pathname || "/").toLowerCase();
+    const isHome = (p === "/") || (p === "") || (p === "/index.html") || (p === "/index.htm") || (p === "/index.php") || (p === "/home") || (p === "/anasayfa") || p.includes("comtr.html") || location.hostname === "localhost" || location.hostname === "127.0.0.1";
+    if (!isHome) return;
+
+    function onReady(fn) {
+      if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", fn, { once: true });
+      else fn();
+    }
+
+    onReady(function () {
+      const banner = document.getElementById("yeni-yil-uha-banner");
+      const closeBtn = document.getElementById("yeni-yil-uha-close");
+      const moreBtn = document.getElementById("yeni-yil-uha-more");
+      const expand = document.getElementById("yeni-yil-uha-expand");
+      const countdownEl = document.getElementById("yeni-yil-uha-countdown");
+      const cta = document.getElementById("yeni-yil-uha-cta");
+      const copyBtn = document.getElementById("yeni-yil-uha-copy");
+      const confettiCanvas = document.getElementById("yeni-yil-uha-confetti");
+      const snowCanvas = document.getElementById("yeni-yil-uha-snow");
+
+      const mini = document.getElementById("yeni-yil-uha-mini");
+      const miniPill = mini ? mini.querySelector(".yeni-yil-uha-mini-pill") : null;
+      const miniExpand = document.getElementById("yeni-yil-uha-mini-expand");
+
+      if (!banner || !closeBtn || !moreBtn || !expand || !countdownEl || !cta || !copyBtn || !confettiCanvas || !snowCanvas || !mini || !miniPill || !miniExpand) return;
+
+      // show
+      banner.classList.remove("yeni-yil-uha-hidden");
+      requestAnimationFrame(() => banner.classList.add("yeni-yil-uha-show"));
+
+      function isMini() { return banner.classList.contains("yeni-yil-uha-is-mini"); }
+
+      function minimize() {
+        if (!banner.classList.contains("yeni-yil-uha-show")) return;
+        banner.classList.add("yeni-yil-uha-is-mini");
+      }
+
+      function maximize() {
+        banner.classList.remove("yeni-yil-uha-is-mini");
+      }
+
+      // close: sadece bu sayfa oturumu için gizler; refresh olunca tekrar görünür
+      function hide() {
+        banner.classList.remove("yeni-yil-uha-show");
+        setTimeout(() => banner.classList.add("yeni-yil-uha-hidden"), 380);
+      }
+      closeBtn.addEventListener("click", hide);
+
+      // mini controls
+      miniExpand.addEventListener("click", function (e) {
+        e.preventDefault();
+        maximize();
+        scheduleAutoMinimize(true);
+      });
+
+      miniPill.addEventListener("click", function () {
+        // mini tıklayınca büyüsün
+        maximize();
+        scheduleAutoMinimize(true);
+      });
+      miniPill.addEventListener("keydown", function (e) {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          maximize();
+          scheduleAutoMinimize(true);
+        }
+      });
+
+      // expand
+      moreBtn.addEventListener("click", function () {
+        const open = expand.classList.toggle("yeni-yil-uha-open");
+        expand.setAttribute("aria-hidden", open ? "false" : "true");
+        moreBtn.textContent = open ? "Kapat" : "Detay";
+        if (open) maximize();
+        scheduleAutoMinimize(true);
+      });
+
+      // countdown
+      const target = new Date(TARGET_DATE).getTime();
+      const pad = (n) => String(n).padStart(2, "0");
+      function tick() {
+        const diff = target - Date.now();
+        if (diff <= 0) { countdownEl.textContent = "2026 • Başladı 🎉"; return; }
+        const s = Math.floor(diff / 1000);
+        const d = Math.floor(s / 86400);
+        const h = Math.floor((s % 86400) / 3600);
+        const m = Math.floor((s % 3600) / 60);
+        const ss = s % 60;
+        countdownEl.textContent = `2026 • ${d} gün ${pad(h)}:${pad(m)}:${pad(ss)}`;
+        requestAnimationFrame(() => setTimeout(tick, 250));
+      }
+      tick();
+
+      // copy
+      copyBtn.addEventListener("click", async function () {
+        try {
+          await navigator.clipboard.writeText(NEW_URL);
+          copyBtn.textContent = "Kopyalandı ✓";
+          setTimeout(() => (copyBtn.textContent = "Adresi Kopyala"), 1400);
+        } catch (e) {
+          copyBtn.textContent = "Kopyalanamadı";
+          setTimeout(() => (copyBtn.textContent = "Adresi Kopyala"), 1400);
+        }
+      });
+
+      // canvases
+      const dpr = () => (window.devicePixelRatio || 1);
+
+      // confetti
+      const cctx = confettiCanvas.getContext("2d");
+      let confetti = [];
+      let confettiAnimating = false;
+
+      function resizeConfetti() {
+        const rect = banner.getBoundingClientRect();
+        const ratio = dpr();
+        confettiCanvas.width = Math.floor(rect.width * ratio);
+        confettiCanvas.height = Math.floor(rect.height * ratio);
+        confettiCanvas.style.width = rect.width + "px";
+        confettiCanvas.style.height = rect.height + "px";
+        cctx.setTransform(ratio, 0, 0, ratio, 0, 0);
+      }
+
+      function burst() {
+        if (isMini()) return; // mini modda konfeti gerekmez
+        resizeConfetti();
+        const w = confettiCanvas.clientWidth, h = confettiCanvas.clientHeight;
+        const cx = w * 0.72, cy = h * 0.55;
+        const colors = ["#d10000", "#0b1b3a", "#ffffff", "#000000"];
+        const count = Math.min(150, Math.max(80, Math.floor(w / 5)));
+        confetti = [];
+        for (let i = 0; i < count; i++) {
+          const a = Math.random() * Math.PI * 2;
+          const sp = 3 + Math.random() * 7;
+          confetti.push({
+            x: cx, y: cy,
+            vx: Math.cos(a) * sp,
+            vy: Math.sin(a) * sp - 2,
+            g: 0.12 + Math.random() * 0.08,
+            w: 6 + Math.random() * 6,
+            h: 2 + Math.random() * 4,
+            rot: Math.random() * Math.PI,
+            vr: (Math.random() - 0.5) * 0.25,
+            c: colors[(Math.random() * colors.length) | 0],
+            life: 60 + (Math.random() * 40 | 0)
+          });
+        }
+        animateConfetti();
+      }
+
+      function animateConfetti() {
+        if (confettiAnimating) return;
+        confettiAnimating = true;
+        const w = confettiCanvas.clientWidth, h = confettiCanvas.clientHeight;
+        (function frame() {
+          cctx.clearRect(0, 0, w, h);
+          confetti = confetti.filter(p => p.life-- > 0);
+          for (const p of confetti) {
+            p.vy += p.g; p.x += p.vx; p.y += p.vy; p.rot += p.vr;
+            cctx.save();
+            cctx.translate(p.x, p.y);
+            cctx.rotate(p.rot);
+            cctx.fillStyle = p.c;
+            cctx.globalAlpha = Math.max(0, Math.min(1, p.life / 90));
+            cctx.fillRect(-p.w / 2, -p.h / 2, p.w, p.h);
+            cctx.restore();
+          }
+          if (confetti.length) requestAnimationFrame(frame);
+          else { confettiAnimating = false; cctx.clearRect(0, 0, w, h); }
+        })();
+      }
+
+      // snow (az)
+      const sctx = snowCanvas.getContext("2d");
+      let snowflakes = [];
+      let snowW = 0, snowH = 0;
+
+      function resizeSnow() {
+        const rect = banner.getBoundingClientRect();
+        const ratio = dpr();
+        snowW = rect.width; snowH = rect.height;
+        snowCanvas.width = Math.floor(snowW * ratio);
+        snowCanvas.height = Math.floor(snowH * ratio);
+        snowCanvas.style.width = snowW + "px";
+        snowCanvas.style.height = snowH + "px";
+        sctx.setTransform(ratio, 0, 0, ratio, 0, 0);
+      }
+
+      function initSnow() {
+        resizeSnow();
+        snowflakes = [];
+        const count = Math.max(18, Math.min(34, Math.floor(snowW / 22)));
+        for (let i = 0; i < count; i++) {
+          snowflakes.push({
+            x: Math.random() * snowW,
+            y: Math.random() * snowH,
+            r: 0.55 + Math.random() * 1.1,
+            s: 0.08 + Math.random() * 0.22,
+            a: Math.random() * Math.PI * 2,
+            o: 0.10 + Math.random() * 0.22
+          });
+        }
+      }
+
+      function snowLoop() {
+        if (!banner.classList.contains("yeni-yil-uha-show")) { requestAnimationFrame(snowLoop); return; }
+        if (isMini()) { requestAnimationFrame(snowLoop); return; }
+        sctx.clearRect(0, 0, snowW, snowH);
+        for (const f of snowflakes) {
+          f.y += f.s;
+          f.x += Math.sin(f.a += 0.010) * 0.14;
+          if (f.y > snowH + 6) { f.y = -6; f.x = Math.random() * snowW; }
+          sctx.fillStyle = `rgba(255,255,255,${f.o})`;
+          sctx.beginPath();
+          sctx.arc(f.x, f.y, f.r, 0, Math.PI * 2);
+          sctx.fill();
+        }
+        requestAnimationFrame(snowLoop);
+      }
+
+      initSnow();
+      snowLoop();
+
+      // CTA click: kapanmasın, sadece konfeti patlasın
+      cta.addEventListener("click", function () {
+        maximize();
+        burst();
+        // tıklama etkileşim sayılır: geri sayım yeniden başlasın
+        scheduleAutoMinimize(true);
+      });
+
+      window.addEventListener("resize", () => { resizeSnow(); resizeConfetti(); }, { passive: true });
+
+      // ✅ Auto minimize after 10s (restart on interaction)
+      let minimizeTimer = null;
+      function scheduleAutoMinimize(reset) {
+        if (minimizeTimer) clearTimeout(minimizeTimer);
+        minimizeTimer = setTimeout(minimize, AUTO_MINIMIZE_MS);
+        if (reset) maximize();
+      }
+
+      // user interaction delays minimize
+      banner.addEventListener("mouseenter", () => scheduleAutoMinimize(false));
+      banner.addEventListener("focusin", () => scheduleAutoMinimize(false));
+      banner.addEventListener("touchstart", () => scheduleAutoMinimize(false), { passive: true });
+
+      scheduleAutoMinimize(false);
+
+      // Mini testler: ?yeni_yil_uha_test=1
+      try {
+        if (new URLSearchParams(location.search).get("yeni_yil_uha_test") === "1") {
+          console.assert(Boolean(document.getElementById("yeni-yil-uha-root")), "[TEST] root yok");
+          console.assert(Boolean(document.getElementById("yeni-yil-uha-banner")), "[TEST] banner yok");
+          console.assert(Boolean(document.getElementById("yeni-yil-uha-mini")), "[TEST] mini yok");
+          console.assert(Boolean(document.getElementById("yeni-yil-uha-mini-link")), "[TEST] mini link yok");
+          console.assert(isHome === true, "[TEST] Bu sayfa ana sayfa değil");
+          console.log("[TEST] OK");
+        }
+      } catch (e) { }
+    });
+  })();
+</script>
+<!-- ✅ /Yeni Yıl UHA Bildirim -->
