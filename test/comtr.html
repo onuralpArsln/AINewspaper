@@ -1,6 +1,7 @@
 <!-- ✅ Yeni Yıl UHA Alan Adı Bildirimi (HTML+CSS+JS | Tam Scoped: yeni-yil-uha-*) -->
 <div id="yeni-yil-uha-root" aria-live="polite">
-  <section id="yeni-yil-uha-banner" class="yeni-yil-uha-hidden" role="dialog" aria-label="Alan adı değişikliği bildirimi">
+  <section id="yeni-yil-uha-banner" class="yeni-yil-uha-hidden" role="dialog"
+    aria-label="Alan adı değişikliği bildirimi">
     <button id="yeni-yil-uha-close" type="button" aria-label="Bildirimi kapat">
       <span aria-hidden="true">×</span>
     </button>
@@ -698,7 +699,8 @@
 
     // ✅ Ana sayfa tespiti (farklı CMS yollarını da kapsar)
     const p = (location.pathname || "/").toLowerCase();
-    const isHome = (p === "/") || (p === "") || (p === "/index.html") || (p === "/index.htm") || (p === "/index.php") || (p === "/home") || (p === "/anasayfa") || p.includes("comtr.html") || location.hostname === "localhost" || location.hostname === "127.0.0.1";
+    const isHome = (p === "/") || (p === "") || (p === "/index.html") || (p === "/index.htm") || (p === "/index.php") || (p === "/home") || (p === "/anasayfa")
+      || p.includes("comtr.html") || location.hostname === "localhost" || location.hostname === "127.0.0.1";
     if (!isHome) return;
 
     function onReady(fn) {
