@@ -1,9 +1,16 @@
 const Parser = require('rss-parser');
+const axios = require('axios');
 const fs = require('fs');
 const path = require('path');
 
-const parser = new Parser();
+// --- CONFIGURATION ---
+// Please fill in your Whapi.cloud credentials here
+const WHAPI_TOKEN = 'YOUR_WHAPI_TOKEN';
+const WHAPI_DESTINATION = 'YOUR_DESTINATION_NUMBER'; // Format: 1234567890 (no plus sign)
 const RSS_URL = 'https://www.uygurhaberajansi.com/rss';
+// ---------------------
+
+const parser = new Parser();
 const MEMORY_FILE = path.join(__dirname, 'memory.json');
 
 // Ensure memory file exists
@@ -24,39 +31,61 @@ function saveMemory(memory) {
     fs.writeFileSync(MEMORY_FILE, JSON.stringify(memory, null, 2));
 }
 
+async function sendToWhapi(article) {
+    if (WHAPI_TOKEN === 'YOUR_WHAPI_TOKEN' || WHAPI_DESTINATION === 'YOUR_DESTINATION_NUMBER') {
+        console.warn("Whapi credentials not set. Skipping WhatsApp message.");
+        return false;
+    }
+
+    const messageBody = `${article.title}\n\n${article.contentSnippet || article.summary || article.content}\n\n${article.link}`;
+
+    try {
+        await axios.post('https://gate.whapi.cloud/messages/text', {
+            to: WHAPI_DESTINATION,
+            body: messageBody
+        }, {
+            headers: {
+                'Authorization': `Bearer ${WHAPI_TOKEN}`,
+                'Content-Type': 'application/json'
+            }
+        });
+        console.log(`Sent to WhatsApp: ${article.title}`);
+        return true;
+    } catch (error) {
+        console.error(`Failed to send - ${article.title}:`, error.response ? error.response.data : error.message);
+        return false;
+    }
+}
+
 (async () => {
     try {
+        console.log("Checking for new articles...");
         const feed = await parser.parseURL(RSS_URL);
         const memory = getMemory();
         let newArticlesCount = 0;
 
-        // Iterate through items in reverse to process older items first if needed, 
-        // or normal order. RSS usually puts newest first.
-        // We want to see if it's new.
-        
-        feed.items.forEach(item => {
-            // Identifier can be guid or link.
+        // Process items. RSS feeds usually give newest first.
+        // We iterate and check if seen.
+
+        for (const item of feed.items) {
             const identifier = item.guid || item.link;
 
             if (!memory.includes(identifier)) {
                 // It's a new article
-                
-                // "link text then description text"
-                // Assuming 'link text' refers to the title of the link, or the URL itself?
-                // The request says: "sharing must be link text then description text"
-                // Usually "link text" means the anchor text, which corresponds to the Title.
-                // Let's print Title then Description.
-                
-                console.log(`${item.title}\n${item.contentSnippet || item.summary || item.content}\n-----------------------------------`);
-                
+                console.log(`New Article: ${item.title}`);
+
+                // Send to WhatsApp
+                await sendToWhapi(item);
+
+                // Add to memory
                 memory.push(identifier);
                 newArticlesCount++;
             }
-        });
+        }
 
         if (newArticlesCount > 0) {
             saveMemory(memory);
-            console.log(`\nFound and saved ${newArticlesCount} new articles.`);
+            console.log(`\nProcessed ${newArticlesCount} new articles.`);
         } else {
             console.log("No new articles found.");
         }
