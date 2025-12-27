@@ -759,12 +759,7 @@
     // Allow localhost/127.0.0.1 for testing
     const isLocal = location.hostname === "localhost" || location.hostname === "127.0.0.1";
 
-    const isHome = (p === "/") || (p === "") || (p === "/index.html") || (p === "/index.htm") || (p === "/index.php") || (p === "/home") || (p === "/anasayfa");
 
-    if (!isHome && !forceShow && !isLocal) {
-      console.log("[YeniYilUHA] Widget stopped: Not homepage (path: " + p + ")");
-      return;
-    }
 
     function onReady(fn) {
       if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", fn, { once: true });
