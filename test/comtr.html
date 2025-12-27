@@ -12,11 +12,6 @@
           <span class="yeni-yil-uha-dot"></span>
           <span class="yeni-yil-uha-badge-text">2026</span>
         </div>
-
-        <div class="yeni-yil-uha-mark" aria-hidden="true">
-          <span class="yeni-yil-uha-mark-glow"></span>
-          <span class="yeni-yil-uha-mark-letter">UHA</span>
-        </div>
       </div>
 
       <div class="yeni-yil-uha-content">
@@ -70,7 +65,7 @@
         </div>
       </div>
 
-      <!-- ✅ 10 sn sonra mini hale gelir (sol alt kısayol) -->
+      <!-- ✅ MINI hale küçülür (sol alt kısayol) -->
       <div id="yeni-yil-uha-mini" class="yeni-yil-uha-mini" aria-label="Yeni adres kısayolu" role="group">
         <button id="yeni-yil-uha-mini-expand" type="button" class="yeni-yil-uha-mini-ctrl" aria-label="Bildirimi büyüt">
           <span class="yeni-yil-uha-mini-ctrl-ico" aria-hidden="true">▣</span>
@@ -110,17 +105,25 @@
 
   /* Design tokens (scoped to root; no :root pollution) */
   #yeni-yil-uha-root {
-    --yeni-yil-uha-red: #d10000;
-    --yeni-yil-uha-navy: #0b1b3a;
+    --yeni-yil-uha-red: #ff2a2a;
+    /* daha canlı kırmızı */
+    --yeni-yil-uha-navy: #071a3a;
+    /* daha derin lacivert */
     --yeni-yil-uha-white: #ffffff;
     --yeni-yil-uha-black: #000000;
 
-    --yeni-yil-uha-text: rgba(255, 255, 255, 0.94);
-    --yeni-yil-uha-muted: rgba(255, 255, 255, 0.75);
-    --yeni-yil-uha-stroke: rgba(255, 255, 255, 0.14);
-    --yeni-yil-uha-shadow: 0 24px 70px rgba(0, 0, 0, .55);
+    /* ekstra vurgu renkleri */
+    --yeni-yil-uha-hot: #ff3bd4;
+    /* neon pembe */
+    --yeni-yil-uha-cyan: #25e6ff;
+    /* neon cyan */
 
-    --yeni-yil-uha-card1: rgba(8, 14, 26, 0.94);
+    --yeni-yil-uha-text: rgba(255, 255, 255, 0.96);
+    --yeni-yil-uha-muted: rgba(255, 255, 255, 0.78);
+    --yeni-yil-uha-stroke: rgba(255, 255, 255, 0.16);
+    --yeni-yil-uha-shadow: 0 26px 80px rgba(0, 0, 0, .62);
+
+    --yeni-yil-uha-card1: rgba(7, 14, 28, 0.94);
     --yeni-yil-uha-card2: rgba(0, 0, 0, 0.86);
   }
 
@@ -135,6 +138,7 @@
     overflow: hidden;
     opacity: 0;
     transform: translate3d(0, 18px, 0) scale(.985);
+    transform-origin: left bottom;
     transition: transform .55s cubic-bezier(.2, .8, .2, 1), opacity .55s cubic-bezier(.2, .8, .2, 1);
   }
 
@@ -143,8 +147,31 @@
     transform: translate3d(0, 0, 0) scale(1);
   }
 
+  #yeni-yil-uha-banner.yeni-yil-uha-show {
+    animation: yeni-yil-uha-pop .62s cubic-bezier(.2, .9, .2, 1) both;
+  }
+
   .yeni-yil-uha-hidden {
     display: none;
+  }
+
+  @keyframes yeni-yil-uha-pop {
+    0% {
+      opacity: 0;
+      transform: translate3d(0, 22px, 0) scale(.94);
+      filter: blur(3px);
+    }
+
+    70% {
+      opacity: 1;
+      transform: translate3d(0, -2px, 0) scale(1.02);
+      filter: blur(0);
+    }
+
+    100% {
+      opacity: 1;
+      transform: translate3d(0, 0, 0) scale(1);
+    }
   }
 
   .yeni-yil-uha-shell {
@@ -153,8 +180,9 @@
     border: 1px solid var(--yeni-yil-uha-stroke);
     box-shadow: var(--yeni-yil-uha-shadow);
     background:
-      radial-gradient(900px 360px at 15% 20%, rgba(209, 0, 0, 0.14), transparent 60%),
-      radial-gradient(900px 420px at 95% 90%, rgba(11, 27, 58, 0.30), transparent 60%),
+      radial-gradient(1000px 420px at 12% 18%, rgba(255, 42, 42, 0.18), transparent 62%),
+      radial-gradient(900px 360px at 85% 85%, rgba(37, 230, 255, 0.14), transparent 58%),
+      radial-gradient(900px 520px at 55% 0%, rgba(255, 59, 212, 0.10), transparent 55%),
       linear-gradient(180deg, var(--yeni-yil-uha-card1), var(--yeni-yil-uha-card2));
     backdrop-filter: blur(10px);
     -webkit-backdrop-filter: blur(10px);
@@ -168,13 +196,12 @@
     inset: -2px;
     background: conic-gradient(from 180deg,
         rgba(255, 255, 255, 0) 0deg,
-        rgba(209, 0, 0, 0.45) 70deg,
-        rgba(11, 27, 58, 0.55) 130deg,
-        rgba(255, 255, 255, 0) 220deg,
-        rgba(209, 0, 0, 0.30) 300deg,
+        rgba(255, 42, 42, 0.55) 70deg,
+        rgba(37, 230, 255, 0.50) 140deg,
+        rgba(255, 59, 212, 0.45) 210deg,
         rgba(255, 255, 255, 0) 360deg);
-    filter: blur(10px);
-    opacity: .55;
+    filter: blur(12px);
+    opacity: .62;
     animation: yeni-yil-uha-spin 6.5s linear infinite;
     pointer-events: none;
   }
@@ -183,7 +210,7 @@
     content: "";
     position: absolute;
     inset: 0;
-    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.06), transparent);
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.08), transparent);
     transform: translateX(-60%);
     animation: yeni-yil-uha-sweep 3.8s ease-in-out infinite;
     pointer-events: none;
@@ -204,7 +231,7 @@
     }
 
     55% {
-      opacity: .65;
+      opacity: .70;
     }
 
     85%,
@@ -265,21 +292,21 @@
     height: 10px;
     border-radius: 999px;
     background: var(--yeni-yil-uha-red);
-    box-shadow: 0 0 0 0 rgba(209, 0, 0, 0.55);
+    box-shadow: 0 0 0 0 rgba(255, 42, 42, 0.55);
     animation: yeni-yil-uha-pulse 1.6s infinite;
   }
 
   @keyframes yeni-yil-uha-pulse {
     0% {
-      box-shadow: 0 0 0 0 rgba(209, 0, 0, 0.55);
+      box-shadow: 0 0 0 0 rgba(255, 42, 42, 0.55);
     }
 
     70% {
-      box-shadow: 0 0 0 14px rgba(209, 0, 0, 0);
+      box-shadow: 0 0 0 14px rgba(255, 42, 42, 0);
     }
 
     100% {
-      box-shadow: 0 0 0 0 rgba(209, 0, 0, 0);
+      box-shadow: 0 0 0 0 rgba(255, 42, 42, 0);
     }
   }
 
@@ -295,7 +322,8 @@
     border-radius: 18px;
     border: 1px solid rgba(255, 255, 255, 0.14);
     background:
-      radial-gradient(18px 18px at 30% 30%, rgba(209, 0, 0, 0.28), transparent 60%),
+      radial-gradient(18px 18px at 30% 30%, rgba(255, 42, 42, 0.22), transparent 60%),
+      radial-gradient(18px 18px at 70% 70%, rgba(37, 230, 255, 0.16), transparent 60%),
       linear-gradient(135deg, rgba(255, 255, 255, 0.10), rgba(255, 255, 255, 0.02));
     display: grid;
     place-items: center;
@@ -314,13 +342,14 @@
     position: absolute;
     inset: -40%;
     background: conic-gradient(from 90deg,
-        rgba(209, 0, 0, 0.0),
-        rgba(209, 0, 0, 0.30),
-        rgba(11, 27, 58, 0.42),
-        rgba(209, 0, 0, 0.0));
+        rgba(255, 42, 42, 0.0),
+        rgba(255, 42, 42, 0.30),
+        rgba(37, 230, 255, 0.36),
+        rgba(255, 59, 212, 0.28),
+        rgba(255, 42, 42, 0.0));
     animation: yeni-yil-uha-spin 7s linear infinite;
     filter: blur(12px);
-    opacity: .9;
+    opacity: .95;
   }
 
   .yeni-yil-uha-content {
@@ -340,9 +369,10 @@
     margin-left: 8px;
     padding: 4px 10px;
     border-radius: 999px;
-    background: rgba(209, 0, 0, 0.10);
-    border: 1px solid rgba(209, 0, 0, 0.38);
-    color: rgba(255, 255, 255, 0.96);
+    background: linear-gradient(135deg, rgba(255, 42, 42, 0.18), rgba(37, 230, 255, 0.10));
+    border: 1px solid rgba(255, 255, 255, 0.20);
+    color: rgba(255, 255, 255, 0.98);
+    box-shadow: 0 10px 24px rgba(0, 0, 0, 0.22);
   }
 
   .yeni-yil-uha-h2 {
@@ -368,7 +398,7 @@
     border: 1px solid rgba(255, 255, 255, 0.12);
     background: rgba(0, 0, 0, 0.16);
     font-size: 13px;
-    color: rgba(255, 255, 255, 0.88);
+    color: rgba(255, 255, 255, 0.90);
   }
 
   /* ⏳ Büyük sayaç */
@@ -376,8 +406,8 @@
     font-size: 16px;
     font-weight: 900;
     padding: 12px 14px;
-    background: linear-gradient(135deg, rgba(209, 0, 0, 0.22), rgba(11, 27, 58, 0.35));
-    border: 1px solid rgba(255, 255, 255, 0.28);
+    background: linear-gradient(135deg, rgba(255, 42, 42, 0.22), rgba(37, 230, 255, 0.12), rgba(7, 26, 58, 0.35));
+    border: 1px solid rgba(255, 255, 255, 0.26);
   }
 
   #yeni-yil-uha-countdown {
@@ -414,14 +444,15 @@
   }
 
   .yeni-yil-uha-btn-primary {
-    background: linear-gradient(135deg, var(--yeni-yil-uha-navy), var(--yeni-yil-uha-red));
-    box-shadow: 0 16px 34px rgba(0, 0, 0, 0.28);
+    background: linear-gradient(135deg, var(--yeni-yil-uha-navy), var(--yeni-yil-uha-red), var(--yeni-yil-uha-hot));
+    box-shadow: 0 18px 42px rgba(0, 0, 0, 0.34), 0 0 0 1px rgba(255, 255, 255, 0.08) inset;
     flex: 1 1 260px;
     min-width: 220px;
   }
 
   .yeni-yil-uha-btn-primary:hover {
     transform: translateY(-1px) scale(1.01);
+    box-shadow: 0 22px 55px rgba(0, 0, 0, 0.38), 0 0 28px rgba(37, 230, 255, 0.18);
   }
 
   .yeni-yil-uha-btn-primary:active {
@@ -554,7 +585,7 @@
   }
 
   /* =====================
-     MINI MODE (after 10s)
+     MINI MODE
      ===================== */
   .yeni-yil-uha-mini {
     display: none;
@@ -601,7 +632,7 @@
     border-radius: 10px;
     display: grid;
     place-items: center;
-    background: linear-gradient(135deg, rgba(11, 27, 58, 0.55), rgba(209, 0, 0, 0.40));
+    background: linear-gradient(135deg, rgba(7, 26, 58, 0.55), rgba(255, 42, 42, 0.40), rgba(37, 230, 255, 0.18));
     border: 1px solid rgba(255, 255, 255, 0.14);
   }
 
@@ -622,6 +653,7 @@
     place-items: center;
     cursor: pointer;
     text-decoration: none;
+    transition: transform .18s ease;
   }
 
   .yeni-yil-uha-mini-ctrl:hover {
@@ -630,6 +662,21 @@
 
   .yeni-yil-uha-mini-ctrl-ico {
     font-weight: 900;
+  }
+
+  /* MINI'ye küçülürken animasyon */
+  #yeni-yil-uha-banner.yeni-yil-uha-mini-anim {
+    animation: yeni-yil-uha-to-mini .42s cubic-bezier(.2, .9, .2, 1) both;
+  }
+
+  @keyframes yeni-yil-uha-to-mini {
+    0% {
+      transform: translate3d(0, 0, 0) scale(1);
+    }
+
+    100% {
+      transform: translate3d(0, 10px, 0) scale(.92);
+    }
   }
 
   /* Mobile / small devices */
@@ -682,6 +729,11 @@
 
     #yeni-yil-uha-banner {
       transition: none !important;
+      animation: none !important;
+    }
+
+    #yeni-yil-uha-banner.yeni-yil-uha-mini-anim {
+      animation: none !important;
     }
   }
 </style>
@@ -692,16 +744,27 @@
 
     const NEW_URL = "https://www.uygurhaberajansi.com.tr";
     const TARGET_DATE = "2026-01-01T00:00:00+03:00";
-    const AUTO_MINIMIZE_MS = 10000; // ✅ 10 sn
+    const AUTO_MINIMIZE_MS = 10000; // ✅ 7 sn sonra otomatik mini
 
     // ✅ Yeni domainde gösterme
     if (location.hostname.endsWith("uygurhaberajansi.com.tr")) return;
 
     // ✅ Ana sayfa tespiti (farklı CMS yollarını da kapsar)
     const p = (location.pathname || "/").toLowerCase();
-    const isHome = (p === "/") || (p === "") || (p === "/index.html") || (p === "/index.htm") || (p === "/index.php") || (p === "/home") || (p === "/anasayfa")
-      || p.includes("comtr.html") || location.hostname === "localhost" || location.hostname === "127.0.0.1";
-    if (!isHome) return;
+    const search = new URLSearchParams(location.search);
+
+    // DEBUG: Force show enabled?
+    const forceShow = search.get("force_show") === "1" || search.get("test") === "1" || search.get("debug") === "1";
+
+    // Allow localhost/127.0.0.1 for testing
+    const isLocal = location.hostname === "localhost" || location.hostname === "127.0.0.1";
+
+    const isHome = (p === "/") || (p === "") || (p === "/index.html") || (p === "/index.htm") || (p === "/index.php") || (p === "/home") || (p === "/anasayfa");
+
+    if (!isHome && !forceShow && !isLocal) {
+      console.log("[YeniYilUHA] Widget stopped: Not homepage (path: " + p + ")");
+      return;
+    }
 
     function onReady(fn) {
       if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", fn, { once: true });
@@ -723,7 +786,14 @@
       const miniPill = mini ? mini.querySelector(".yeni-yil-uha-mini-pill") : null;
       const miniExpand = document.getElementById("yeni-yil-uha-mini-expand");
 
-      if (!banner || !closeBtn || !moreBtn || !expand || !countdownEl || !cta || !copyBtn || !confettiCanvas || !snowCanvas || !mini || !miniPill || !miniExpand) return;
+      if (!banner || !closeBtn || !moreBtn || !expand || !countdownEl || !cta || !copyBtn || !confettiCanvas || !snowCanvas || !mini || !miniPill || !miniExpand) {
+        console.warn("[YeniYilUHA] Widget stopped: Missing elements.");
+        if (!banner) console.warn(" - Missing: #yeni-yil-uha-banner");
+        if (!closeBtn) console.warn(" - Missing: #yeni-yil-uha-close");
+        if (!moreBtn) console.warn(" - Missing: #yeni-yil-uha-more");
+        // ... Log other missing critical elements if needed for deep debug
+        return;
+      }
 
       // show
       banner.classList.remove("yeni-yil-uha-hidden");
@@ -731,21 +801,29 @@
 
       function isMini() { return banner.classList.contains("yeni-yil-uha-is-mini"); }
 
+      function animateToMini() {
+        // önce mini animasyonu oynat, sonra mini moda al
+        banner.classList.add("yeni-yil-uha-mini-anim");
+        setTimeout(() => {
+          banner.classList.remove("yeni-yil-uha-mini-anim");
+          banner.classList.add("yeni-yil-uha-is-mini");
+        }, 380);
+      }
+
       function minimize() {
         if (!banner.classList.contains("yeni-yil-uha-show")) return;
-        banner.classList.add("yeni-yil-uha-is-mini");
+        if (banner.classList.contains("yeni-yil-uha-is-mini")) return;
+        animateToMini();
       }
 
       function maximize() {
         banner.classList.remove("yeni-yil-uha-is-mini");
       }
 
-      // close: sadece bu sayfa oturumu için gizler; refresh olunca tekrar görünür
-      function hide() {
-        banner.classList.remove("yeni-yil-uha-show");
-        setTimeout(() => banner.classList.add("yeni-yil-uha-hidden"), 380);
-      }
-      closeBtn.addEventListener("click", hide);
+      // ✅ Kapatınca gizleme: mini hale küçült
+      closeBtn.addEventListener("click", function () {
+        animateToMini();
+      });
 
       // mini controls
       miniExpand.addEventListener("click", function (e) {
@@ -755,7 +833,6 @@
       });
 
       miniPill.addEventListener("click", function () {
-        // mini tıklayınca büyüsün
         maximize();
         scheduleAutoMinimize(true);
       });
@@ -827,8 +904,8 @@
         resizeConfetti();
         const w = confettiCanvas.clientWidth, h = confettiCanvas.clientHeight;
         const cx = w * 0.72, cy = h * 0.55;
-        const colors = ["#d10000", "#0b1b3a", "#ffffff", "#000000"];
-        const count = Math.min(150, Math.max(80, Math.floor(w / 5)));
+        const colors = ["#ff2a2a", "#071a3a", "#25e6ff", "#ff3bd4", "#ffffff"];
+        const count = Math.min(160, Math.max(90, Math.floor(w / 5)));
         confetti = [];
         for (let i = 0; i < count; i++) {
           const a = Math.random() * Math.PI * 2;
@@ -926,13 +1003,12 @@
       cta.addEventListener("click", function () {
         maximize();
         burst();
-        // tıklama etkileşim sayılır: geri sayım yeniden başlasın
         scheduleAutoMinimize(true);
       });
 
       window.addEventListener("resize", () => { resizeSnow(); resizeConfetti(); }, { passive: true });
 
-      // ✅ Auto minimize after 10s (restart on interaction)
+      // ✅ Auto minimize after 7s (restart on interaction)
       let minimizeTimer = null;
       function scheduleAutoMinimize(reset) {
         if (minimizeTimer) clearTimeout(minimizeTimer);
