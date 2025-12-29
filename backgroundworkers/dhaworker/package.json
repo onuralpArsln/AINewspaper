@@ -1,0 +1,13 @@
+{
+  "name": "dha-rss-worker",
+  "version": "1.0.0",
+  "description": "Worker to fetch DHA RSS and save to JSON",
+  "main": "dha-rss-worker.js",
+  "scripts": {
+    "start": "node dha-rss-worker.js"
+  },
+  "dependencies": {
+    "xml2js": "^0.6.2",
+    "sharp": "^0.33.2"
+  }
+}

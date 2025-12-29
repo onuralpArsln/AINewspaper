@@ -63,3 +63,6 @@ Thumbs.db
 cleanup.bat
 
 backgroundworkers/node_modules
+backgroundworkers/wpworker/node_modules
+backgroundworkers/dhaworker/node_modules
+backgroundworkers/dhaworker/data
