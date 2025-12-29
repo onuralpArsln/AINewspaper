@@ -5,8 +5,8 @@ const path = require('path');
 
 // --- CONFIGURATION ---
 // Please fill in your Whapi.cloud credentials here
-const WHAPI_TOKEN = 'YOUR_WHAPI_TOKEN';
-const WHAPI_DESTINATION = 'YOUR_DESTINATION_NUMBER'; // Format: 1234567890 (no plus sign)
+const WHAPI_TOKEN = 'ZiRh4pzfMYjXNwd1fzdPjmNH9Dn6pTqK';
+const WHAPI_DESTINATION = '120363423920732166@newsletter'; // Verified Channel ID
 const RSS_URL = 'https://www.uygurhaberajansi.com/rss';
 // ---------------------
 
