@@ -57,40 +57,45 @@ async function sendToWhapi(article) {
     }
 }
 
-(async () => {
+async function checkFeed() {
     try {
-        console.log("Checking for new articles...");
+        console.log(`[${new Date().toISOString()}] Checking for new articles...`);
         const feed = await parser.parseURL(RSS_URL);
         const memory = getMemory();
-        let newArticlesCount = 0;
 
-        // Process items. RSS feeds usually give newest first.
-        // We iterate and check if seen.
-
-        for (const item of feed.items) {
-            const identifier = item.guid || item.link;
-
-            if (!memory.includes(identifier)) {
-                // It's a new article
-                console.log(`New Article: ${item.title}`);
-
-                // Send to WhatsApp
-                await sendToWhapi(item);
-
-                // Add to memory
-                memory.push(identifier);
-                newArticlesCount++;
-            }
+        if (!feed.items || feed.items.length === 0) {
+            console.log("No items found in RSS feed.");
+            return;
         }
 
-        if (newArticlesCount > 0) {
-            saveMemory(memory);
-            console.log(`\nProcessed ${newArticlesCount} new articles.`);
+        // Check only the newest article (first item)
+        const latestItem = feed.items[0];
+        const identifier = latestItem.guid || latestItem.link;
+
+        if (!memory.includes(identifier)) {
+            console.log(`New Article found: ${latestItem.title}`);
+
+            // Send to WhatsApp
+            const sent = await sendToWhapi(latestItem);
+
+            if (sent) {
+                // Add to memory and save
+                memory.push(identifier);
+                // Optional: Trim memory to keep it from growing indefinitely (keep last 500)
+                if (memory.length > 500) memory.shift();
+                saveMemory(memory);
+            }
         } else {
-            console.log("No new articles found.");
+            console.log("No new articles (newest already seen).");
         }
 
     } catch (err) {
-        console.error("Error fetching or parsing RSS:", err);
+        console.error("Error in checkFeed:", err.message);
     }
-})();
+}
+
+// Run immediately on start
+checkFeed();
+
+// Run every 60 seconds (1 minute)
+setInterval(checkFeed, 60 * 1000);
