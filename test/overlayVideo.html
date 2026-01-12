@@ -1,66 +1,84 @@
+<!-- overlay video --><!-- overlay video --><!-- overlay video --><!-- overlay video -->
 <style>
-    #overlayVideoContainer {
-      position: fixed;
-      top: 150px;
-      left: 10px;
-      width: 350px;
-      aspect-ratio: 16/9;
-      z-index: 9999;
-      border-radius: 8px;
-      overflow: hidden;
-      box-shadow: 0 0 10px rgba(0,0,0,0.5);
-      background: #000;
-      transition: all 0.3s ease;
-      cursor: move;
-    }
-  
-    #overlayVideoContainer.overlayVideoFullscreen {
-      position: fixed;
-      top: 0 !important;
-      left: 0 !important;
-      right: 0;
-      bottom: 0;
-      width: 100vw;
-      height: 100vh;
-      max-width: 100vw;
-      max-height: 100vh;
-      border-radius: 0;
-      cursor: default;
-    }
-  
-    #overlayVideoContainer video {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-    }
+  #overlayVideoContainer {
+    position: fixed;
+    top: 150px;
+    left: 10px;
+    width: 350px;
+    aspect-ratio: 16/9;
+    z-index: 9999;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+    background: #000;
+    transition: all 0.3s ease;
+    cursor: move;
+  }
 
-    #overlayVideoContainer.overlayVideoFullscreen video {
-      width: 100vw;
-      height: 100vh;
-      object-fit: contain;
-    }
+  #overlayVideoContainer.overlayVideoFullscreen {
+    position: fixed;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0;
+    bottom: 0;
+    width: 100vw;
+    height: 100vh;
+    max-width: 100vw;
+    max-height: 100vh;
+    border-radius: 0;
+    cursor: default;
+  }
 
-    #overlayVideoContainer.overlayVideoMinimized {
-      width: 60px;
-      height: 60px;
-      top: 10px;
-      left: 10px;
-      border-radius: 50%;
-      cursor: pointer;
-      transition: all 0.3s ease;
-    }
+  #overlayVideoContainer iframe {
+    width: 100%;
+    height: 100%;
+    border: none;
+    position: absolute;
+    top: 0;
+    left: 0;
+    pointer-events: none;
+  }
 
-    #overlayVideoContainer.overlayVideoMinimized video {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-      border-radius: 50%;
-    }
+  #overlayVideoContainer .youtube-overlay-blocker {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: transparent;
+    z-index: 1;
+    pointer-events: auto;
+  }
 
-    #overlayVideoContainer.overlayVideoMinimized .overlayVideoControls {
-      display: none;
-    }
-  
+  #overlayVideoContainer.overlayVideoFullscreen iframe {
+    width: 100vw;
+    height: 100vh;
+  }
+
+  #overlayVideoContainer.overlayVideoMinimized {
+    width: 60px;
+    height: 60px;
+    top: 10px;
+    left: 10px;
+    border-radius: 50%;
+    cursor: pointer;
+    transition: all 0.3s ease;
+  }
+
+  #overlayVideoContainer.overlayVideoMinimized iframe {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+  }
+
+  #overlayVideoContainer.overlayVideoMinimized .youtube-overlay-blocker {
+    border-radius: 50%;
+  }
+
+  #overlayVideoContainer.overlayVideoMinimized .overlayVideoControls {
+    display: none;
+  }
+
   .overlayVideoControls {
     position: absolute;
     top: 5px;
@@ -69,9 +87,9 @@
     gap: 5px;
     z-index: 10;
   }
-  
+
   .overlayVideoBtn {
-    background: rgba(0,0,0,0.6);
+    background: rgba(0, 0, 0, 0.6);
     color: white;
     border: none;
     cursor: pointer;
@@ -81,167 +99,216 @@
     min-width: 44px;
     min-height: 44px;
   }
-  
-    .overlayVideoBtn:hover {
-      background: rgba(255,255,255,0.2);
-    }
-  </style>
-  
-  <div id="overlayVideoContainer">
-    <div class="overlayVideoControls">
-      <button class="overlayVideoBtn" id="overlayVideoSoundBtn">🔇</button>
-      <button class="overlayVideoBtn" id="overlayVideoFullscreenBtn">⛶</button>
-      <button class="overlayVideoBtn" id="overlayVideoCloseBtn">✖</button>
-    </div>
-    <video id="overlayVideoPlayer"
-      src="https://uygurhaberajansicom.tevideo.org/uygurhaberajansi-com/uploads/2025/08/u-h-a-jenerik-2.mp4"
-      playsinline muted autoplay loop>
-    </video>
+
+  .overlayVideoBtn:hover {
+    background: rgba(255, 255, 255, 0.2);
+  }
+</style>
+
+<div id="overlayVideoContainer">
+  <div class="overlayVideoControls">
+    <button class="overlayVideoBtn" id="overlayVideoSoundBtn">🔇</button>
+    <button class="overlayVideoBtn" id="overlayVideoFullscreenBtn">⛶</button>
+    <button class="overlayVideoBtn" id="overlayVideoCloseBtn">✖</button>
   </div>
-  
-  <script>
-    const overlayVideoContainer = document.getElementById('overlayVideoContainer');
-    const overlayVideoPlayer = document.getElementById('overlayVideoPlayer');
-    const overlayVideoSoundBtn = document.getElementById('overlayVideoSoundBtn');
-    const overlayVideoFullscreenBtn = document.getElementById('overlayVideoFullscreenBtn');
-    const overlayVideoCloseBtn = document.getElementById('overlayVideoCloseBtn');
-  
-    overlayVideoSoundBtn.onclick = () => {
-      if (overlayVideoPlayer.muted) {
-        overlayVideoPlayer.muted = false;
+  <iframe id="overlayVideoPlayer"
+    src="https://www.youtube.com/embed/kbfQGIukKiI?autoplay=1&mute=1&controls=0&enablejsapi=1&loop=1&rel=0&modestbranding=1"
+    title="YouTube video player" frameborder="0"
+    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+    allowfullscreen>
+  </iframe>
+  <div class="youtube-overlay-blocker"></div>
+</div>
+
+<!-- YouTube IFrame API -->
+<script src="https://www.youtube.com/iframe_api"></script>
+
+<script>
+  const overlayVideoContainer = document.getElementById('overlayVideoContainer');
+  const overlayVideoPlayer = document.getElementById('overlayVideoPlayer');
+  const overlayVideoSoundBtn = document.getElementById('overlayVideoSoundBtn');
+  const overlayVideoFullscreenBtn = document.getElementById('overlayVideoFullscreenBtn');
+  const overlayVideoCloseBtn = document.getElementById('overlayVideoCloseBtn');
+
+  let isVideoMuted = true; // Start muted for autoplay
+  let youtubePlayer = null;
+
+  // YouTube IFrame API callback - must be global
+  function onYouTubeIframeAPIReady() {
+    // Create player instance from existing iframe
+    youtubePlayer = new YT.Player('overlayVideoPlayer', {
+      events: {
+        'onReady': onPlayerReady
+      }
+    });
+  }
+
+  function onPlayerReady(event) {
+    // Player is ready, ensure it's muted
+    if (youtubePlayer) {
+      youtubePlayer.mute();
+      isVideoMuted = true;
+    }
+  }
+
+  overlayVideoSoundBtn.onclick = () => {
+    if (youtubePlayer) {
+      // Toggle mute state using YouTube API (no reload)
+      if (isVideoMuted) {
+        youtubePlayer.unMute();
+        isVideoMuted = false;
         overlayVideoSoundBtn.textContent = '🔊';
       } else {
-        overlayVideoPlayer.muted = true;
+        youtubePlayer.mute();
+        isVideoMuted = true;
         overlayVideoSoundBtn.textContent = '🔇';
       }
-    };
+    } else {
+      // Fallback: If API not ready, use URL method (will reload)
+      isVideoMuted = !isVideoMuted;
+      overlayVideoSoundBtn.textContent = isVideoMuted ? '🔇' : '🔊';
 
-    overlayVideoFullscreenBtn.onclick = () => {
-      if (overlayVideoContainer.classList.contains('overlayVideoFullscreen')) {
-        overlayVideoContainer.classList.remove('overlayVideoFullscreen');
-      } else {
-        overlayVideoContainer.classList.add('overlayVideoFullscreen');
-        overlayVideoContainer.style.transition = 'all 0.3s ease';
-      }
-    };
-  
-    overlayVideoCloseBtn.onclick = () => {
-      if (overlayVideoContainer.classList.contains('overlayVideoMinimized')) {
-        // Restore to normal video view
-        overlayVideoContainer.classList.remove('overlayVideoMinimized');
-        overlayVideoContainer.style.transition = 'all 0.3s ease';
-      } else {
-        // Minimize to logo position
-        overlayVideoContainer.classList.add('overlayVideoMinimized');
-        overlayVideoContainer.style.transition = 'all 0.3s ease';
-      }
-    };
+      const baseUrl = 'https://www.youtube.com/embed/kbfQGIukKiI';
+      const params = new URLSearchParams({
+        autoplay: '1',
+        mute: isVideoMuted ? '1' : '0',
+        controls: '0',
+        enablejsapi: '1',
+        loop: '1',
+        rel: '0',
+        modestbranding: '1'
+      });
 
-    // Drag functionality
-    let overlayVideoIsDragging = false;
-    let overlayVideoOffsetX = 0;
-    let overlayVideoOffsetY = 0;
-    const overlayVideoSnapDistance = 80;
-
-    function overlayVideoStartDrag(clientX, clientY, target) {
-      if (overlayVideoContainer.classList.contains('overlayVideoFullscreen')) return false;
-      if (overlayVideoContainer.classList.contains('overlayVideoMinimized')) return false;
-      if (target.closest('.overlayVideoBtn')) return false;
-      
-      overlayVideoIsDragging = true;
-      overlayVideoContainer.style.transition = 'none';
-      overlayVideoOffsetX = clientX - overlayVideoContainer.getBoundingClientRect().left;
-      overlayVideoOffsetY = clientY - overlayVideoContainer.getBoundingClientRect().top;
-      return true;
+      overlayVideoPlayer.src = `${baseUrl}?${params.toString()}`;
     }
+  };
 
-    function overlayVideoDrag(clientX, clientY) {
-      if (!overlayVideoIsDragging) return;
-      
-      const x = clientX - overlayVideoOffsetX;
-      const y = clientY - overlayVideoOffsetY;
-      
-      overlayVideoContainer.style.left = x + 'px';
-      overlayVideoContainer.style.top = y + 'px';
-      overlayVideoContainer.style.right = 'auto';
+  overlayVideoFullscreenBtn.onclick = () => {
+    if (overlayVideoContainer.classList.contains('overlayVideoFullscreen')) {
+      overlayVideoContainer.classList.remove('overlayVideoFullscreen');
+    } else {
+      overlayVideoContainer.classList.add('overlayVideoFullscreen');
+      overlayVideoContainer.style.transition = 'all 0.3s ease';
     }
+  };
 
-    function overlayVideoEndDrag() {
-      if (overlayVideoIsDragging) {
-        overlayVideoContainer.style.transition = 'all 0.3s ease';
-        
-        const rect = overlayVideoContainer.getBoundingClientRect();
-        const windowWidth = window.innerWidth;
-        const windowHeight = window.innerHeight;
-        
-        let finalLeft = rect.left;
-        let finalTop = rect.top;
-        
-        // Snap to left edge
-        if (rect.left < overlayVideoSnapDistance) {
-          finalLeft = 10;
-        }
-        // Snap to right edge
-        if (windowWidth - rect.right < overlayVideoSnapDistance) {
-          finalLeft = windowWidth - rect.width - 10;
-        }
-        // Snap to top edge
-        if (rect.top < overlayVideoSnapDistance) {
-          finalTop = 10;
-        }
-        // Snap to bottom edge
-        if (windowHeight - rect.bottom < overlayVideoSnapDistance) {
-          finalTop = windowHeight - rect.height - 10;
-        }
-        
-        overlayVideoContainer.style.left = finalLeft + 'px';
-        overlayVideoContainer.style.top = finalTop + 'px';
-      }
-      overlayVideoIsDragging = false;
+  overlayVideoCloseBtn.onclick = () => {
+    if (overlayVideoContainer.classList.contains('overlayVideoMinimized')) {
+      // Restore to normal video view
+      overlayVideoContainer.classList.remove('overlayVideoMinimized');
+      overlayVideoContainer.style.transition = 'all 0.3s ease';
+    } else {
+      // Minimize to logo position
+      overlayVideoContainer.classList.add('overlayVideoMinimized');
+      overlayVideoContainer.style.transition = 'all 0.3s ease';
     }
+  };
 
-    // Mouse events
-    overlayVideoContainer.addEventListener('mousedown', (e) => {
-      // If minimized, restore on click instead of dragging
-      if (overlayVideoContainer.classList.contains('overlayVideoMinimized')) {
-        overlayVideoContainer.classList.remove('overlayVideoMinimized');
-        overlayVideoContainer.style.transition = 'all 0.3s ease';
-        return;
+  // Drag functionality
+  let overlayVideoIsDragging = false;
+  let overlayVideoOffsetX = 0;
+  let overlayVideoOffsetY = 0;
+  const overlayVideoSnapDistance = 80;
+
+  function overlayVideoStartDrag(clientX, clientY, target) {
+    if (overlayVideoContainer.classList.contains('overlayVideoFullscreen')) return false;
+    if (overlayVideoContainer.classList.contains('overlayVideoMinimized')) return false;
+    if (target.closest('.overlayVideoBtn')) return false;
+
+    overlayVideoIsDragging = true;
+    overlayVideoContainer.style.transition = 'none';
+    overlayVideoOffsetX = clientX - overlayVideoContainer.getBoundingClientRect().left;
+    overlayVideoOffsetY = clientY - overlayVideoContainer.getBoundingClientRect().top;
+    return true;
+  }
+
+  function overlayVideoDrag(clientX, clientY) {
+    if (!overlayVideoIsDragging) return;
+
+    const x = clientX - overlayVideoOffsetX;
+    const y = clientY - overlayVideoOffsetY;
+
+    overlayVideoContainer.style.left = x + 'px';
+    overlayVideoContainer.style.top = y + 'px';
+    overlayVideoContainer.style.right = 'auto';
+  }
+
+  function overlayVideoEndDrag() {
+    if (overlayVideoIsDragging) {
+      overlayVideoContainer.style.transition = 'all 0.3s ease';
+
+      const rect = overlayVideoContainer.getBoundingClientRect();
+      const windowWidth = window.innerWidth;
+      const windowHeight = window.innerHeight;
+
+      let finalLeft = rect.left;
+      let finalTop = rect.top;
+
+      // Snap to left edge
+      if (rect.left < overlayVideoSnapDistance) {
+        finalLeft = 10;
       }
-      overlayVideoStartDrag(e.clientX, e.clientY, e.target);
-    });
-
-    document.addEventListener('mousemove', (e) => {
-      overlayVideoDrag(e.clientX, e.clientY);
-    });
-
-    document.addEventListener('mouseup', () => {
-      overlayVideoEndDrag();
-    });
-
-    // Touch events
-    overlayVideoContainer.addEventListener('touchstart', (e) => {
-      // If minimized, restore on touch instead of dragging
-      if (overlayVideoContainer.classList.contains('overlayVideoMinimized')) {
-        overlayVideoContainer.classList.remove('overlayVideoMinimized');
-        overlayVideoContainer.style.transition = 'all 0.3s ease';
-        e.preventDefault();
-        return;
+      // Snap to right edge
+      if (windowWidth - rect.right < overlayVideoSnapDistance) {
+        finalLeft = windowWidth - rect.width - 10;
       }
-      if (overlayVideoStartDrag(e.touches[0].clientX, e.touches[0].clientY, e.target)) {
-        e.preventDefault();
+      // Snap to top edge
+      if (rect.top < overlayVideoSnapDistance) {
+        finalTop = 10;
       }
-    });
-
-    document.addEventListener('touchmove', (e) => {
-      if (overlayVideoIsDragging) {
-        e.preventDefault();
-        overlayVideoDrag(e.touches[0].clientX, e.touches[0].clientY);
+      // Snap to bottom edge
+      if (windowHeight - rect.bottom < overlayVideoSnapDistance) {
+        finalTop = windowHeight - rect.height - 10;
       }
-    }, { passive: false });
 
-    document.addEventListener('touchend', () => {
-      overlayVideoEndDrag();
-    });
-  </script>
-  
+      overlayVideoContainer.style.left = finalLeft + 'px';
+      overlayVideoContainer.style.top = finalTop + 'px';
+    }
+    overlayVideoIsDragging = false;
+  }
+
+  // Mouse events
+  overlayVideoContainer.addEventListener('mousedown', (e) => {
+    // If minimized, restore on click instead of dragging
+    if (overlayVideoContainer.classList.contains('overlayVideoMinimized')) {
+      overlayVideoContainer.classList.remove('overlayVideoMinimized');
+      overlayVideoContainer.style.transition = 'all 0.3s ease';
+      return;
+    }
+    overlayVideoStartDrag(e.clientX, e.clientY, e.target);
+  });
+
+  document.addEventListener('mousemove', (e) => {
+    overlayVideoDrag(e.clientX, e.clientY);
+  });
+
+  document.addEventListener('mouseup', () => {
+    overlayVideoEndDrag();
+  });
+
+  // Touch events
+  overlayVideoContainer.addEventListener('touchstart', (e) => {
+    // If minimized, restore on touch instead of dragging
+    if (overlayVideoContainer.classList.contains('overlayVideoMinimized')) {
+      overlayVideoContainer.classList.remove('overlayVideoMinimized');
+      overlayVideoContainer.style.transition = 'all 0.3s ease';
+      e.preventDefault();
+      return;
+    }
+    if (overlayVideoStartDrag(e.touches[0].clientX, e.touches[0].clientY, e.target)) {
+      e.preventDefault();
+    }
+  });
+
+  document.addEventListener('touchmove', (e) => {
+    if (overlayVideoIsDragging) {
+      e.preventDefault();
+      overlayVideoDrag(e.touches[0].clientX, e.touches[0].clientY);
+    }
+  }, { passive: false });
+
+  document.addEventListener('touchend', () => {
+    overlayVideoEndDrag();
+  });
+</script>
+<!-- overlay video end --><!-- overlay video end --><!-- overlay video end --><!-- overlay video end -->
