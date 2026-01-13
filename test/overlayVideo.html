@@ -143,7 +143,6 @@
     <button class="overlayVideoBtn" id="overlayVideoCloseBtn">✖</button>
   </div>
   <iframe id="overlayVideoPlayer"
-    src="https://www.youtube.com/embed/8X9miaFaxec?autoplay=1&mute=1&controls=0&enablejsapi=1&loop=1&playlist=8X9miaFaxec&rel=0&modestbranding=1"
     title="YouTube video player" frameborder="0"
     allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
     allowfullscreen>
@@ -164,6 +163,22 @@
   const overlayVideoSoundBtn = document.getElementById('overlayVideoSoundBtn');
   const overlayVideoFullscreenBtn = document.getElementById('overlayVideoFullscreenBtn');
   const overlayVideoCloseBtn = document.getElementById('overlayVideoCloseBtn');
+
+  // Video configuration - change this to update video source
+  const VIDEO_ID = 'HzPNsuzjLTU';
+
+  // Build and set iframe src dynamically
+  const videoParams = new URLSearchParams({
+    autoplay: '1',
+    mute: '1',
+    controls: '0',
+    enablejsapi: '1',
+    loop: '1',
+    playlist: VIDEO_ID,
+    rel: '0',
+    modestbranding: '1'
+  });
+  overlayVideoPlayer.src = `https://www.youtube.com/embed/${VIDEO_ID}?${videoParams.toString()}`;
 
   let isVideoMuted = true; // Start muted for autoplay
   let youtubePlayer = null;
@@ -203,14 +218,14 @@
       isVideoMuted = !isVideoMuted;
       overlayVideoSoundBtn.textContent = isVideoMuted ? '🔇' : '🔊';
 
-      const baseUrl = 'https://www.youtube.com/embed/8X9miaFaxec';
+      const baseUrl = `https://www.youtube.com/embed/${VIDEO_ID}`;
       const params = new URLSearchParams({
         autoplay: '1',
         mute: isVideoMuted ? '1' : '0',
         controls: '0',
         enablejsapi: '1',
         loop: '1',
-        playlist: '8X9miaFaxec',
+        playlist: VIDEO_ID,
         rel: '0',
         modestbranding: '1'
       });
