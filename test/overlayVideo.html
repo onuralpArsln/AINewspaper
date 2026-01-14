@@ -177,7 +177,7 @@
   const overlayVideoCloseBtn = document.getElementById('overlayVideoCloseBtn');
 
   // Video configuration - change this to update video source
-  const VIDEO_ID = 'HzPNsuzjLTU';
+  const VIDEO_ID = 'nfnCNHu58Eo';
 
   // Build and set iframe src dynamically
   const videoParams = new URLSearchParams({
@@ -277,6 +277,7 @@
     if (overlayVideoContainer.classList.contains('overlayVideoFullscreen')) return false;
     if (overlayVideoContainer.classList.contains('overlayVideoMinimized')) return false;
     if (target.closest('.overlayVideoBtn')) return false;
+    if (target.closest('.overlayVideoSubscribeLink')) return false;
 
     overlayVideoIsDragging = true;
     overlayVideoContainer.style.transition = 'none';
