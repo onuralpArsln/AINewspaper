@@ -1,17 +1,14 @@
 <div style="display: flex; justify-content: center; align-items: center; ">
-    <!-- Config Script - Easy access at the top -->
     <script>
         window.VIDEO_ID_CONFIG = 'NOHwIbpqL3A'; // <--- Change Source Here
     </script>
     <div style="width:500px;  ">
 
         <style>
-            /* Default State: Fits inside its parent */
             #simpleVideoContainer {
                 position: relative;
                 width: 100%;
                 aspect-ratio: 16/9;
-                /* Keeps video shape */
                 background: #000;
                 overflow: hidden;
                 border-radius: 8px;
@@ -19,7 +16,6 @@
                 transition: all 0.3s ease;
             }
 
-            /* Fullscreen State: Overrides everything to fill screen */
             #simpleVideoContainer.isFullscreen {
                 position: fixed;
                 top: 0;
@@ -35,10 +31,8 @@
                 width: 100%;
                 height: 100%;
                 pointer-events: none;
-                /* Prevents clicking YouTube native stuff */
             }
 
-            /* Controls Overlay */
             .videoControls {
                 position: absolute;
                 top: 10px;
@@ -67,7 +61,6 @@
                 background: rgba(255, 255, 255, 0.25);
             }
 
-            /* Subscribe Link Overlay */
             .subLink {
                 position: absolute;
                 top: 15px;
@@ -109,17 +102,15 @@
 
         <script src="https://www.youtube.com/iframe_api"></script>
         <script>
-            // We read from the config set at the very top
             const VIDEO_ID = window.VIDEO_ID_CONFIG;
-            let player;
+            let vidplayer1;
             let isMuted = true;
             const container = document.getElementById('simpleVideoContainer');
             const muteBtn = document.getElementById('vidMuteBtn');
             const fullBtn = document.getElementById('vidFullBtn');
 
-            // 1. Initialize YouTube API
             function onYouTubeIframeAPIReady() {
-                player = new YT.Player('ytPlayerPlaceholder', {
+                vidplayer1 = new YT.Player('ytPlayerPlaceholder', {
                     videoId: VIDEO_ID,
                     playerVars: {
                         'autoplay': 1,
@@ -144,19 +135,19 @@
             function onPlayerStateChange(event) {
                 // Explicitly restart video when it ends to guarantee a loop
                 if (event.data === YT.PlayerState.ENDED) {
-                    player.playVideo();
+                    vidplayer1.playVideo();
                 }
             }
 
             // 2. Mute Toggle Logic
             muteBtn.addEventListener('click', () => {
-                if (!player) return;
+                if (!vidplayer1) return;
                 if (isMuted) {
-                    player.unMute();
+                    vidplayer1.unMute();
                     muteBtn.textContent = '🔊';
                     isMuted = false;
                 } else {
-                    player.mute();
+                    vidplayer1.mute();
                     muteBtn.textContent = '🔇';
                     isMuted = true;
                 }
