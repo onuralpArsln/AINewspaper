@@ -102,68 +102,92 @@
 
         <script src="https://www.youtube.com/iframe_api"></script>
         <script>
-            const VIDEO_ID = window.VIDEO_ID_CONFIG;
-            let vidplayer1;
-            let isMuted = true;
-            const container = document.getElementById('simpleVideoContainer');
-            const muteBtn = document.getElementById('vidMuteBtn');
-            const fullBtn = document.getElementById('vidFullBtn');
+            (function () {
+                // We read from the config set at the very top
+                const VIDEO_ID = window.VIDEO_ID_CONFIG || 'NOHwIbpqL3A';
 
-            function onYouTubeIframeAPIReady() {
-                vidplayer1 = new YT.Player('ytPlayerPlaceholder', {
-                    videoId: VIDEO_ID,
-                    playerVars: {
-                        'autoplay': 1,
-                        'mute': 1,
-                        'controls': 0, // Hide native controls
-                        'loop': 1,
-                        'playlist': VIDEO_ID,
-                        'modestbranding': 1,
-                        'rel': 0
-                    },
-                    events: {
-                        'onReady': onPlayerReady,
-                        'onStateChange': onPlayerStateChange
+                // Variables local to this closure
+                let vidplayer1;
+                let isMuted = true;
+
+                const container = document.getElementById('simpleVideoContainer');
+                const muteBtn = document.getElementById('vidMuteBtn');
+                const fullBtn = document.getElementById('vidFullBtn');
+
+                // Internal init function
+                function initLocalPlayer() {
+                    vidplayer1 = new YT.Player('ytPlayerPlaceholder', {
+                        videoId: VIDEO_ID,
+                        playerVars: {
+                            'autoplay': 1,
+                            'mute': 1,
+                            'controls': 0, // Hide native controls
+                            'loop': 1,
+                            'playlist': VIDEO_ID,
+                            'modestbranding': 1,
+                            'rel': 0
+                        },
+                        events: {
+                            'onReady': onPlayerReady,
+                            'onStateChange': onPlayerStateChange
+                        }
+                    });
+                }
+
+                function onPlayerReady(event) {
+                    event.target.mute(); // Ensure start muted
+                }
+
+                function onPlayerStateChange(event) {
+                    // Explicitly restart video when it ends to guarantee a loop
+                    if (event.data === YT.PlayerState.ENDED) {
+                        vidplayer1.playVideo();
                     }
-                });
-            }
-
-            function onPlayerReady(event) {
-                event.target.mute(); // Ensure start muted
-            }
-
-            function onPlayerStateChange(event) {
-                // Explicitly restart video when it ends to guarantee a loop
-                if (event.data === YT.PlayerState.ENDED) {
-                    vidplayer1.playVideo();
                 }
-            }
 
-            // 2. Mute Toggle Logic
-            muteBtn.addEventListener('click', () => {
-                if (!vidplayer1) return;
-                if (isMuted) {
-                    vidplayer1.unMute();
-                    muteBtn.textContent = '🔊';
-                    isMuted = false;
+                // 2. Mute Toggle Logic
+                if (muteBtn) {
+                    muteBtn.addEventListener('click', () => {
+                        if (!vidplayer1) return;
+                        if (isMuted) {
+                            vidplayer1.unMute();
+                            muteBtn.textContent = '🔊';
+                            isMuted = false;
+                        } else {
+                            vidplayer1.mute();
+                            muteBtn.textContent = '🔇';
+                            isMuted = true;
+                        }
+                    });
+                }
+
+                // 3. Fullscreen Logic
+                if (fullBtn) {
+                    fullBtn.addEventListener('click', () => {
+                        container.classList.toggle('isFullscreen');
+
+                        // Update icon based on state
+                        if (container.classList.contains('isFullscreen')) {
+                            fullBtn.textContent = '✖'; // Change to close icon
+                        } else {
+                            fullBtn.textContent = '⛶'; // Change back to expand icon
+                        }
+                    });
+                }
+
+                // 4. Safe Initialization Logic
+                // If existing API is ready, init immediately
+                if (window.YT && window.YT.Player) {
+                    initLocalPlayer();
                 } else {
-                    vidplayer1.mute();
-                    muteBtn.textContent = '🔇';
-                    isMuted = true;
+                    // Otherwise hook into the global event safely
+                    const oldOnReady = window.onYouTubeIframeAPIReady;
+                    window.onYouTubeIframeAPIReady = function () {
+                        if (oldOnReady) oldOnReady();
+                        initLocalPlayer();
+                    };
                 }
-            });
-
-            // 3. Fullscreen Logic
-            fullBtn.addEventListener('click', () => {
-                container.classList.toggle('isFullscreen');
-
-                // Update icon based on state
-                if (container.classList.contains('isFullscreen')) {
-                    fullBtn.textContent = '✖'; // Change to close icon
-                } else {
-                    fullBtn.textContent = '⛶'; // Change back to expand icon
-                }
-            });
+            })();
         </script>
     </div>
 </div>
