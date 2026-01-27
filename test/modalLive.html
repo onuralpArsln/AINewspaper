@@ -8,20 +8,57 @@
     <!-- Load HLS.js in head to ensure availability -->
     <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
     <style>
-        /* Button Style (Basic visibility) */
-        .uhaCanliYayinButon {
-            padding: 10px 20px;
+        /* Shared Pulse Animation */
+        @keyframes uha-pulse-red {
+            0% {
+                box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.7);
+            }
+
+            70% {
+                box-shadow: 0 0 0 10px rgba(220, 38, 38, 0);
+            }
+
+            100% {
+                box-shadow: 0 0 0 0 rgba(220, 38, 38, 0);
+            }
+        }
+
+        /* Live Dot Style (Reusable) */
+        .uha-live-dot {
+            width: 12px;
+            height: 12px;
             background-color: #dc2626;
+            /* Red 600 */
+            border-radius: 50%;
+            animation: uha-pulse-red 2s infinite;
+            flex-shrink: 0;
+        }
+
+        /* Button Style */
+        .uhaCanliYayinButon {
+            display: inline-flex;
+            align-items: center;
+            gap: 12px;
+            /* Space between dot and text */
+            padding: 12px 24px;
+            background-color: #1e293b;
+            /* Dark Slate background like header */
             color: white;
-            border: none;
-            border-radius: 6px;
+            border: 1px solid #334155;
+            border-radius: 8px;
             cursor: pointer;
-            font-weight: bold;
-            font-family: sans-serif;
+            font-weight: 600;
+            font-family: ui-sans-serif, system-ui, -apple-system, sans-serif;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            font-size: 14px;
+            transition: all 0.2s ease;
         }
 
         .uhaCanliYayinButon:hover {
-            background-color: #b91c1c;
+            background-color: #334155;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
         }
 
         /* Modal Overlay */
@@ -86,30 +123,6 @@
             text-transform: uppercase;
             letter-spacing: 0.05em;
             font-size: 14px;
-        }
-
-        /* Live Indicator Pulse */
-        .uha-live-dot {
-            width: 12px;
-            height: 12px;
-            background-color: #dc2626;
-            /* Red 600 */
-            border-radius: 50%;
-            animation: uha-pulse-red 2s infinite;
-        }
-
-        @keyframes uha-pulse-red {
-            0% {
-                box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.7);
-            }
-
-            70% {
-                box-shadow: 0 0 0 10px rgba(220, 38, 38, 0);
-            }
-
-            100% {
-                box-shadow: 0 0 0 0 rgba(220, 38, 38, 0);
-            }
         }
 
         /* Close Button */
@@ -197,7 +210,10 @@
 <body>
 
     <!-- Trigger Button -->
-    <button class="uhaCanliYayinButon">Canlı Yayın (Click Me)</button>
+    <button class="uhaCanliYayinButon">
+        <div class="uha-live-dot"></div>
+        <span>UHA TV</span>
+    </button>
 
     <!-- Modal Structure -->
     <div id="uha-video-modal">
@@ -258,7 +274,10 @@
 
                 const openModal = (e) => {
                     console.log("Button clicked!");
-                    if (e) e.preventDefault();
+                    if (e) {
+                        e.preventDefault();
+                        e.stopPropagation(); // Stop event from bubble up if needed
+                    }
 
                     // Show modal immediately
                     modal.classList.add('active');
@@ -306,7 +325,7 @@
                 });
             };
 
-            // Run immediately as we are at the end of the body
+            // Run immediately
             initModalLogic();
         })();
     </script>
