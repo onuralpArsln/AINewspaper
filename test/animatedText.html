@@ -15,6 +15,15 @@
             margin: 0;
             font-family: 'Courier New', Courier, monospace;
         }
+
+        .typewriter-effect {
+            font-size: 4rem;
+            font-weight: 900;
+            text-transform: uppercase;
+            display: flex;
+            color: #ff6b6b;
+            text-shadow: 0 5px 15px rgba(255, 107, 107, 0.4);
+        }
     </style>
 </head>
 
@@ -30,12 +39,7 @@
         }
 
         .typewriter-effect {
-            font-size: 4rem;
-            font-weight: 900;
-            text-transform: uppercase;
             display: flex;
-            color: #ff6b6b;
-            text-shadow: 0 5px 15px rgba(255, 107, 107, 0.4);
         }
 
         .typewriter-effect span {
@@ -52,20 +56,22 @@
             }
 
             50% {
-                transform: translateY(-10px);
+                transform: translateY(-2px);
             }
         }
     </style>
     <script>
-        const element = document.querySelector('.typewriter-effect');
-        const text = element.innerText;
-        element.innerHTML = '';
-        text.split('').forEach((char, index) => {
-            const span = document.createElement('span');
-            span.innerHTML = char === ' ' ? '&nbsp;' : char;
-            span.style.setProperty('--i', index);
-            element.appendChild(span);
-        });
+        setTimeout(() => {
+            const element = document.querySelector('.typewriter-effect');
+            const text = element.innerText;
+            element.innerHTML = '';
+            text.split('').forEach((char, index) => {
+                const span = document.createElement('span');
+                span.innerHTML = char === ' ' ? '&nbsp;' : char;
+                span.style.setProperty('--i', index);
+                element.appendChild(span);
+            });
+        }, 5000);
     </script>
 
 </body>
