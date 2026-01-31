@@ -14,21 +14,15 @@
             min-height: 100vh;
             margin: 0;
             font-family: 'Courier New', Courier, monospace;
-            overflow: hidden;
         }
 
-        .typewriter-effect,
-        .typewriter-new {
+        .typewriter-effect {
             font-size: 4rem;
             font-weight: 900;
             text-transform: uppercase;
             display: flex;
             color: #ff6b6b;
             text-shadow: 0 5px 15px rgba(255, 107, 107, 0.4);
-            /* Adds spacing between the sliding word blocks */
-            gap: 0.6em;
-            flex-wrap: wrap;
-            justify-content: center;
         }
     </style>
 </head>
@@ -48,26 +42,10 @@
             display: flex;
         }
 
-        .word {
-            display: inline-flex;
-            animation: slide-in-left 0.6s cubic-bezier(0.25, 1, 0.5, 1) backwards;
-        }
-
-        .char {
+        .typewriter-effect span {
             display: inline-block;
             animation: sine-wave 1.5s ease-in-out infinite;
-        }
-
-        @keyframes slide-in-left {
-            0% {
-                transform: translateX(-100vw);
-                opacity: 0;
-            }
-
-            100% {
-                transform: translateX(0);
-                opacity: 1;
-            }
+            animation-delay: calc(0.1s * var(--i));
         }
 
         @keyframes sine-wave {
@@ -78,44 +56,22 @@
             }
 
             50% {
-                transform: translateY(-3px);
+                transform: translateY(-2px);
             }
         }
     </style>
-
     <script>
-        const element = document.querySelector('.typewriter-effect');
-
-        const text = "Uygur Haber Ajansı";
-        element.innerHTML = '';
-
-        const words = text.split(' ');
-
-        const slideDuration = 0.6;
-        const wordStagger = 0.25;
-
-        words.forEach((wordText, wIndex) => {
-            const wordSpan = document.createElement('span');
-            wordSpan.className = 'word';
-
-            const slideDelay = wIndex * wordStagger;
-            wordSpan.style.animationDelay = `${slideDelay}s`;
-            wordText.split('').forEach((char, cIndex) => {
-                const charSpan = document.createElement('span');
-                charSpan.className = 'char';
-                charSpan.innerHTML = char;
-
-                // 2. Wave Animation Delay
-                // Wait for the word to slide in fully (slideDelay + slideDuration)
-                // Then ripple through the characters (cIndex * 0.1)
-                const waveDelay = slideDelay + slideDuration + (cIndex * 0.1);
-
-                charSpan.style.animationDelay = `${waveDelay}s`;
-                wordSpan.appendChild(charSpan);
+        setTimeout(() => {
+            const element = document.querySelector('.typewriter-effect');
+            const text = element.innerText;
+            element.innerHTML = '';
+            text.split('').forEach((char, index) => {
+                const span = document.createElement('span');
+                span.innerHTML = char === ' ' ? '&nbsp;' : char;
+                span.style.setProperty('--i', index);
+                element.appendChild(span);
             });
-
-            element.appendChild(wordSpan);
-        });
+        }, 2000);
     </script>
 
 </body>
