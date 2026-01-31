@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Waving Flag Text CSS</title>
+    <style>
+        body {
+            background-color: #1a1a1a;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            font-family: 'Courier New', Courier, monospace;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="typewriter-wrapper">
+        <span class="typewriter-effect">Uygur Haber Ajansı</span>
+    </div>
+
+    <style>
+        .typewriter-wrapper {
+            display: block;
+        }
+
+        .typewriter-effect {
+            font-size: 4rem;
+            font-weight: 900;
+            text-transform: uppercase;
+            display: flex;
+            color: #ff6b6b;
+            text-shadow: 0 5px 15px rgba(255, 107, 107, 0.4);
+        }
+
+        .typewriter-effect span {
+            display: inline-block;
+            animation: sine-wave 1.5s ease-in-out infinite;
+            animation-delay: calc(0.1s * var(--i));
+        }
+
+        @keyframes sine-wave {
+
+            0%,
+            100% {
+                transform: translateY(0);
+            }
+
+            50% {
+                transform: translateY(-10px);
+            }
+        }
+    </style>
+    <script>
+        const element = document.querySelector('.typewriter-effect');
+        const text = element.innerText;
+        element.innerHTML = '';
+        text.split('').forEach((char, index) => {
+            const span = document.createElement('span');
+            span.innerHTML = char === ' ' ? '&nbsp;' : char;
+            span.style.setProperty('--i', index);
+            element.appendChild(span);
+        });
+    </script>
+
+</body>
+
+</html>
