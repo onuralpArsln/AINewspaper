@@ -37,16 +37,16 @@
 
         /* Button Style */
         .uhaCanliYayinButon {
+            min-height: 30px;
+            padding: 5px;
             color: white !important;
             background: #991b1b;
             /* Less dark, more vibrant crimson (Red 800) */
             font-size: 0.9rem !important;
             font-weight: 700;
             border-radius: 6px;
-            margin-top: 2px;
-            margin-bottom: 2px;
-            padding: 10px 20px;
-            border: 1px solid #7f1d1d;
+            margin: 2px;
+            border: 1px solid #f24c4c;
 
             /* Flexbox for centering */
             display: inline-flex;
@@ -59,7 +59,6 @@
             letter-spacing: 0.08em;
             font-family: 'Inter', sans-serif;
             text-decoration: none;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.2), 0 2px 4px -1px rgba(0, 0, 0, 0.1);
         }
 
         .uhaCanliYayinButon:hover {
@@ -68,6 +67,12 @@
             border-color: #991b1b;
             box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3);
             transform: translateY(-2px);
+        }
+
+        @media (max-width: 750px) {
+            .uhaCanliYayinButon {
+                transform: translateY(-7px);
+            }
         }
 
         /* 1. Shinier Pulse Animation */
@@ -99,7 +104,7 @@
 
             /* Vertical centering and spacing */
             margin-right: 3px;
-            margin-left:6px;
+            margin-left: 6px;
             flex-shrink: 0;
 
             /* Add a small inner white glow to the dot itself for "shine" */
