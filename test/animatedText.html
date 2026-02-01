@@ -30,6 +30,7 @@
 <body>
 
     <div class="typewriter-wrapper">
+        <img src="https://placehold.co/200x100?text=Logo" class="light-mode img-fluid flow-logo" alt="Logo">
         <span class="typewriter-effect">Uygur Haber Ajansı</span>
     </div>
 
@@ -40,6 +41,8 @@
 
         .typewriter-effect {
             display: flex;
+            opacity: 0;
+            /* Initially hidden */
         }
 
         .typewriter-effect span.word {
@@ -82,8 +85,36 @@
                 transform: translateY(-2px);
             }
         }
+
+        @keyframes drop-in {
+            0% {
+                transform: translateY(-100vh);
+                opacity: 0;
+            }
+
+            100% {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .flow-logo {
+            display: block;
+            margin: 0 auto 20px auto;
+            /* Centered with bottom spacing */
+            max-width: 200px;
+            /* Adjust as needed */
+            opacity: 0;
+            /* Generally hidden until animation starts */
+            animation: drop-in 1s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+            animation-delay: 0.5s;
+            /* Start falling after 0.5s */
+        }
     </style>
     <script>
+        // Start text animation logic after image lands
+        // Image start: 0.5s, Duration: 1s -> Ends at 1.5s
+        // Start text at 1.8s (giving 0.3s pause)
         setTimeout(() => {
             const element = document.querySelector('.typewriter-effect');
             // Hardcoded for safety or retrieve from original text if preferred, 
@@ -91,6 +122,7 @@
             // Let's use the explicit text "Uygur Haber Ajansı" as per previous context or reading from element.
             const text = "Uygur Haber Ajansı";
             element.innerHTML = '';
+            element.style.opacity = 1; // Reveal content
 
             const words = text.split(' ');
             const wordSlideDuration = 0.4; // Matches CSS animation duration
@@ -120,7 +152,7 @@
 
                 element.appendChild(wordSpan);
             });
-        }, 2000);
+        }, 1800);
     </script>
 
 </body>
