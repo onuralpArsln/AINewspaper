@@ -42,10 +42,33 @@
             display: flex;
         }
 
-        .typewriter-effect span {
+        .typewriter-effect span.word {
+            display: inline-flex;
+            animation: slide-in-left 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) backwards;
+            margin-right: 0.5em;
+            /* Space between words */
+        }
+
+        .typewriter-effect span.char {
             display: inline-block;
             animation: sine-wave 1.5s ease-in-out infinite;
-            animation-delay: calc(0.1s * var(--i));
+            /* Remove calc delay here as it will be managed in JS or relative to word */
+        }
+
+        @keyframes slide-in-left {
+            0% {
+                transform: translateX(-100vw) skewX(-20deg);
+                opacity: 0;
+            }
+
+            70% {
+                transform: translateX(0) skewX(10deg);
+            }
+
+            100% {
+                transform: translateX(0) skewX(0);
+                opacity: 1;
+            }
         }
 
         @keyframes sine-wave {
@@ -63,13 +86,39 @@
     <script>
         setTimeout(() => {
             const element = document.querySelector('.typewriter-effect');
-            const text = element.innerText;
+            // Hardcoded for safety or retrieve from original text if preferred, 
+            // but previous steps implied using the text content.
+            // Let's use the explicit text "Uygur Haber Ajansı" as per previous context or reading from element.
+            const text = "Uygur Haber Ajansı";
             element.innerHTML = '';
-            text.split('').forEach((char, index) => {
-                const span = document.createElement('span');
-                span.innerHTML = char === ' ' ? '&nbsp;' : char;
-                span.style.setProperty('--i', index);
-                element.appendChild(span);
+
+            const words = text.split(' ');
+            const wordSlideDuration = 0.4; // Matches CSS animation duration
+            const staggerDelay = 0.15; // Delay between words
+
+            words.forEach((word, wordIndex) => {
+                const wordSpan = document.createElement('span');
+                wordSpan.classList.add('word');
+
+                // Calculate delay for this word's slide-in
+                const delay = wordIndex * staggerDelay;
+                wordSpan.style.animationDelay = `${delay}s`;
+
+                // Split word into chars for the sine-wave effect
+                word.split('').forEach((char, charIndex) => {
+                    const charSpan = document.createElement('span');
+                    charSpan.classList.add('char');
+                    charSpan.innerHTML = char;
+
+                    // Optional: Offset the wave animation so they don't all wave in sync
+                    // combining word delay + slight char stagger
+                    const waveDelay = delay + wordSlideDuration + (charIndex * 0.1);
+                    charSpan.style.animationDelay = `${waveDelay}s`;
+
+                    wordSpan.appendChild(charSpan);
+                });
+
+                element.appendChild(wordSpan);
             });
         }, 2000);
     </script>
