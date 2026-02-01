@@ -40,6 +40,7 @@
         }
 
         .typewriter-effect {
+             margin-left: 5px;
             display: flex;
             opacity: 0;
             /* Initially hidden */
@@ -55,9 +56,15 @@
         .typewriter-effect span.char {
             font-weight: bold;
             font-size: 1.10rem;
+           
             display: inline-block;
             animation: sine-wave 1.5s ease-in-out infinite;
-            /* Remove calc delay here as it will be managed in JS or relative to word */
+        }
+
+        @media (min-width: 1081px) {
+            .typewriter-effect span.char {
+                font-size: 2rem;
+            }
         }
 
         @keyframes slide-in-left {
