@@ -7,6 +7,7 @@
     <title>UHA Live Player Test</title>
     <!-- Load HLS.js in head to ensure availability -->
     <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
     <style>
         /* Shared Pulse Animation */
         @keyframes uha-pulse-red {
@@ -36,29 +37,73 @@
 
         /* Button Style */
         .uhaCanliYayinButon {
+            color: white !important;
+            background: #991b1b;
+            /* Less dark, more vibrant crimson (Red 800) */
+            font-size: 0.9rem !important;
+            font-weight: 700;
+            border-radius: 6px;
+            margin-top: 2px;
+            margin-bottom: 2px;
+            padding: 10px 20px;
+            border: 1px solid #7f1d1d;
+
+            /* Flexbox for centering */
             display: inline-flex;
             align-items: center;
-            gap: 12px;
-            /* Space between dot and text */
-            padding: 12px 24px;
-            background-color: #1e293b;
-            /* Dark Slate background like header */
-            color: white;
-            border: 1px solid #334155;
-            border-radius: 8px;
+            justify-content: center;
+
             cursor: pointer;
-            font-weight: 600;
-            font-family: ui-sans-serif, system-ui, -apple-system, sans-serif;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             text-transform: uppercase;
-            letter-spacing: 0.05em;
-            font-size: 14px;
-            transition: all 0.2s ease;
+            letter-spacing: 0.08em;
+            font-family: 'Inter', sans-serif;
+            text-decoration: none;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.2), 0 2px 4px -1px rgba(0, 0, 0, 0.1);
         }
 
         .uhaCanliYayinButon:hover {
-            background-color: #334155;
-            transform: translateY(-1px);
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            background-color: #b91c1c;
+            /* Lighter red on hover */
+            border-color: #991b1b;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3);
+            transform: translateY(-2px);
+        }
+
+        /* 1. Shinier Pulse Animation */
+        /* Added a dual-layered shadow to make it look like a light source */
+        @keyframes uha-pulse-shiny {
+            0% {
+                box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.6), 0 0 0 0 rgba(239, 68, 68, 0.7);
+            }
+
+            70% {
+                box-shadow: 0 0 0 6px rgba(255, 255, 255, 0), 0 0 0 14px rgba(239, 68, 68, 0);
+            }
+
+            100% {
+                box-shadow: 0 0 0 0 rgba(255, 255, 255, 0), 0 0 0 0 rgba(239, 68, 68, 0);
+            }
+        }
+
+        /* 2. The Red Dot (Pseudo-element) */
+        .uhaCanliYayinButon::before {
+            content: "";
+            display: inline-block;
+            width: 11px;
+            height: 11px;
+            background-color: #ff4d4d;
+            /* Very bright vibrant red */
+            border-radius: 50%;
+            animation: uha-pulse-shiny 1.8s infinite;
+
+            /* Vertical centering and spacing */
+            margin-right: 3px;
+            margin-left:6px;
+            flex-shrink: 0;
+
+            /* Add a small inner white glow to the dot itself for "shine" */
+            border: 1px solid rgba(255, 255, 255, 0.3);
         }
 
         /* Modal Overlay */
@@ -211,7 +256,6 @@
 
     <!-- Trigger Button -->
     <button class="uhaCanliYayinButon">
-        <div class="uha-live-dot"></div>
         <span>UHA TV</span>
     </button>
 
