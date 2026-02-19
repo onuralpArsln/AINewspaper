@@ -47,6 +47,7 @@
         font-family: system-ui, -apple-system, sans-serif;
         font-size: 1.5rem;
         font-weight: 700;
+        text-transform: capitalize;
     }
 
     .panel-container .date-display {
@@ -153,8 +154,9 @@
         overlay.innerHTML = `
             <div class="panel-container">
                 <div class="close-button" aria-label="Close">×</div>
-                <h1>İstanbul İmsakiye</h1>
+                <h1 id="imsak-title">İmsakiye</h1>
                 <div id="imsak-content">
+                    <p class="date-display">Konum algılanıyor...</p>
                     <div class="loading-spinner"></div>
                 </div>
             </div>
@@ -180,23 +182,83 @@
             const closeBtn = overlay.querySelector('.close-button');
             if (closeBtn) closeBtn.addEventListener("click", hideOverlay);
 
-            // Fetch Data
-            fetchImsakiye();
+            // Start process
+            initImsakiye();
         };
 
-        const fetchImsakiye = async () => {
+        const initImsakiye = () => {
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(
+                    (position) => {
+                        // Success: Reverse geocode to find city
+                        reverseGeocode(position.coords.latitude, position.coords.longitude);
+                    },
+                    (error) => {
+                        // Error/Denied: Fallback to Istanbul
+                        console.warn("Geolocation detection failed, defaulting to Istanbul:", error.message);
+                        fetchImsakiye('Istanbul');
+                    },
+                    { timeout: 5000 } // Wait max 5s for location
+                );
+            } else {
+                // Not supported: Fallback to Istanbul
+                fetchImsakiye('Istanbul');
+            }
+        };
+
+        const reverseGeocode = async (lat, lon) => {
             try {
-                const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
-                const url = `https://api.cagrivakti.com.tr/vakitler?sehir=Istanbul&tarih=${today}`;
+                // Using OpenStreetMap Nominatim API for reverse geocoding
+                const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}`);
+                if (!response.ok) throw new Error('Reverse geocoding failed');
+
+                const data = await response.json();
+                const address = data.address;
+
+                // Extract city name (trying various fields as OSM data varies)
+                let city = address.province || address.city || address.town || address.county || 'Istanbul';
+
+                // Normalize city name (remove ' Province', etc if present)
+                city = city.replace(/ Province| province/gi, '').trim();
+
+                fetchImsakiye(city);
+            } catch (e) {
+                console.error("Reverse geocoding error:", e);
+                fetchImsakiye('Istanbul');
+            }
+        };
+
+        const fetchImsakiye = async (city) => {
+            try {
+                // Update title to show city being fetched
+                const titleEl = document.getElementById('imsak-title');
+                if (titleEl) titleEl.innerText = `${city} İmsakiye`;
+
+                const today = new Date().toISOString().split('T')[0];
+                const url = `https://api.cagrivakti.com.tr/vakitler?sehir=${encodeURIComponent(city)}&tarih=${today}`;
 
                 const response = await fetch(url);
-                if (!response.ok) throw new Error('Veri alınamadı');
+
+                // If specific city failed (e.g. not in database), fallback to Istanbul
+                if (!response.ok) {
+                    if (city !== 'Istanbul') {
+                        console.warn(`Data not found for ${city}, falling back to Istanbul.`);
+                        fetchImsakiye('Istanbul');
+                        return;
+                    }
+                    throw new Error('Veri alınamadı');
+                }
 
                 const json = await response.json();
 
                 if (json.durum === 'basarili' && json.data && json.data.vakitler) {
                     renderTable(json.data);
                 } else {
+                    // Check if we can fallback
+                    if (city !== 'Istanbul') {
+                        fetchImsakiye('Istanbul');
+                        return;
+                    }
                     throw new Error('Geçersiz veri formatı');
                 }
             } catch (error) {
