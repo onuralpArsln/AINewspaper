@@ -135,6 +135,24 @@
         color: #d32f2f;
         margin: 1rem 0;
     }
+
+    .detail-button {
+        display: inline-block;
+        margin-top: 1rem;
+        padding: 0.75rem 1.5rem;
+        background-color: #d32f2f;
+        color: white;
+        text-decoration: none;
+        border-radius: 0.5rem;
+        font-family: system-ui, -apple-system, sans-serif;
+        font-weight: 600;
+        font-size: 0.9rem;
+        transition: background-color 0.2s ease;
+    }
+
+    .detail-button:hover {
+        background-color: #b71c1c;
+    }
 </style>
 
 <script>
@@ -156,7 +174,7 @@
                 <div class="close-button" aria-label="Close">×</div>
                 <h1 id="imsak-title">İmsakiye</h1>
                 <div id="imsak-content">
-                    <p class="date-display">Konum algılanıyor...</p>
+                    <p class="date-display">Konuma izin vererek şehirinize uygun bilgileri alın...</p>
                     <div class="loading-spinner"></div>
                 </div>
             </div>
@@ -270,7 +288,7 @@
                 const json = await response.json();
 
                 if (json.durum === 'basarili' && json.data && json.data.vakitler) {
-                    renderTable(json.data);
+                    renderTable(json.data, apiCity); // Pass normalized city name for button link
                 } else {
                     // Check if we can fallback
                     if (city !== 'Istanbul') {
@@ -287,7 +305,7 @@
             }
         };
 
-        const renderTable = (data) => {
+        const renderTable = (data, apiCity) => {
             const content = document.getElementById('imsak-content');
             const v = data.vakitler;
             const dateStr = new Date(data.tarih).toLocaleDateString('tr-TR', {
@@ -296,6 +314,19 @@
                 month: 'long',
                 day: 'numeric'
             });
+
+            // Generate link with lowercase normalized city name
+            // e.g. "Sirnak" -> "sirnak"
+            const citySlug = apiCity.toLowerCase();
+            const detailUrl = `https://www.uygurhaberajansi.com/${citySlug}-namaz-vakitleri`;
+
+            // Hide button if already on the target page
+            // Check if current URL contains the city slug pattern, avoiding protocols/www differences
+            const isAlreadyOnPage = window.location.href.includes(`${citySlug}-namaz-vakitleri`);
+
+            const buttonHtml = isAlreadyOnPage
+                ? ''
+                : `<a href="${detailUrl}" class="detail-button" target="_blank">Detaylı Namaz Vakitleri İçin Tıklayınız</a>`;
 
             const html = `
                 <p class="date-display">${dateStr}</p>
@@ -307,6 +338,7 @@
                     <tr><td>Akşam</td><td>${v.aksam}</td></tr>
                     <tr><td>Yatsı</td><td>${v.yatsi}</td></tr>
                 </table>
+                ${buttonHtml}
             `;
 
             if (content) {
