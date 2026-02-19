@@ -19,7 +19,7 @@
     .panel-container {
         position: relative;
         display: block;
-        width: min(90vw, 24rem);
+        width: min(90vw, 30rem);
         background: white;
         border-radius: 1rem;
         box-shadow: 0 1.5rem 3rem rgba(0, 0, 0, 0.35);
@@ -208,18 +208,20 @@
 
         const reverseGeocode = async (lat, lon) => {
             try {
-                // Using OpenStreetMap Nominatim API for reverse geocoding
-                const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}`);
+                // Using BigDataCloud Reverse Geocoding API (CORS friendly)
+                // Use localityLanguage=tr to get Turkish names
+                const response = await fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lon}&localityLanguage=tr`);
                 if (!response.ok) throw new Error('Reverse geocoding failed');
 
                 const data = await response.json();
-                const address = data.address;
 
-                // Extract city name (trying various fields as OSM data varies)
-                let city = address.province || address.city || address.town || address.county || 'Istanbul';
+                // BigDataCloud returns 'principalSubdivision' for Province (e.g., "İzmir")
+                // Fallback to 'city' or 'locality'
+                let city = data.principalSubdivision || data.city || data.locality || 'Istanbul';
 
-                // Normalize city name (remove ' Province', etc if present)
-                city = city.replace(/ Province| province/gi, '').trim();
+                // Normalize city name
+                // Remove specific suffixes if they appear, though BigDataCloud usually returns clean names
+                city = city.replace(/ Province| province| ili| Vilayeti/gi, '').trim();
 
                 fetchImsakiye(city);
             } catch (e) {
@@ -228,21 +230,37 @@
             }
         };
 
+        const normalizeCityName = (city) => {
+            const charMap = {
+                'İ': 'I', 'ı': 'i',
+                'Ş': 'S', 'ş': 's',
+                'Ğ': 'G', 'ğ': 'g',
+                'Ü': 'U', 'ü': 'u',
+                'Ö': 'O', 'ö': 'o',
+                'Ç': 'C', 'ç': 'c'
+            };
+
+            return city.split('').map(char => charMap[char] || char).join('');
+        };
+
         const fetchImsakiye = async (city) => {
             try {
-                // Update title to show city being fetched
+                // Update title to show city being fetched (keep original characters for display)
                 const titleEl = document.getElementById('imsak-title');
                 if (titleEl) titleEl.innerText = `${city} İmsakiye`;
 
+                // Normalize for API (API likely needs English chars)
+                const apiCity = normalizeCityName(city);
+
                 const today = new Date().toISOString().split('T')[0];
-                const url = `https://api.cagrivakti.com.tr/vakitler?sehir=${encodeURIComponent(city)}&tarih=${today}`;
+                const url = `https://api.cagrivakti.com.tr/vakitler?sehir=${encodeURIComponent(apiCity)}&tarih=${today}`;
 
                 const response = await fetch(url);
 
                 // If specific city failed (e.g. not in database), fallback to Istanbul
                 if (!response.ok) {
                     if (city !== 'Istanbul') {
-                        console.warn(`Data not found for ${city}, falling back to Istanbul.`);
+                        console.warn(`Data not found for ${city} (${apiCity}), falling back to Istanbul.`);
                         fetchImsakiye('Istanbul');
                         return;
                     }
