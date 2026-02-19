@@ -213,14 +213,14 @@
                     },
                     (error) => {
                         // Error/Denied: Fallback to Istanbul
-                        console.warn("Geolocation detection failed, defaulting to Istanbul:", error.message);
-                        fetchImsakiye('Istanbul');
+                        console.warn("Geolocation detection failed, defaulting to Ankara:", error.message);
+                        fetchImsakiye('Ankara');
                     },
                     { timeout: 5000 } // Wait max 5s for location
                 );
             } else {
-                // Not supported: Fallback to Istanbul
-                fetchImsakiye('Istanbul');
+                // Not supported: Fallback to Ankara
+                fetchImsakiye('Ankara');
             }
         };
 
@@ -235,7 +235,7 @@
 
                 // BigDataCloud returns 'principalSubdivision' for Province (e.g., "İzmir")
                 // Fallback to 'city' or 'locality'
-                let city = data.principalSubdivision || data.city || data.locality || 'Istanbul';
+                let city = data.principalSubdivision || data.city || data.locality || 'Ankara';
 
                 // Normalize city name
                 // Remove specific suffixes if they appear, though BigDataCloud usually returns clean names
@@ -244,7 +244,7 @@
                 fetchImsakiye(city);
             } catch (e) {
                 console.error("Reverse geocoding error:", e);
-                fetchImsakiye('Istanbul');
+                fetchImsakiye('Ankara');
             }
         };
 
@@ -320,13 +320,28 @@
             const citySlug = apiCity.toLowerCase();
             const detailUrl = `https://www.uygurhaberajansi.com/${citySlug}-namaz-vakitleri`;
 
-            // Hide button if already on the target page
-            // Check if current URL contains the city slug pattern, avoiding protocols/www differences
-            const isAlreadyOnPage = window.location.href.includes(`${citySlug}-namaz-vakitleri`);
+            // Hide overlay entirely if already on the target page
+            let isAlreadyOnPage = false;
+            try {
+                const currentUrl = window.location.href.toLowerCase();
+                const targetSlug = `${citySlug}-namaz-vakitleri`;
 
-            const buttonHtml = isAlreadyOnPage
-                ? ''
-                : `<a href="${detailUrl}" class="detail-button" target="_blank">Detaylı Namaz Vakitleri İçin Tıklayınız</a>`;
+                if (currentUrl.includes(targetSlug)) {
+                    isAlreadyOnPage = true;
+                } else if (window.top !== window.self) {
+                    // Check parent frame URL if possible
+                    if (window.top.location.href.toLowerCase().includes(targetSlug)) {
+                        isAlreadyOnPage = true;
+                    }
+                }
+            } catch (e) {
+                // Cross-origin or other error, assume not on page
+            }
+
+            if (isAlreadyOnPage) {
+                hideOverlay();
+                return;
+            }
 
             const html = `
                 <p class="date-display">${dateStr}</p>
@@ -338,7 +353,7 @@
                     <tr><td>Akşam</td><td>${v.aksam}</td></tr>
                     <tr><td>Yatsı</td><td>${v.yatsi}</td></tr>
                 </table>
-                ${buttonHtml}
+                <a href="${detailUrl}" class="detail-button" target="_blank">Detaylı Namaz Vakitleri İçin Tıklayınız</a>
             `;
 
             if (content) {
