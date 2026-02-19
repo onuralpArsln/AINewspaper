@@ -1,0 +1,245 @@
+<!-- Closable Imsakiye panel overlay -->
+<style>
+    .closable-loader-overlay {
+        position: fixed;
+        inset: 0;
+        z-index: 9999;
+        display: grid;
+        place-items: center;
+        background: rgba(0, 0, 0, 0.6);
+        transition: opacity 400ms ease, visibility 400ms ease;
+        cursor: pointer;
+    }
+
+    .closable-loader-overlay.hide {
+        opacity: 0;
+        visibility: hidden;
+    }
+
+    .panel-container {
+        position: relative;
+        display: block;
+        width: min(90vw, 24rem);
+        background: white;
+        border-radius: 1rem;
+        box-shadow: 0 1.5rem 3rem rgba(0, 0, 0, 0.35);
+        padding: 2rem 1.5rem;
+        text-align: center;
+        cursor: default;
+        animation: scaleIn 0.3s ease-out;
+    }
+
+    @keyframes scaleIn {
+        from {
+            transform: scale(0.9);
+            opacity: 0;
+        }
+
+        to {
+            transform: scale(1);
+            opacity: 1;
+        }
+    }
+
+    .panel-container h1 {
+        margin: 0 0 0.5rem 0;
+        color: #333;
+        font-family: system-ui, -apple-system, sans-serif;
+        font-size: 1.5rem;
+        font-weight: 700;
+    }
+
+    .panel-container .date-display {
+        color: #666;
+        font-size: 0.9rem;
+        margin-bottom: 1.5rem;
+        font-family: system-ui, -apple-system, sans-serif;
+    }
+
+    .imsakiye-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-family: system-ui, -apple-system, sans-serif;
+        margin-bottom: 1rem;
+    }
+
+    .imsakiye-table tr {
+        border-bottom: 1px solid #eee;
+    }
+
+    .imsakiye-table tr:last-child {
+        border-bottom: none;
+    }
+
+    .imsakiye-table td {
+        padding: 0.75rem 0.5rem;
+        font-size: 1rem;
+        color: #444;
+    }
+
+    .imsakiye-table td:first-child {
+        text-align: left;
+        font-weight: 500;
+    }
+
+    .imsakiye-table td:last-child {
+        text-align: right;
+        font-weight: 600;
+        color: #222;
+    }
+
+    .close-button {
+        position: absolute;
+        top: -1rem;
+        right: -1rem;
+        width: 2.5rem;
+        height: 2.5rem;
+        background: #333;
+        color: white;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+        font-weight: bold;
+        cursor: pointer;
+        box-shadow: 0 0.25rem 0.5rem rgba(0, 0, 0, 0.2);
+        transition: transform 0.2s ease, background 0.2s ease;
+        z-index: 10000;
+    }
+
+    .close-button:hover {
+        transform: scale(1.1);
+        background: #000;
+    }
+
+    .loading-spinner {
+        display: inline-block;
+        width: 2rem;
+        height: 2rem;
+        border: 3px solid rgba(0, 0, 0, 0.1);
+        border-radius: 50%;
+        border-top-color: #333;
+        animation: spin 1s ease-in-out infinite;
+        margin: 2rem 0;
+    }
+
+    @keyframes spin {
+        to {
+            transform: rotate(360deg);
+        }
+    }
+
+    .error-message {
+        color: #d32f2f;
+        margin: 1rem 0;
+    }
+</style>
+
+<script>
+    (() => {
+        const overlayId = "closable-loader-overlay";
+
+        // Prevent duplicate overlays
+        if (document.getElementById(overlayId)) return;
+
+        const overlay = document.createElement("div");
+        overlay.id = overlayId;
+        overlay.className = "closable-loader-overlay";
+        overlay.setAttribute("role", "dialog");
+        overlay.setAttribute("aria-modal", "true");
+
+        // Initial Loading State
+        overlay.innerHTML = `
+            <div class="panel-container">
+                <div class="close-button" aria-label="Close">×</div>
+                <h1>İstanbul İmsakiye</h1>
+                <div id="imsak-content">
+                    <div class="loading-spinner"></div>
+                </div>
+            </div>
+        `;
+
+        const hideOverlay = () => {
+            overlay.classList.add("hide");
+            overlay.addEventListener(
+                "transitionend",
+                () => overlay.remove(),
+                { once: true }
+            );
+        };
+
+        const injectOverlay = () => {
+            document.body.appendChild(overlay);
+
+            // Close events
+            overlay.addEventListener("click", (e) => {
+                if (e.target === overlay) hideOverlay();
+            });
+
+            const closeBtn = overlay.querySelector('.close-button');
+            if (closeBtn) closeBtn.addEventListener("click", hideOverlay);
+
+            // Fetch Data
+            fetchImsakiye();
+        };
+
+        const fetchImsakiye = async () => {
+            try {
+                const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
+                const url = `https://api.cagrivakti.com.tr/vakitler?sehir=Istanbul&tarih=${today}`;
+
+                const response = await fetch(url);
+                if (!response.ok) throw new Error('Veri alınamadı');
+
+                const json = await response.json();
+
+                if (json.durum === 'basarili' && json.data && json.data.vakitler) {
+                    renderTable(json.data);
+                } else {
+                    throw new Error('Geçersiz veri formatı');
+                }
+            } catch (error) {
+                const content = document.getElementById('imsak-content');
+                if (content) {
+                    content.innerHTML = `<p class="error-message">İmsakiye verileri yüklenemedi.<br><small>${error.message}</small></p>`;
+                }
+            }
+        };
+
+        const renderTable = (data) => {
+            const content = document.getElementById('imsak-content');
+            const v = data.vakitler;
+            const dateStr = new Date(data.tarih).toLocaleDateString('tr-TR', {
+                weekday: 'long',
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric'
+            });
+
+            const html = `
+                <p class="date-display">${dateStr}</p>
+                <table class="imsakiye-table">
+                    <tr><td>İmsak</td><td>${v.imsak}</td></tr>
+                    <tr><td>Güneş</td><td>${v.gunes}</td></tr>
+                    <tr><td>Öğle</td><td>${v.ogle}</td></tr>
+                    <tr><td>İkindi</td><td>${v.ikindi}</td></tr>
+                    <tr><td>Akşam</td><td>${v.aksam}</td></tr>
+                    <tr><td>Yatsı</td><td>${v.yatsi}</td></tr>
+                </table>
+            `;
+
+            if (content) {
+                content.innerHTML = html;
+            }
+        };
+
+        if (document.body) {
+            injectOverlay();
+        } else {
+            document.addEventListener("DOMContentLoaded", injectOverlay, {
+                once: true,
+            });
+        }
+    })();
+</script>
